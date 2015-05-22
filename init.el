@@ -46,6 +46,7 @@
         guide-key
         helm
         highlight-parentheses                     ; highlight matching parentheses
+        ido-vertical-mode
         magit
         moe-theme
         paredit
@@ -72,6 +73,8 @@
 (delete-selection-mode t)                         ; typing will delete selected text
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (guide-key-mode 1)
+(ido-mode 1)
+(ido-vertical-mode 1)
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
 
@@ -121,12 +124,15 @@
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-r"       . #'helm-recentf)
         ("C-x b"         . #'helm-buffers-list)
+        ("C-x k"         . #'kill-this-buffer)
         ("C-x f"         . #'helm-find-files)
         ("M-j"           . #'cam/join-next-line)
-        ("M-x"           . #'helm-M-x)))
+        ("M-x"           . #'helm-M-x)
+        ("s-f"           . #'ftf-grepsource)
+        ("s-o"           . #'ftf-find-file)))
 
 
-;;; ---------------------------------------- Mode Specific Setup ----------------------------------------
+;;; ---------------------------------------- Mode/Package Specific Setup ----------------------------------------
 
 ;;; Auto-complete
 
@@ -154,8 +160,22 @@
             (lambda ()
               (when (buffer-file-name)
                 (byte-compile-file (buffer-file-name))))))
-
 (add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
+
+
+;;; Find Things Fast
+(eval-when-compile
+  (require 'find-things-fast))
+
+(eval-after-load "find-things-fast"
+  '(nconc ftf-filetypes '("*.clj"
+                          "*.css"
+                          "*.el"
+                          "*.html"
+                          "*.js"
+                          "*.java"
+                          "*.md"
+                          "*.yml")))
 
 
 ;;; Guide-Key
@@ -164,19 +184,20 @@
       guide-key/recursive-key-sequence-flag t
       guide-key/guide-key-sequence '("<f12>" "<f1>"
                                      "<help>" "A-'"
-                                     "A-*" "A-,"
-                                     "A-/" "A-1"
-                                     "A-3" "A-\""
-                                     "A-^" "A-_"
-                                     "A-`" "A-r"
-                                     "A-~" "C-c"
-                                     "C-h" "C-x"
-                                     "M-g" "M-o"))
+                                     "A-*"    "A-,"
+                                     "A-/"    "A-1"
+                                     "A-3"    "A-\""
+                                     "A-^"    "A-_"
+                                     "A-`"    "A-r"
+                                     "A-~"    "C-c"
+                                     "C-h"    "C-x"
+                                     "M-g"    "M-o"))
 
 ;;; Magit
+(eval-when-compile
+  (require 'magit))
 
-(eval-after-load "magit"
-  '(setq magit-last-seen-setup-instructions "1.4.0"))
+(setq magit-last-seen-setup-instructions "1.4.0")
 
 ;;; ---------------------------------------- Final Setup ----------------------------------------
 
