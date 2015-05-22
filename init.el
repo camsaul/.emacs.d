@@ -188,7 +188,9 @@
 
   (add-hook 'before-save-hook
             (lambda ()
-              (cam/untabify-current-buffer))))
+              (cam/untabify-current-buffer))
+            nil
+            :local))
 
 
 ;;; Auto-complete
@@ -203,20 +205,35 @@
 
 
 ;;; Clojure
+(eval-when-compile
+  (require 'cider))
+(defun cam/clojure-save-load-switch-to-cider ()
+  (interactive)
+  (save-buffer)
+  (cider-load-buffer)
+  (cider-repl-set-ns (cider-current-ns))
+  (cider-switch-to-relevant-repl-buffer)
+  (cider-repl-clear-buffer))
+
 (defun cam/clojure-mode-setup ()
   (cam/lisp-mode-setup)
-  (auto-complete-mode 1))
+  (auto-complete-mode 1)
+
+  (define-key clojure-mode-map
+    (kbd "M-RET") #'cam/clojure-save-load-switch-to-cider))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
 
 (defun cam/cider-repl-mode-setup ()
   (cam/lisp-mode-setup)
   (auto-complete-mode 1)
-  (aggressive-indent-mode 1))
+  (aggressive-indent-mode 1)
+
+  (define-key cider-repl-mode-map
+    (kbd "M-RET") #'cider-switch-to-last-clojure-buffer))
 (add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
 
 ;;; Company
-
 (eval-when-compile
   (require 'company))
 (eval-after-load "company"
@@ -232,7 +249,9 @@
   (add-hook 'after-save-hook
             (lambda ()
               (when (buffer-file-name)
-                (byte-compile-file (buffer-file-name))))))
+                (byte-compile-file (buffer-file-name))))
+            nil
+            :local))
 (add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
 
 
@@ -282,6 +301,5 @@
 ;;; ---------------------------------------- Final Setup ----------------------------------------
 
 (ignore-errors
-  (byte-recompile-file custom-file nil 0)         ; byte-recompile the custom file if applicable + load it
   (load-file custom-file))
 (toggle-frame-maximized)                          ; maximize the frame
