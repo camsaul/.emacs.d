@@ -160,17 +160,3 @@
 ;;; Things that need to happen at the end of setup or they don't work right
 
 (toggle-frame-maximized)                          ; maximize the frame
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (magit rainbow-delimiters paredit moe-theme highlight-parentheses helm guide-key auto-complete ace-jump-mode))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
