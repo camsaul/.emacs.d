@@ -94,7 +94,12 @@
             (when (get atom 'disabled)
               (put atom 'disabled nil))))
 
-(setq custom-file (concat user-emacs-directory
+(setq backup-directory-alist                      ; save backup files to ~/.emacs.d/backups
+      `(("." . ,(expand-file-name
+                 (concat user-emacs-directory
+                         "backups"))))
+
+      custom-file (concat user-emacs-directory    ; write customizations to ~/.emacs.d/custom.el instead of init.el
                           "custom.el")
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
@@ -259,5 +264,6 @@
 ;;; ---------------------------------------- Final Setup ----------------------------------------
 
 (ignore-errors
-  (load custom-file))
+  (byte-recompile-file custom-file nil 0)         ; byte-recompile the custom file if applicable + load it
+  (load-file custom-file))
 (toggle-frame-maximized)                          ; maximize the frame
