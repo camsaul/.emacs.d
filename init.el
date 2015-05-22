@@ -43,6 +43,7 @@
         auto-complete                             ; auto-completion
         cider
         clj-refactor
+        company                                   ; auto-completion
         editorconfig
         find-things-fast
         guide-key
@@ -214,6 +215,15 @@
 (add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
 
+;;; Company
+
+(eval-when-compile
+  (require 'company))
+(eval-after-load "company"
+  '(setq company-idle-delay 0.01
+         company-minimum-prefix-length 1))
+
+
 ;;; Emacs Lisp Mode
 (defun cam/emacs-lisp-mode-setup ()
   (cam/lisp-mode-setup)
@@ -224,6 +234,14 @@
               (when (buffer-file-name)
                 (byte-compile-file (buffer-file-name))))))
 (add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
+
+
+;;; Eval Expresssion (Minibuffer)
+(defun cam/eval-expression-minibuffer-setup ()
+  (company-mode 1)
+  (paredit-mode 1)
+  (setq-local company-echo-delay 10))
+(add-hook 'eval-expression-minibuffer-setup-hook #'cam/eval-expression-minibuffer-setup)
 
 
 ;;; Find Things Fast
