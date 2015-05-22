@@ -54,7 +54,8 @@
         multiple-cursors
         moe-theme
         paredit
-        rainbow-delimiters))
+        rainbow-delimiters
+        undo-tree))
 
 
 ;;; ---------------------------------------- Global Setup ----------------------------------------
@@ -77,6 +78,7 @@
 
 (delete-selection-mode t)                         ; typing will delete selected text
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
+(global-undo-tree-mode 1)
 (guide-key-mode 1)
 (ido-mode 1)
 (ido-everywhere 1)                                ; use ido for all buffer/file reading
@@ -84,18 +86,22 @@
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
 
-(fset #'yes-or-no-p #'y-or-n-p)
+(fset #'yes-or-no-p #'y-or-n-p)                   ; Prompt for 'y' or 'n' instead of 'yes' or 'no'
 
 (prefer-coding-system 'utf-8-auto-unix)
+
+(mapatoms (lambda (atom)                          ; Enable all disabled functions
+            (when (get atom 'disabled)
+              (put atom 'disabled nil))))
 
 (setq custom-file (concat user-emacs-directory
                           "custom.el")
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
-      ns-right-command-modifier 'hyper
-      ns-right-control-modifier 'hyper
-      ns-right-option-modifier 'alt
+      global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
       require-final-newline t                     ; add final newline on save
+      truncate-lines t                            ; don't display continuation lines (i.e., wrap long lines)
       visible-bell t)
+
 
 ;;; Global Fns
 
@@ -120,14 +126,22 @@
 
 ;;; Global Keybindings
 
-(mapc (lambda (key)
-        (global-unset-key (kbd key)))
-      '("C-b"
-        "C-f"))
+;; Unset global and keymap-specific keys that we want to change below
+(mapc (lambda (mode-map-and-keys)
+        (let ((mode-map (eval (car mode-map-and-keys)))
+              (keys     (mapcar #'kbd (cdr mode-map-and-keys))))
+          (mapc (if mode-map
+                    (lambda (key)
+                      (define-key mode-map key nil))
+                  #'global-unset-key)
+                keys)))
+      '((nil "C-b" "C-f" "C-v")
+        (winner-mode-map "C-c <left>" "C-c <right>")))
 
 (mapc (lambda (key-command-pair)
         (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
-      '(("C-b SPC"       . #'mc/mark-all-like-this)
+      '(("C-M-y"         . #'helm-show-kill-ring)
+        ("C-b SPC"       . #'mc/mark-all-like-this)
         ("C-b a"         . #'mc/mark-previous-like-this)
         ("C-b e"         . #'mc/mark-next-like-this)
         ("C-b <return>"  . #'mc/mark-next-lines)
@@ -138,6 +152,12 @@
                                (require 'loccur)
                                (call-interactively #'loccur)))
         ("C-c o"         . #'ftf-find-file)
+        ("C-c w <left>"  . #'winner-undo)
+        ("C-c w <right>" . #'winner-redo)
+        ("C-c <down>"    . #'windmove-down)
+        ("C-c <left>"    . #'windmove-left)
+        ("C-c <right>"   . #'windmove-right)
+        ("C-c <up>"      . #'windmove-up)
         ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-r"       . #'helm-recentf)
@@ -145,13 +165,11 @@
         ("C-x f"         . #'helm-find-files)
         ("C-x k"         . #'kill-this-buffer)
         ("C-x m"         . #'magit-status)
-        ("C-x <down>"    . #'windmove-down)
-        ("C-x <left>"    . #'windmove-left)
-        ("C-x <right>"   . #'windmove-right)
-        ("C-x <up>"      . #'windmove-up)
         ("C-z"           . #'undo)
+        ("ESC <up>"      . #'windmove-up)
         ("M-j"           . #'cam/join-next-line)
         ("M-x"           . #'helm-M-x)))
+
 
 ;;; ---------------------------------------- Mode/Package Specific Setup ----------------------------------------
 
@@ -183,6 +201,12 @@
   (cam/lisp-mode-setup)
   (auto-complete-mode 1))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
+
+(defun cam/cider-repl-mode-setup ()
+  (cam/lisp-mode-setup)
+  (auto-complete-mode 1)
+  (aggressive-indent-mode 1))
+(add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
 
 ;;; Emacs Lisp Mode
