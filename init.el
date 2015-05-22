@@ -3,7 +3,8 @@
 ;;; ---------------------------------------- Initial Setup ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
-(setq gc-cons-threshold (* 32 1024 1024))         ; A more reasonable garbage collection threshold
+(setq gc-cons-threshold (* 32 1024 1024)          ; A more reasonable garbage collection threshold
+      load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
@@ -38,6 +39,10 @@
             (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
       '(ace-jump-mode
         auto-complete                             ; auto-completion
+        cider
+        clj-refactor
+        editorconfig
+        find-things-fast
         guide-key
         helm
         highlight-parentheses                     ; highlight matching parentheses
@@ -54,6 +59,11 @@
 (moe-light)
 (set-frame-font "Source Code Pro-13")
 
+
+;;; Global Requires
+
+(require 'editorconfig)
+
 ;;; Global Settings
 
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
@@ -62,17 +72,21 @@
 (delete-selection-mode t)                         ; typing will delete selected text
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (guide-key-mode 1)
+(save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
 
 
 (prefer-coding-system 'utf-8-auto-unix)
 
-(setq echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
+(setq custom-file (concat user-emacs-directory
+                          "custom.el")
+      echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
       ns-right-option-modifier 'alt
       require-final-newline t                     ; add final newline on save
       visible-bell t)
+
 ;;; Global Fns
 
 (defun cam/untabify-current-buffer ()
@@ -91,6 +105,8 @@
             (delete-trailing-whitespace)
             (set-buffer-file-coding-system 'utf-8-auto-unix)))
 
+(add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
+
 
 ;;; Global Keybindings
 
@@ -104,6 +120,7 @@
         ("C-="           . #'magit-status)
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-r"       . #'helm-recentf)
+        ("C-x b"         . #'helm-buffers-list)
         ("C-x f"         . #'helm-find-files)
         ("M-j"           . #'cam/join-next-line)
         ("M-x"           . #'helm-M-x)))
@@ -132,7 +149,12 @@
 
   (add-hook 'before-save-hook
             (lambda ()
-              (cam/untabify-current-buffer))))
+              (cam/untabify-current-buffer)))
+  (add-hook 'after-save-hook
+            (lambda ()
+              (when (buffer-file-name)
+                (byte-compile-file (buffer-file-name))))))
+
 (add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
 
 
@@ -157,6 +179,7 @@
   '(setq magit-last-seen-setup-instructions "1.4.0"))
 
 ;;; ---------------------------------------- Final Setup ----------------------------------------
-;;; Things that need to happen at the end of setup or they don't work right
 
+(ignore-errors
+  (load custom-file))
 (toggle-frame-maximized)                          ; maximize the frame
