@@ -11,7 +11,8 @@
 (mapc (lambda (mode)
         (when (boundp mode)
           (funcall mode -1)))
-      '(scroll-bar-mode
+      '(menu-bar-mode
+        scroll-bar-mode
         tool-bar-mode))
 
 (setq inhibit-splash-screen t
@@ -38,6 +39,7 @@
               (package-install package)
             (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
       '(ace-jump-mode
+        aggressive-indent
         auto-complete                             ; auto-completion
         cider
         clj-refactor
@@ -47,10 +49,13 @@
         helm
         highlight-parentheses                     ; highlight matching parentheses
         ido-vertical-mode
+        loccur
         magit
+        multiple-cursors
         moe-theme
         paredit
         rainbow-delimiters))
+
 
 ;;; ---------------------------------------- Global Setup ----------------------------------------
 
@@ -74,10 +79,12 @@
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (guide-key-mode 1)
 (ido-mode 1)
+(ido-everywhere 1)                                ; use ido for all buffer/file reading
 (ido-vertical-mode 1)
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
 
+(fset #'yes-or-no-p #'y-or-n-p)
 
 (prefer-coding-system 'utf-8-auto-unix)
 
@@ -113,29 +120,56 @@
 
 ;;; Global Keybindings
 
+(mapc (lambda (key)
+        (global-unset-key (kbd key)))
+      '("C-b"
+        "C-f"))
+
 (mapc (lambda (key-command-pair)
         (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
-      '(("<C-M-s-down>"  . #'windmove-down)
-        ("<C-M-s-left>"  . #'windmove-left)
-        ("<C-M-s-right>" . #'windmove-right)
-        ("<C-M-s-up>"    . #'windmove-up)
-        ("<escape>"      . #'ace-jump-mode)
-        ("C-="           . #'magit-status)
+      '(("C-b SPC"       . #'mc/mark-all-like-this)
+        ("C-b a"         . #'mc/mark-previous-like-this)
+        ("C-b e"         . #'mc/mark-next-like-this)
+        ("C-b <return>"  . #'mc/mark-next-lines)
+        ("C-f"           . #'ace-jump-mode)
+        ("C-c f"         . #'ftf-grepsource)
+        ("C-c l"         . #'(lambda ()
+                               (interactive)
+                               (require 'loccur)
+                               (call-interactively #'loccur)))
+        ("C-c o"         . #'ftf-find-file)
+        ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-r"       . #'helm-recentf)
         ("C-x b"         . #'helm-buffers-list)
-        ("C-x k"         . #'kill-this-buffer)
         ("C-x f"         . #'helm-find-files)
+        ("C-x k"         . #'kill-this-buffer)
+        ("C-x m"         . #'magit-status)
+        ("C-x <down>"    . #'windmove-down)
+        ("C-x <left>"    . #'windmove-left)
+        ("C-x <right>"   . #'windmove-right)
+        ("C-x <up>"      . #'windmove-up)
+        ("C-z"           . #'undo)
         ("M-j"           . #'cam/join-next-line)
-        ("M-x"           . #'helm-M-x)
-        ("s-f"           . #'ftf-grepsource)
-        ("s-o"           . #'ftf-find-file)))
-
+        ("M-x"           . #'helm-M-x)))
 
 ;;; ---------------------------------------- Mode/Package Specific Setup ----------------------------------------
 
-;;; Auto-complete
+;;; Lisp Modes
+(defun cam/lisp-mode-setup ()
+  (highlight-parentheses-mode 1)
+  (paredit-mode 1)
+  (rainbow-delimiters-mode 1)
+  (show-paren-mode 1)
 
+  (add-hook 'before-save-hook
+            (lambda ()
+              (cam/untabify-current-buffer))))
+
+
+;;; Auto-complete
+(eval-when-compile
+  (require 'auto-complete))
 (eval-after-load "auto-complete"
   '(progn (setq ac-delay 0.05
                 ac-auto-show-menu 0.1
@@ -144,18 +178,18 @@
           (add-to-list 'ac-modes 'emacs-lisp-mode)))
 
 
+;;; Clojure
+(defun cam/clojure-mode-setup ()
+  (cam/lisp-mode-setup)
+  (auto-complete-mode 1))
+(add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
+
+
 ;;; Emacs Lisp Mode
-
 (defun cam/emacs-lisp-mode-setup ()
+  (cam/lisp-mode-setup)
   (auto-complete-mode 1)
-  (highlight-parentheses-mode 1)
-  (paredit-mode 1)
-  (rainbow-delimiters-mode 1)
-  (show-paren-mode 1)
 
-  (add-hook 'before-save-hook
-            (lambda ()
-              (cam/untabify-current-buffer)))
   (add-hook 'after-save-hook
             (lambda ()
               (when (buffer-file-name)
@@ -179,7 +213,6 @@
 
 
 ;;; Guide-Key
-
 (setq guide-key/idle-delay 1.0
       guide-key/recursive-key-sequence-flag t
       guide-key/guide-key-sequence '("<f12>" "<f1>"
