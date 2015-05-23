@@ -49,6 +49,7 @@
     macrostep                                     ; Interactive macrostepper for Emacs Lisp
     magit
     markdown-mode                                 ; Major mode for editing markdown files
+    morlock                                       ; Extra font-locking for Emacs Lisp
     multiple-cursors
     moe-theme
     paredit
@@ -294,6 +295,7 @@
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
   (elisp-slime-nav-mode 1)
+  (morlock-mode 1)
 
   (define-key emacs-lisp-mode-map
     (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp)
@@ -310,7 +312,8 @@
   (cam/lisp-mode-setup)
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
-  (ac-emacs-lisp-mode-setup))
+  (ac-emacs-lisp-mode-setup)
+  (morlock-mode 1))
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
 
 
