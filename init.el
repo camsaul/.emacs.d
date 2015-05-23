@@ -30,6 +30,29 @@
 
 (defvar cam/has-refreshed-package-contents nil)
 
+(defvar cam/packages
+  '(ac-cider                                      ; auto-complete <-> cider
+    ace-jump-mode
+    aggressive-indent
+    auto-complete                                 ; auto-completion
+    cider
+    clj-refactor
+    company                                       ; auto-completion
+    editorconfig
+    find-things-fast
+    guide-key
+    helm
+    highlight-parentheses                         ; highlight matching parentheses
+    ido-vertical-mode
+    loccur
+    macrostep                                     ; Interactive macrostepper for Emacs Lisp
+    magit
+    multiple-cursors
+    moe-theme
+    paredit
+    rainbow-delimiters
+    undo-tree))
+
 (mapc (lambda (package)
         (unless (package-installed-p package)
           (unless cam/has-refreshed-package-contents
@@ -38,25 +61,30 @@
           (condition-case err
               (package-install package)
             (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
-      '(ace-jump-mode
-        aggressive-indent
-        auto-complete                             ; auto-completion
-        cider
-        clj-refactor
-        company                                   ; auto-completion
-        editorconfig
-        find-things-fast
-        guide-key
-        helm
-        highlight-parentheses                     ; highlight matching parentheses
-        ido-vertical-mode
-        loccur
-        magit
-        multiple-cursors
-        moe-theme
-        paredit
-        rainbow-delimiters
-        undo-tree))
+      cam/packages)
+
+(eval-when-compile
+  (mapc #'require cam/packages))
+
+;;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
+(defmacro declare-functions (file fn &rest more)
+  `(progn (declare-function ,fn ,file)
+          ,(when more
+             `(declare-functions ,file ,@more))))
+(put #'declare-functions 'lisp-indent-function 1)
+
+(declare-functions "cider-interaction"
+  cider-current-ns
+  cider-load-buffer
+  cider-switch-to-last-clojure-buffer
+  cider-switch-to-relevant-repl-buffer)
+
+(declare-functions "cider-repl"
+  cider-repl-clear-buffer
+  cider-repl-set-ns)
+
+(declare-functions "org"
+  org-bookmark-jump-unhide)
 
 
 ;;; ---------------------------------------- Global Setup ----------------------------------------
@@ -105,9 +133,9 @@
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
       require-final-newline t                     ; add final newline on save
-      truncate-lines t                            ; don't display continuation lines (i.e., wrap long lines)
       visible-bell t)
 
+(setq-default truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 ;;; Global Fns
 
@@ -194,19 +222,17 @@
 
 
 ;;; Auto-complete
-(eval-when-compile
-  (require 'auto-complete))
 (eval-after-load "auto-complete"
   '(progn (setq ac-delay 0.05
                 ac-auto-show-menu 0.1
                 ac-quick-help-delay 0.2)
           (ac-config-default)
-          (add-to-list 'ac-modes 'emacs-lisp-mode)))
+          (nconc ac-modes '(cider-repl-mode
+                            emacs-lisp-mode
+                            ielm-mode))))
 
 
 ;;; Clojure
-(eval-when-compile
-  (require 'cider))
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
@@ -215,12 +241,18 @@
   (cider-switch-to-relevant-repl-buffer)
   (cider-repl-clear-buffer))
 
+;; (eval-after-load "cider"
+;;   '(progn (require 'ac-cider)
+;;           (ac-cider-setup)))
+
 (defun cam/clojure-mode-setup ()
   (cam/lisp-mode-setup)
   (auto-complete-mode 1)
+  (clj-refactor-mode 1)
 
   (define-key clojure-mode-map
-    (kbd "M-RET") #'cam/clojure-save-load-switch-to-cider))
+    (kbd "M-RET") #'cam/clojure-save-load-switch-to-cider)
+  (cljr-add-keybindings-with-prefix "C-c r"))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
 
 (defun cam/cider-repl-mode-setup ()
@@ -228,23 +260,34 @@
   (auto-complete-mode 1)
   (aggressive-indent-mode 1)
 
+  (setq cider-auto-select-error-buffer nil
+        cider-repl-use-pretty-printing t)
+
   (define-key cider-repl-mode-map
     (kbd "M-RET") #'cider-switch-to-last-clojure-buffer))
 (add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
 
 ;;; Company
-(eval-when-compile
-  (require 'company))
 (eval-after-load "company"
   '(setq company-idle-delay 0.01
          company-minimum-prefix-length 1))
 
 
 ;;; Emacs Lisp Mode
+(defun cam/emacs-lisp-macroexpand-last-sexp ()
+  (interactive)
+  (call-interactively #'pp-macroexpand-last-sexp)
+  (with-current-buffer "*Pp Macroexpand Output*"
+    (macrostep-mode 1)))
+
 (defun cam/emacs-lisp-mode-setup ()
   (cam/lisp-mode-setup)
+  (aggressive-indent-mode 1)
   (auto-complete-mode 1)
+
+  (define-key emacs-lisp-mode-map
+    (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp)
 
   (add-hook 'after-save-hook
             (lambda ()
@@ -253,6 +296,13 @@
             nil
             :local))
 (add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
+
+(defun cam/ielm-mode-setup ()
+  (cam/lisp-mode-setup)
+  (aggressive-indent-mode 1)
+  (auto-complete-mode 1)
+  (ac-emacs-lisp-mode-setup))
+(add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
 
 
 ;;; Eval Expresssion (Minibuffer)
@@ -264,9 +314,6 @@
 
 
 ;;; Find Things Fast
-(eval-when-compile
-  (require 'find-things-fast))
-
 (eval-after-load "find-things-fast"
   '(nconc ftf-filetypes '("*.clj"
                           "*.css"
@@ -293,9 +340,6 @@
                                      "M-g"    "M-o"))
 
 ;;; Magit
-(eval-when-compile
-  (require 'magit))
-
 (setq magit-last-seen-setup-instructions "1.4.0")
 
 ;;; ---------------------------------------- Final Setup ----------------------------------------
