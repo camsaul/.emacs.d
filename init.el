@@ -303,6 +303,12 @@
     (kbd "M-RET") #'cider-switch-to-last-clojure-buffer))
 (add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
+;; Delete trailing whitespace that may have been introduced by auto-complete
+(eval-after-load "cider"
+  '(advice-add #'cider-repl-return :before (lambda ()
+                                             (interactive)
+                                             (call-interactively #'delete-trailing-whitespace))))
+
 
 ;;; [[<company]]
 (eval-after-load "company"
