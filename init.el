@@ -241,14 +241,12 @@
   (cider-switch-to-relevant-repl-buffer)
   (cider-repl-clear-buffer))
 
-;; (eval-after-load "cider"
-;;   '(progn (require 'ac-cider)
-;;           (ac-cider-setup)))
-
 (defun cam/clojure-mode-setup ()
   (cam/lisp-mode-setup)
   (auto-complete-mode 1)
+  (ac-cider-setup)
   (clj-refactor-mode 1)
+
 
   (define-key clojure-mode-map
     (kbd "M-RET") #'cam/clojure-save-load-switch-to-cider)
@@ -258,6 +256,7 @@
 (defun cam/cider-repl-mode-setup ()
   (cam/lisp-mode-setup)
   (auto-complete-mode 1)
+  (ac-cider-setup)
   (aggressive-indent-mode 1)
 
   (setq cider-auto-select-error-buffer nil
