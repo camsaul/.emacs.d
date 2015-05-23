@@ -1,6 +1,29 @@
 ;;; -*- lexical-binding: t; comment-column: 50; -*-
 
-;;; ---------------------------------------- Initial Setup ----------------------------------------
+;;; TOC:
+;;; [[Initial Setup]]
+;;; [[Package Setup]]
+;;; *  [[Global Setup]]
+;;;    *  [[Theme]]
+;;;    *  [[Global Requires]]
+;;;    *  [[Global Minor Modes]]
+;;;    *  [[Global Settings]]
+;;;    *  [[Global Functions]]
+;;;    *  [[Global Hooks]]
+;;;    *  [[Global Keybindings]]
+;;; *  [[Mode/Package Specific Setup]]
+;;;    *  [[Lisp Modes]]
+;;;    *  [[auto-complete]]
+;;;    *  [[Clojure]]
+;;;    *  [[company]]
+;;;    *  [[Emacs Lisp]]
+;;;    *  [[Eval Expresssion (Minibuffer)]]
+;;;    *  [[Find Things Fast]]
+;;;    *  [[Guide Key]]
+;;;    *  [[Magit]]
+;;; * [[Final Setup]]
+
+;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
 (setq gc-cons-threshold (* 32 1024 1024)          ; A more reasonable garbage collection threshold
@@ -18,26 +41,24 @@
 (setq inhibit-splash-screen t
       inhibit-startup-screen t)
 
-;;; ---------------------------------------- Package Setup ----------------------------------------
+;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
 
 (require 'package)
 (package-initialize)
 
 (nconc package-archives '(("melpa" . "http://melpa.milkbox.net/packages/")
                           ("marmalade" . "http://marmalade-repo.org/packages/")))
-
-(defvar cam/has-refreshed-package-contents nil)
-
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
     ace-jump-mode
-    aggressive-indent
+    aggressive-indent                             ; Minor mode to aggressively keep code always indented
     anzu                                          ; Show number of matches in mode-line while searching
     auto-complete                                 ; auto-completion
-    cider
-    clj-refactor
+    cider                                         ; Clojure Interactive Development Environment that Rocks
+    clj-refactor                                  ; Clojure refactoring minor mode
     company                                       ; auto-completion
-    editorconfig
+    dockerfile-mode                               ; Major mode for editing Dockerfiles
+    editorconfig                                  ; Read EditorConfig files
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     find-things-fast
     gitignore-mode                                ; Major mode for editing .gitignore files
@@ -54,9 +75,11 @@
     moe-theme
     paredit
     rainbow-delimiters
-    undo-tree))
+    undo-tree
+    wiki-nav))                                    ; Navigate a file using [[WikiStrings]]
 
 ;;; Install packages as needed
+(defvar cam/has-refreshed-package-contents nil)
 (mapc (lambda (package)
         (unless (package-installed-p package)
           (unless cam/has-refreshed-package-contents
@@ -92,19 +115,19 @@
   org-bookmark-jump-unhide)
 
 
-;;; ---------------------------------------- Global Setup ----------------------------------------
+;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
-;;; Theme
+;;; [[<Theme]]
 
 (require 'moe-theme)
 (moe-light)
 
 
-;;; Global Requires
+;;; [[<Global Requires]]
 
 (require 'editorconfig)
 
-;;; Global Settings
+;;; [[<Global Minor Modes]]
 
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
 (set-fringe-mode -1)                              ; disable displaying the fringes
@@ -113,12 +136,15 @@
 (global-anzu-mode 1)                              ; show number of matches in mode-line while searching
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (global-undo-tree-mode 1)
+(global-wiki-nav-mode 1)
 (guide-key-mode 1)
 (ido-mode 1)
 (ido-everywhere 1)                                ; use ido for all buffer/file reading
 (ido-vertical-mode 1)
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
+
+;;; [[<Global Settings]]
 
 (fset #'yes-or-no-p #'y-or-n-p)                   ; Prompt for 'y' or 'n' instead of 'yes' or 'no'
 
@@ -147,7 +173,7 @@
 
 (setq-default truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
-;;; Global Fns
+;;; [[<Global Functions]]
 
 (defun cam/untabify-current-buffer ()
   (interactive)
@@ -158,7 +184,7 @@
   (join-line -1))
 
 
-;;; Global Hooks
+;;; [[<Global Hooks]]
 
 (add-hook 'before-save-hook
           (lambda ()
@@ -168,7 +194,7 @@
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
 
 
-;;; Global Keybindings
+;;; [[<Global Keybindings]]
 
 ;; Unset global and keymap-specific keys that we want to change below
 (mapc (lambda (mode-map-and-keys)
@@ -215,9 +241,9 @@
         ("M-x"           . #'helm-M-x)))
 
 
-;;; ---------------------------------------- Mode/Package Specific Setup ----------------------------------------
+;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
 
-;;; Lisp Modes
+;;; [[<Lisp Modes]]
 (defun cam/lisp-mode-setup ()
   (highlight-parentheses-mode 1)
   (paredit-mode 1)
@@ -231,7 +257,7 @@
             :local))
 
 
-;;; Auto-complete
+;;; [[<auto-complete]]
 (eval-after-load "auto-complete"
   '(progn (setq ac-delay 0.05
                 ac-auto-show-menu 0.1
@@ -242,7 +268,7 @@
                             ielm-mode))))
 
 
-;;; Clojure
+;;; [[<Clojure]]
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
@@ -277,13 +303,13 @@
 (add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
 
-;;; Company
+;;; [[<company]]
 (eval-after-load "company"
   '(setq company-idle-delay 0.01
          company-minimum-prefix-length 1))
 
 
-;;; Emacs Lisp Mode
+;;; [[<Emacs Lisp]]
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
   (interactive)
   (call-interactively #'pp-macroexpand-last-sexp)
@@ -317,7 +343,7 @@
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
 
 
-;;; Eval Expresssion (Minibuffer)
+;;; [[<Eval Expresssion (Minibuffer)]]
 (defun cam/eval-expression-minibuffer-setup ()
   (company-mode 1)
   (paredit-mode 1)
@@ -325,7 +351,7 @@
 (add-hook 'eval-expression-minibuffer-setup-hook #'cam/eval-expression-minibuffer-setup)
 
 
-;;; Find Things Fast
+;;; [[<Find Things Fast]]
 (eval-after-load "find-things-fast"
   '(nconc ftf-filetypes '("*.clj"
                           "*.css"
@@ -337,7 +363,7 @@
                           "*.yml")))
 
 
-;;; Guide-Key
+;;; [[<Guide Key]]
 (setq guide-key/idle-delay 1.0
       guide-key/recursive-key-sequence-flag t
       guide-key/guide-key-sequence '("<f12>" "<f1>"
@@ -351,10 +377,10 @@
                                      "C-h"    "C-x"
                                      "M-g"    "M-o"))
 
-;;; Magit
+;;; [[<Magit]]
 (setq magit-last-seen-setup-instructions "1.4.0")
 
-;;; ---------------------------------------- Final Setup ----------------------------------------
+;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
 (ignore-errors
   (load-file custom-file))
