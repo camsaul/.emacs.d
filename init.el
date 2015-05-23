@@ -374,9 +374,10 @@
                                      "A-3"    "A-\""
                                      "A-^"    "A-_"
                                      "A-`"    "A-r"
-                                     "A-~"    "C-c"
-                                     "C-h"    "C-x"
-                                     "M-g"    "M-o"))
+                                     "A-~"    "C-b"
+                                     "C-c"    "C-h"
+                                     "C-x"    "M-g"
+                                     "M-o"))
 
 ;;; [[<Magit]]
 (setq magit-last-seen-setup-instructions "1.4.0")
