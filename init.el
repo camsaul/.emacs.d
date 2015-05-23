@@ -3,25 +3,25 @@
 ;;; TOC:
 ;;; [[Initial Setup]]
 ;;; [[Package Setup]]
-;;; *  [[Global Setup]]
-;;;    *  [[Theme]]
-;;;    *  [[Global Requires]]
-;;;    *  [[Global Minor Modes]]
-;;;    *  [[Global Settings]]
-;;;    *  [[Global Functions]]
-;;;    *  [[Global Hooks]]
-;;;    *  [[Global Keybindings]]
-;;; *  [[Mode/Package Specific Setup]]
-;;;    *  [[Lisp Modes]]
-;;;    *  [[auto-complete]]
-;;;    *  [[Clojure]]
-;;;    *  [[company]]
-;;;    *  [[Emacs Lisp]]
-;;;    *  [[Eval Expresssion (Minibuffer)]]
-;;;    *  [[Find Things Fast]]
-;;;    *  [[Guide Key]]
-;;;    *  [[Magit]]
-;;; * [[Final Setup]]
+;;; [[Global Setup]]
+;;;    [[Theme]]
+;;;    [[Global Requires]]
+;;;    [[Global Minor Modes]]
+;;;    [[Global Settings]]
+;;;    [[Global Functions]]
+;;;    [[Global Hooks]]
+;;;    [[Global Keybindings]]
+;;; [[Mode/Package Specific Setup]]
+;;;    [[Lisp Modes]]
+;;;    [[auto-complete]]
+;;;    [[Clojure]]
+;;;    [[company]]
+;;;    [[Emacs Lisp]]
+;;;    [[Eval Expresssion (Minibuffer)]]
+;;;    [[Find Things Fast]]
+;;;    [[Guide Key]]
+;;;    [[Magit]]
+;;; [[Final Setup]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
@@ -76,7 +76,8 @@
     paredit
     rainbow-delimiters
     undo-tree
-    wiki-nav))                                    ; Navigate a file using [[WikiStrings]]
+    wiki-nav                                      ; Navigate a file using [[WikiStrings]]
+    yaml-mode))
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents nil)
