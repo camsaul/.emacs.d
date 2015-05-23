@@ -3,3 +3,4 @@ places
 ac-comphist.dat
 custom.el
 *.elc
+\#.*\#

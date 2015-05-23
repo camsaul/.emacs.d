@@ -20,8 +20,6 @@
 
 ;;; ---------------------------------------- Package Setup ----------------------------------------
 
-;;; Load some packages!
-
 (require 'package)
 (package-initialize)
 
@@ -30,16 +28,19 @@
 
 (defvar cam/has-refreshed-package-contents nil)
 
-(defvar cam/packages
+(defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
     ace-jump-mode
     aggressive-indent
+    anzu                                          ; Show number of matches in mode-line while searching
     auto-complete                                 ; auto-completion
     cider
     clj-refactor
     company                                       ; auto-completion
     editorconfig
+    elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     find-things-fast
+    gitignore-mode                                ; Major mode for editing .gitignore files
     guide-key
     helm
     highlight-parentheses                         ; highlight matching parentheses
@@ -47,16 +48,19 @@
     loccur
     macrostep                                     ; Interactive macrostepper for Emacs Lisp
     magit
+    markdown-mode                                 ; Major mode for editing markdown files
     multiple-cursors
     moe-theme
     paredit
     rainbow-delimiters
     undo-tree))
 
+;;; Install packages as needed
 (mapc (lambda (package)
         (unless (package-installed-p package)
           (unless cam/has-refreshed-package-contents
-            (package-refresh-contents)
+            (ignore-errors
+              (package-refresh-contents))
             (setq cam/has-refreshed-package-contents t))
           (condition-case err
               (package-install package)
@@ -93,7 +97,6 @@
 
 (require 'moe-theme)
 (moe-light)
-(set-frame-font "Source Code Pro-13")
 
 
 ;;; Global Requires
@@ -105,7 +108,8 @@
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
 (set-fringe-mode -1)                              ; disable displaying the fringes
 
-(delete-selection-mode t)                         ; typing will delete selected text
+(delete-selection-mode 1)                         ; typing will delete selected text
+(global-anzu-mode 1)                              ; show number of matches in mode-line while searching
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (global-undo-tree-mode 1)
 (guide-key-mode 1)
@@ -132,7 +136,12 @@
                           "custom.el")
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
+      indent-tabs-mode nil                        ; disable insertion of tabs
       require-final-newline t                     ; add final newline on save
+      save-interprogram-paste-before-kill t       ; Save clipboard strings (from other applications) into kill-ring before replacing them
+      savehist-mode t                             ; Periodically save minibuffer history
+      select-enable-clipboard t                   ; Cutting and pasting uses the clipboard
+      vc-make-backup-files t                      ; Make backups of files even if they're under VC
       visible-bell t)
 
 (setq-default truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
@@ -284,6 +293,7 @@
   (cam/lisp-mode-setup)
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
+  (elisp-slime-nav-mode 1)
 
   (define-key emacs-lisp-mode-map
     (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp)
@@ -345,4 +355,3 @@
 
 (ignore-errors
   (load-file custom-file))
-(toggle-frame-maximized)                          ; maximize the frame
