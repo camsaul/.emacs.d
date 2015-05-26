@@ -214,6 +214,11 @@
   (require 'loccur)
   (call-interactively #'loccur))
 
+(defun cam/backward-kill-line ()
+  "Kill line from current cursor position to beginning of line."
+  (interactive)
+  (kill-line 0))
+
 
 ;;; [[<Global Hooks]]
 
@@ -243,11 +248,14 @@
         ("A-r w"         . #'rotate-window)
         ("C-="           . #'magit-status)
         ("C-M-y"         . #'helm-show-kill-ring)
+        ("C-S-k"         . #'cam/backward-kill-line)
         ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-g"       . #'keyboard-quit)
         ("C-x C-r"       . #'helm-recentf)
+        ("C-x C-z"       . nil)                   ; instead of suspend-frame
         ("C-x b"         . #'helm-buffers-list)
+        ("C-x C-d"       . #'dired)               ; instead of ido-list-directory
         ("C-x f"         . #'helm-find-files)
         ("C-x k"         . #'kill-this-buffer)
         ("C-x r r"       . #'register-list)       ; replaces copy-rectangle-to-register
