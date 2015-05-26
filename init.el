@@ -310,7 +310,7 @@
 
   (define-key clojure-mode-map
     (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
-  (cljr-add-keybindings-with-prefix "C-c r"))
+  (cljr-add-keybindings-with-modifier "A-H-"))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
 
 (defun cam/cider-repl-mode-setup ()
