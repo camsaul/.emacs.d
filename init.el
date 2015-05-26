@@ -58,6 +58,7 @@
     clj-refactor                                  ; Clojure refactoring minor mode
     company                                       ; auto-completion
     diff-hl                                       ; mark uncommited changes in the fringe
+    diminish                                      ; Replace or hide minor modes in mode-line
     dockerfile-mode                               ; Major mode for editing Dockerfiles
     editorconfig                                  ; Read EditorConfig files
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
@@ -140,7 +141,6 @@
 ;;; [[<Global Minor Modes]]
 
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
-;; (set-fringe-mode -1)                              ; disable displaying the fringes
 
 (delete-selection-mode 1)                         ; typing will delete selected text
 (global-anzu-mode 1)                              ; show number of matches in mode-line while searching
@@ -155,6 +155,14 @@
 (ido-vertical-mode 1)
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
+
+(mapc #'diminish
+      '(anzu-mode
+        button-lock-mode
+        diff-hl-mode
+        guide-key-mode
+        undo-tree-mode
+        wiki-nav-mode))
 
 ;;; [[<Global Settings]]
 
@@ -256,6 +264,7 @@
 ;;; [[<Lisp Modes]]
 (defun cam/lisp-mode-setup ()
   (highlight-parentheses-mode 1)
+  (diminish 'highlight-parentheses-mode)
   (paredit-mode 1)
   (rainbow-delimiters-mode 1)
   (show-paren-mode 1)
@@ -399,7 +408,8 @@
                                      "M-g"    "M-o"))
 
 ;;; [[<Magit]]
-(setq magit-last-seen-setup-instructions "1.4.0")
+(setq magit-auto-revert-mode-lighter     ""
+      magit-last-seen-setup-instructions "1.4.0")
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
