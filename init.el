@@ -80,6 +80,7 @@
     paredit
     projectile
     rainbow-delimiters
+    register-list                                 ; dired-like editing of Emacs registers
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
     wiki-nav                                      ; Navigate a file using [[WikiStrings]]
@@ -249,6 +250,7 @@
         ("C-x b"         . #'helm-buffers-list)
         ("C-x f"         . #'helm-find-files)
         ("C-x k"         . #'kill-this-buffer)
+        ("C-x r r"       . #'register-list)       ; replaces copy-rectangle-to-register
         ("C-z"           . #'undo)
         ("ESC <up>"      . #'windmove-up)
         ("H-a"           . #'mc/mark-previous-like-this)
