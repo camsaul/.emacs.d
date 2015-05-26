@@ -137,7 +137,12 @@
 
 (require 'moe-theme)
 (moe-light)
-(set-frame-font "Source Code Pro-12")
+
+(defun cam/setup-frame ()
+  (set-frame-font "Source Code Pro-12"))
+(advice-add #'make-frame-command :after #'cam/setup-frame)
+
+(cam/setup-frame)
 
 
 ;;; [[<Global Requires]]
