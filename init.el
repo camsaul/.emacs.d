@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; comment-column: 50; -*-
+;;; -*- lexical-binding: t; byte-compile-dynamic: t; comment-column: 50; -*-
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -243,6 +243,9 @@
         ("<H-escape>"    . #'ace-jump-line-mode)
         ("<H-return>"    . #'mc/mark-next-lines)
         ("<escape>"      . #'ace-jump-mode)
+        ("<f11>"         . nil)                   ; Use <f11> <key> for toggling various minor modes
+        ("<f11> p"       . #'paredit-mode)
+        ("<f11> w"       . #'whitespace-mode)
         ("A-;"           . #'cam/loccur)
         ("A-r l"         . #'rotate-layout)
         ("A-r w"         . #'rotate-window)
@@ -363,10 +366,8 @@
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
 
-  (define-key emacs-lisp-mode-map
-    (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp)
-  (define-key emacs-lisp-mode-map
-    (kbd "<C-M-s-return>") #'save-buffer)
+  (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
+  (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'save-buffer)
 
   (add-hook 'after-save-hook
             (lambda ()
