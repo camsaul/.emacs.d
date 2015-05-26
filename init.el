@@ -56,6 +56,7 @@
     auto-complete                                 ; auto-completion
     cider                                         ; Clojure Interactive Development Environment that Rocks
     clj-refactor                                  ; Clojure refactoring minor mode
+    clojure-mode-extra-font-locking
     company                                       ; auto-completion
     diff-hl                                       ; mark uncommited changes in the fringe
     diminish                                      ; Replace or hide minor modes in mode-line
@@ -305,6 +306,7 @@
   (auto-complete-mode 1)
   (ac-cider-setup)
   (clj-refactor-mode 1)
+  (require 'clojure-mode-extra-font-locking)
 
   (define-key clojure-mode-map
     (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
