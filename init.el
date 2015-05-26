@@ -282,10 +282,14 @@
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
-  (cider-load-buffer)
-  (cider-repl-set-ns (cider-current-ns))
-  (cider-switch-to-relevant-repl-buffer)
-  (cider-repl-clear-buffer))
+
+  (condition-case _
+      (progn
+        (cider-load-buffer)
+        (cider-repl-set-ns (cider-current-ns))
+        (cider-switch-to-relevant-repl-buffer)
+        (cider-repl-clear-buffer))
+    (error (cider-jack-in))))
 
 (defun cam/clojure-mode-setup ()
   (cam/lisp-mode-setup)
@@ -293,9 +297,8 @@
   (ac-cider-setup)
   (clj-refactor-mode 1)
 
-
   (define-key clojure-mode-map
-    (kbd "M-RET") #'cam/clojure-save-load-switch-to-cider)
+    (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
   (cljr-add-keybindings-with-prefix "C-c r"))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
 
@@ -341,6 +344,8 @@
 
   (define-key emacs-lisp-mode-map
     (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp)
+  (define-key emacs-lisp-mode-map
+    (kbd "<C-M-s-return>") #'save-buffer)
 
   (add-hook 'after-save-hook
             (lambda ()
