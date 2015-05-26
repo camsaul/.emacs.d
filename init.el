@@ -15,6 +15,7 @@
 ;;;    [[Lisp Modes]]
 ;;;    [[auto-complete]]
 ;;;    [[Clojure]]
+;;;    [[dired]]
 ;;;    [[company]]
 ;;;    [[Emacs Lisp]]
 ;;;    [[Eval Expresssion (Minibuffer)]]
@@ -119,6 +120,9 @@
   cider-repl-clear-buffer
   cider-repl-return
   cider-repl-set-ns)
+
+(declare-functions "dired"
+  dired-hide-details-mode)
 
 (declare-functions "loccur"
   loccur)
@@ -350,6 +354,12 @@
 (eval-after-load "company"
   '(setq company-idle-delay 0.01
          company-minimum-prefix-length 1))
+
+
+;;; [[<dired]]
+(defun cam/dired-mode-setup ()
+  (dired-hide-details-mode 1))
+(add-hook 'dired-mode-hook #'cam/dired-mode-setup)
 
 
 ;;; [[<Emacs Lisp]]
