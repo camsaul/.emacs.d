@@ -1,6 +1,8 @@
-elpa/
-places
-ac-comphist.dat
-custom.el
 *.elc
 \#.*\#
+ac-comphist.dat
+custom.el
+elpa/
+eshell/
+places
+projectile-bookmarks.eld

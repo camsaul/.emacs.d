@@ -57,10 +57,12 @@
     cider                                         ; Clojure Interactive Development Environment that Rocks
     clj-refactor                                  ; Clojure refactoring minor mode
     company                                       ; auto-completion
+    diff-hl                                       ; mark uncommited changes in the fringe
     dockerfile-mode                               ; Major mode for editing Dockerfiles
     editorconfig                                  ; Read EditorConfig files
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     find-things-fast
+    git-timemachine                               ; Walk through git revisions of a file
     gitignore-mode                                ; Major mode for editing .gitignore files
     guide-key
     helm
@@ -74,7 +76,9 @@
     multiple-cursors
     moe-theme
     paredit
+    projectile
     rainbow-delimiters
+    rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
     wiki-nav                                      ; Navigate a file using [[WikiStrings]]
     yaml-mode))
@@ -110,7 +114,11 @@
 
 (declare-functions "cider-repl"
   cider-repl-clear-buffer
+  cider-repl-return
   cider-repl-set-ns)
+
+(declare-functions "loccur"
+  loccur)
 
 (declare-functions "org"
   org-bookmark-jump-unhide)
@@ -122,6 +130,7 @@
 
 (require 'moe-theme)
 (moe-light)
+(set-frame-font "Source Code Pro-12")
 
 
 ;;; [[<Global Requires]]
@@ -131,14 +140,16 @@
 ;;; [[<Global Minor Modes]]
 
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
-(set-fringe-mode -1)                              ; disable displaying the fringes
+;; (set-fringe-mode -1)                              ; disable displaying the fringes
 
 (delete-selection-mode 1)                         ; typing will delete selected text
 (global-anzu-mode 1)                              ; show number of matches in mode-line while searching
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
+(global-diff-hl-mode 1)
 (global-undo-tree-mode 1)
 (global-wiki-nav-mode 1)
 (guide-key-mode 1)
+(projectile-global-mode 1)
 (ido-mode 1)
 (ido-everywhere 1)                                ; use ido for all buffer/file reading
 (ido-vertical-mode 1)
@@ -165,7 +176,11 @@
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
       indent-tabs-mode nil                        ; disable insertion of tabs
+      ns-right-command-modifier 'hyper
+      ns-right-control-modifier 'hyper
+      ns-right-option-modifier 'alt
       require-final-newline t                     ; add final newline on save
+      revert-without-query '(".*")                ; tell revert-buffer to revert all buffers without confirmation
       save-interprogram-paste-before-kill t       ; Save clipboard strings (from other applications) into kill-ring before replacing them
       savehist-mode t                             ; Periodically save minibuffer history
       select-enable-clipboard t                   ; Cutting and pasting uses the clipboard
@@ -184,6 +199,11 @@
   (interactive)
   (join-line -1))
 
+(defun cam/loccur ()
+  (interactive)
+  (require 'loccur)
+  (call-interactively #'loccur))
+
 
 ;;; [[<Global Hooks]]
 
@@ -197,49 +217,38 @@
 
 ;;; [[<Global Keybindings]]
 
-;; Unset global and keymap-specific keys that we want to change below
-(mapc (lambda (mode-map-and-keys)
-        (let ((mode-map (eval (car mode-map-and-keys)))
-              (keys     (mapcar #'kbd (cdr mode-map-and-keys))))
-          (mapc (if mode-map
-                    (lambda (key)
-                      (define-key mode-map key nil))
-                  #'global-unset-key)
-                keys)))
-      '((nil "C-b" "C-f" "C-v")
-        (winner-mode-map "C-c <left>" "C-c <right>")))
-
 (mapc (lambda (key-command-pair)
         (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
-      '(("C-M-y"         . #'helm-show-kill-ring)
-        ("C-b SPC"       . #'mc/mark-all-like-this)
-        ("C-b a"         . #'mc/mark-previous-like-this)
-        ("C-b e"         . #'mc/mark-next-like-this)
-        ("C-b <return>"  . #'mc/mark-next-lines)
-        ("C-f"           . #'ace-jump-mode)
-        ("C-c f"         . #'ftf-grepsource)
-        ("C-c l"         . #'(lambda ()
-                               (interactive)
-                               (require 'loccur)
-                               (call-interactively #'loccur)))
-        ("C-c o"         . #'ftf-find-file)
-        ("C-c w <left>"  . #'winner-undo)
-        ("C-c w <right>" . #'winner-redo)
-        ("C-c <down>"    . #'windmove-down)
-        ("C-c <left>"    . #'windmove-left)
-        ("C-c <right>"   . #'windmove-right)
-        ("C-c <up>"      . #'windmove-up)
+      '(("<A-return>"    . #'wiki-nav-ido)
+        ("<C-M-s-down>"  . #'windmove-down)
+        ("<C-M-s-left>"  . #'windmove-left)
+        ("<C-M-s-right>" . #'windmove-right)
+        ("<C-M-s-up>"    . #'windmove-up)
+        ("<H-SPC>"       . #'mc/mark-all-like-this)
+        ("<H-escape>"    . #'ace-jump-line-mode)
+        ("<H-return>"    . #'mc/mark-next-lines)
+        ("<escape>"      . #'ace-jump-mode)
+        ("A-;"           . #'cam/loccur)
+        ("A-r l"         . #'rotate-layout)
+        ("A-r w"         . #'rotate-window)
+        ("C-="           . #'magit-status)
+        ("C-M-y"         . #'helm-show-kill-ring)
         ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
+        ("C-x C-g"       . #'keyboard-quit)
         ("C-x C-r"       . #'helm-recentf)
         ("C-x b"         . #'helm-buffers-list)
         ("C-x f"         . #'helm-find-files)
         ("C-x k"         . #'kill-this-buffer)
-        ("C-x m"         . #'magit-status)
         ("C-z"           . #'undo)
         ("ESC <up>"      . #'windmove-up)
+        ("H-a"           . #'mc/mark-previous-like-this)
+        ("H-e"           . #'mc/mark-next-like-this)
         ("M-j"           . #'cam/join-next-line)
-        ("M-x"           . #'helm-M-x)))
+        ("M-x"           . #'helm-M-x)
+        ("s-Z"           . #'undo-tree-redo)
+        ("s-f"           . #'ftf-grepsource)
+        ("s-o"           . #'ftf-find-file)))
 
 
 ;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
@@ -380,10 +389,9 @@
                                      "A-3"    "A-\""
                                      "A-^"    "A-_"
                                      "A-`"    "A-r"
-                                     "A-~"    "C-b"
-                                     "C-c"    "C-h"
-                                     "C-x"    "M-g"
-                                     "M-o"))
+                                     "A-~"    "C-c"
+                                     "C-h"    "C-x"
+                                     "M-g"    "M-o"))
 
 ;;; [[<Magit]]
 (setq magit-last-seen-setup-instructions "1.4.0")
@@ -392,3 +400,4 @@
 
 (ignore-errors
   (load-file custom-file))
+(toggle-frame-maximized)
