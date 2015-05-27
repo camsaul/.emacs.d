@@ -22,6 +22,7 @@
 ;;;    [[Eval Expresssion (Minibuffer)]]
 ;;;    [[Find Things Fast]]
 ;;;    [[Guide Key]]
+;;;    [[js2-mode]]
 ;;;    [[Magit]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
@@ -58,6 +59,7 @@
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
     ace-jump-mode
+    ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
     anzu                                          ; Show number of matches in mode-line while searching
     auto-complete                                 ; auto-completion
@@ -168,6 +170,9 @@
 
 (defun cam/setup-frame ()
   (set-frame-font "Source Code Pro-12")
+
+  (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
+
   ;; (moe-theme-random-color)
   (set-face-foreground 'mode-line "#111111")
   (set-face-background 'mode-line cam/mode-line-color)
@@ -353,6 +358,7 @@
         ("H-e"           . #'mc/mark-next-like-this)
         ("M-j"           . #'cam/join-next-line)
         ("M-x"           . #'helm-M-x)
+        ("M-z"           . #'ace-jump-zap-up-to-char)
         ("s-Z"           . #'undo-tree-redo)
         ("s-f"           . #'ftf-grepsource)
         ("s-o"           . #'ftf-find-file)))
@@ -523,6 +529,15 @@
                                      "A-~"    "C-c"
                                      "C-h"    "C-x"
                                      "M-g"    "M-o"))
+
+
+;;; [[<js2-mode]]
+(defun cam/js2-mode-setup ()
+  (electric-pair-mode 1)
+  (rainbow-delimiters-mode 1)
+  (define-key js2-mode-map
+    (kbd "C-j") #'newline))                       ; instead of electrict-newline-maybe-indent, which doesn't indent
+(add-hook 'js2-mode-hook #'cam/js2-mode-setup)
 
 
 ;;; [[<Magit]]
