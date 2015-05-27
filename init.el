@@ -379,32 +379,10 @@
             nil
             :local))
 
-;; -------------------- OMG HAVE I LOST MY MIND --------------------
-(defun pos-tip-show (string &optional tip-color pos window timeout width frame-coordinates dx dy)
-  (let* ((frame (if window (window-frame window)
-                  (selected-frame)))
-         (x+y (pos-visible-in-window-p pos window :partially))
-         (mouse-pos (cdr (mouse-pixel-position)))
-         (dx      (or dx 10))
-         (dy      (or dy 20))
-         (x       (+ (car x+y)
-                     (- (car mouse-pos))
-                     dx))
-         (y       (+ (cadr x+y)
-                     (- (cdr mouse-pos))
-                     dy)))
-    (x-show-tip string frame nil timeout x y)))
-
-(provide 'pos-tip)
-(fset #'pos-tip-hide #'x-hide-tip)
-
 ;;; [[<auto-complete]]
 (eval-after-load 'auto-complete
   '(progn
-     ;; (require 'tooltip)
-     ;; (tooltip-show "OK!")
-     ;; (pos-tip-show "X")
-     ;; (require 'pos-tip)
+     (require 'pos-tip)
      (setq ac-delay 0.05
            ac-auto-show-menu 0.1
            ac-menu-height 20                      ; show 20 results instead of 10
