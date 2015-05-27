@@ -81,6 +81,7 @@
     paredit
     projectile
     rainbow-delimiters
+    rainbow-mode
     register-list                                 ; dired-like editing of Emacs registers
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
@@ -187,6 +188,7 @@
 (ido-mode 1)
 (ido-everywhere 1)                                ; use ido for all buffer/file reading
 (ido-vertical-mode 1)
+(rainbow-mode 1)                                  ; Highlight color strings like #8844AA
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
 
@@ -195,6 +197,7 @@
         button-lock-mode
         diff-hl-mode
         guide-key-mode
+        rainbow-mode
         undo-tree-mode
         wiki-nav-mode))
 
@@ -468,6 +471,7 @@
                                      "A-~"    "C-c"
                                      "C-h"    "C-x"
                                      "M-g"    "M-o"))
+
 
 ;;; [[<Magit]]
 (setq magit-auto-revert-mode-lighter     ""
