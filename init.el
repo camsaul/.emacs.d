@@ -144,6 +144,29 @@
 
 (cam/setup-frame)
 
+(set-face-background 'mode-line-buffer-id nil)    ; Don't show a blue background behind buffer name on modeline for deselected frames
+
+(setq-default mode-line-format
+              '("%e"
+                mode-line-front-space
+                mode-line-mule-info
+                " "
+                (:eval (cond
+                        (buffer-read-only    "[read-only] ")
+                        ((buffer-modified-p) "[modified] ")
+                        ((:else              " "))))
+                mode-line-buffer-identification
+                "   L%l/"
+                (:eval (int-to-string (line-number-at-pos (point-max))))
+                "  C%c  "
+                (vc-mode vc-mode)
+                "  "
+                (:propertize mode-name
+                             face mode-line-buffer-id)
+                minor-mode-alist
+                mode-line-misc-info
+                mode-line-end-spaces))
+
 
 ;;; [[<Global Requires]]
 
@@ -207,6 +230,7 @@
       visible-bell t)
 
 (setq-default truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
+
 
 ;;; [[<Global Functions]]
 
@@ -374,6 +398,16 @@
   (with-current-buffer "*Pp Macroexpand Output*"
     (macrostep-mode 1)))
 
+(defun cam/emacs-lisp-save-switch-to-ielm-if-visible ()
+  (interactive)
+  (save-buffer)
+  (let ((ielm-window (get-window-with-predicate (lambda (window)
+                                                  (string= (buffer-name (window-buffer window)) "*ielm*")))))
+    (when ielm-window
+      (select-window ielm-window)
+      (comint-clear-buffer)
+      (comint-kill-input))))
+
 (defun cam/emacs-lisp-mode-setup ()
   (cam/lisp-mode-setup)
   (aggressive-indent-mode 1)
@@ -382,7 +416,7 @@
   (morlock-mode 1)
 
   (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
-  (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'save-buffer)
+  (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
 
   (add-hook 'after-save-hook
             (lambda ()
