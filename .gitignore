@@ -4,5 +4,6 @@ ac-comphist.dat
 custom.el
 elpa/
 eshell/
+ido.last
 places
 projectile-bookmarks.eld

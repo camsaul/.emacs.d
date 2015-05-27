@@ -1,5 +1,8 @@
 ;;; -*- lexical-binding: t; coding: utf-8; comment-column: 50; -*-
 
+(unless (>= emacs-major-version 25)
+  (error "This setup requires Emacs version 25 or newer."))
+
 ;;; TOC:
 ;;; [[Initial Setup]]
 ;;; [[Package Setup]]
@@ -7,6 +10,7 @@
 ;;;    [[Theme]]
 ;;;    [[Global Requires]]
 ;;;    [[Global Minor Modes]]
+;;;    [[Diminished Minor Modes]]
 ;;;    [[Global Settings]]
 ;;;    [[auto-mode-alist]]
 ;;;    [[Global Functions]]
@@ -47,7 +51,12 @@
   (menu-bar-mode -1))
 
 (setq inhibit-splash-screen t
+      inhibit-startup-echo-area-message (user-login-name)
+      inhibit-startup-message t
       inhibit-startup-screen t)
+
+(eval '(setq inhibit-startup-echo-area-message "camsaul"))
+
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
 
@@ -210,6 +219,7 @@
 
 (require 'editorconfig)
 (eval-when-compile
+  (require 'cl-lib)
   (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
 
 
@@ -236,14 +246,24 @@
 (add-hook 'find-file-hook (lambda ()
                             (rainbow-mode 1)))
 
+
+;;; [[<Diminished Minor Modes]]
+
+;; hide minor modes that are always going to be loaded
 (mapc #'diminish
       '(anzu-mode
-        button-lock-mode
         diff-hl-mode
         guide-key-mode
         rainbow-mode
-        undo-tree-mode
-        wiki-nav-mode))
+        undo-tree-mode))
+
+;; for minor modes that get selectively loaded add a hook to diminish them after they're enabled
+(mapc (lambda (hook.mode)
+        (add-hook (car hook.mode) (lambda ()
+                                    (diminish (cdr hook.mode)))))
+      '((button-lock-mode-hook           . button-lock-mode)
+        (highlight-parentheses-mode-hook . highlight-parentheses-mode)
+        (wiki-nav-mode-hook              . wiki-nav-mode)))
 
 
 ;;; [[<Global Settings]]
@@ -325,7 +345,7 @@
 
 (mapc (lambda (key-command-pair)
         (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
-      '(("<A-escape>"    . #'helm-global-mark-ring)
+      '(("<A-escape>"    . #'helm-mark-ring)
         ("<A-return>"    . #'wiki-nav-ido)
         ("<C-M-s-down>"  . #'windmove-down)
         ("<C-M-s-left>"  . #'windmove-left)
@@ -344,6 +364,7 @@
         ("A-r w"         . #'rotate-window)
         ("C-="           . #'magit-status)
         ("C-M-y"         . #'helm-show-kill-ring)
+        ("C-M-S-k"       . #'backward-kill-sexp)
         ("C-S-k"         . #'cam/backward-kill-line)
         ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
@@ -374,7 +395,6 @@
 ;;; [[<Lisp Modes]]
 (defun cam/lisp-mode-setup ()
   (highlight-parentheses-mode 1)
-  (diminish 'highlight-parentheses-mode)
   (paredit-mode 1)
   (rainbow-delimiters-mode 1)
   (show-paren-mode 1)
@@ -390,14 +410,24 @@
 (eval-after-load 'auto-complete
   '(progn
      (require 'pos-tip)
+
      (setq ac-delay 0.05
            ac-auto-show-menu 0.1
-           ac-menu-height 20                      ; show 20 results instead of 10
+           ac-candidate-menu-height 30
+           ac-menu-height 30                      ; show 20 results instead of 10
            ac-quick-help-prefer-pos-tip t         ; use native tooltips provided by pos-tip
-           ac-quick-help-delay 0.2)
+           ac-quick-help-delay 0.2
+           ac-use-menu-map t)                     ; enable mode-map when AC menu is visible
+
      (ac-config-default)
+
      (nconc ac-modes '(cider-repl-mode
-                       ielm-mode))))
+                       ielm-mode))
+
+     ;; Define some keybindings that will allow use to filter ac results by type
+     (define-key ac-menu-map (kbd "A-f") #'ac-complete-functions)
+     (define-key ac-menu-map (kbd "A-s") #'ac-complete-symbols)
+     (define-key ac-menu-map (kbd "A-v") #'ac-complete-variables)))
 
 
 ;;; [[<Clojure]]
@@ -474,10 +504,12 @@
     (comint-kill-input)))
 
 (defun cam/emacs-lisp-mode-setup ()
+  (require 'cl-lib)
   (require 'subr-x) ; when-let, etc.
   (cam/lisp-mode-setup)
   (aggressive-indent-mode 1)
-  (auto-complete-mode 1)
+  (cl-letf (((symbol-function 'message) (lambda (&rest _)))) ; suppress messages while activating auto-complete-mode
+    (auto-complete-mode 1))
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
   (wiki-nav-mode 1)
@@ -611,3 +643,5 @@
   (load-file custom-file))
 
 (toggle-frame-maximized)
+
+(message "Loaded Emacs in: %s" (emacs-init-time))
