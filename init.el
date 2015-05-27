@@ -77,6 +77,7 @@
     helm
     highlight-parentheses                         ; highlight matching parentheses
     ido-vertical-mode
+    js2-mode                                      ; Javascript
     loccur
     macrostep                                     ; Interactive macrostepper for Emacs Lisp
     magit
@@ -119,6 +120,9 @@
              `(declare-functions ,file ,@more))))
 (put #'declare-functions 'lisp-indent-function 1)
 
+(declare-functions "auto-complete-config"
+  ac-emacs-lisp-mode-setup)
+
 (declare-functions "cider-interaction"
   cider-current-ns
   cider-load-buffer
@@ -143,6 +147,14 @@
 
 (declare-functions "org"
   org-bookmark-jump-unhide)
+
+(declare-functions "paredit"
+  paredit-backward-delete
+  paredit-doublequote
+  paredit-newline
+  paredit-open-round
+  paredit-open-square
+  paredit-forward-delete)
 
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
@@ -266,7 +278,8 @@
 ;;; [[<auto-mode-alist]]
 ;;; Tell Emacs how to open files with certain extensions
 (mapc (apply-partially #'add-to-list 'auto-mode-alist)
-      '(("\.html$" . web-mode)))
+      '(("\.html$" . web-mode)
+        ("\.js$"   . js2-mode)))
 
 
 ;;; [[<Global Functions]]
