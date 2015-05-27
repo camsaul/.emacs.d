@@ -129,6 +129,11 @@
 (declare-functions "loccur"
   loccur)
 
+(declare-functions "magit"
+  magit-get
+  magit-get-current-branch
+  magit-get-current-remote)
+
 (declare-functions "org"
   org-bookmark-jump-unhide)
 
@@ -156,7 +161,7 @@
                 (:eval (cond
                         (buffer-read-only    "[read-only] ")
                         ((buffer-modified-p) "[modified] ")
-                        ((:else              " "))))
+                        (:else                " ")))
                 mode-line-buffer-identification
                 "   L%l/"
                 (:eval (int-to-string (line-number-at-pos (point-max))))
@@ -174,7 +179,7 @@
 
 (require 'editorconfig)
 (eval-when-compile
-  (require 'subr-x))                              ; when-let, etc.
+  (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
 
 
 ;;; [[<Global Minor Modes]]
@@ -222,8 +227,9 @@
                  (concat user-emacs-directory
                          "backups"))))
 
-      custom-file (concat user-emacs-directory    ; write customizations to ~/.emacs.d/custom.el instead of init.el
-                          "custom.el")
+      custom-file (expand-file-name               ; write customizations to ~/.emacs.d/custom.el instead of init.el
+                   (concat user-emacs-directory
+                           "custom.el"))
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
       indent-tabs-mode nil                        ; disable insertion of tabs
@@ -264,6 +270,7 @@
 (defun cam/update-packages ()
   "Update all packages."
   (interactive)
+  (message "Auto updating packages...")
   (ignore-errors
     (save-window-excursion
       (let ((package-menu-async nil))
@@ -285,6 +292,10 @@
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
 
 (add-hook 'midnight-hook #'cam/update-packages)
+
+;; Recompile any elisp files that need it (recursive)
+(add-hook 'midnight-hook (lambda ()
+                           (byte-recompile-directory user-emacs-directory 0))) ; 0 = recompile even if there's no .elc file
 
 
 ;;; [[<Global Keybindings]]
@@ -348,7 +359,7 @@
 
 
 ;;; [[<auto-complete]]
-(eval-after-load "auto-complete"
+(eval-after-load 'auto-complete
   '(progn (setq ac-delay 0.05
                 ac-auto-show-menu 0.1
                 ac-quick-help-delay 0.2)
@@ -397,14 +408,14 @@
 (add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
 ;; Delete trailing whitespace that may have been introduced by auto-complete
-(eval-after-load "cider"
+(eval-after-load 'cider
   '(advice-add #'cider-repl-return :before (lambda ()
                                              (interactive)
                                              (call-interactively #'delete-trailing-whitespace))))
 
 
 ;;; [[<company]]
-(eval-after-load "company"
+(eval-after-load 'company
   '(setq company-idle-delay 0.01
          company-minimum-prefix-length 1))
 
@@ -468,7 +479,7 @@
 
 
 ;;; [[<Find Things Fast]]
-(eval-after-load "find-things-fast"
+(eval-after-load 'find-things-fast
   '(nconc ftf-filetypes '("*.clj"
                           "*.css"
                           "*.el"
@@ -495,6 +506,21 @@
 
 
 ;;; [[<Magit]]
+(defun cam/magit-visit-pull-request-url ()
+  "Visit the current git branch's PR on GitHub."
+  (interactive)
+  (browse-url (concat "http://github.com/"
+                      (thread-last (magit-get "remote" (magit-get-current-remote) "url")
+                        (string-remove-suffix ".git")
+                        (string-remove-prefix "git@github.com:"))
+                      "/pull/"
+                      (magit-get-current-branch))))
+
+(defun cam/magit-status-mode-setup ()
+  (define-key magit-status-mode-map
+    (kbd "V") #'cam/magit-visit-pull-request-url))
+(add-hook 'magit-status-mode-hook #'cam/magit-status-mode-setup)
+
 (setq magit-auto-revert-mode-lighter     ""
       magit-last-seen-setup-instructions "1.4.0")
 
@@ -509,8 +535,20 @@
           (put #'paredit-doublequote     'delete-selection t)
           (put #'paredit-newline         'delete-selection t)))
 
+
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
+
+;; byte-recompile ~/.emacs.d/*.el when applicable
+(autoload #'byte-recompile-file "bytecomp")
+(mapc (lambda (file)
+        (when (string-match-p "^[^#]*\\.el$" file)
+          (let ((compiled-file (concat file "c")))
+            (when (or (not compiled-file)
+                      (file-newer-than-file-p file compiled-file))
+              (byte-recompile-file file nil 0)))))
+      (directory-files user-emacs-directory))
 
 (ignore-errors
   (load-file custom-file))
+
 (toggle-frame-maximized)
