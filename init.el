@@ -8,6 +8,7 @@
 ;;;    [[Global Requires]]
 ;;;    [[Global Minor Modes]]
 ;;;    [[Global Settings]]
+;;;    [[auto-mode-alist]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
 ;;;    [[Global Keybindings]]
@@ -86,6 +87,7 @@
     register-list                                 ; dired-like editing of Emacs registers
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
+    web-mode                                      ; major-mode for editing web templates
     wiki-nav                                      ; Navigate a file using [[WikiStrings]]
     yaml-mode))
 
@@ -247,6 +249,12 @@
 (setq-default truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 
+;;; [[<auto-mode-alist]]
+;;; Tell Emacs how to open files with certain extensions
+(mapc (apply-partially #'add-to-list 'auto-mode-alist)
+      '(("\.html$" . web-mode)))
+
+
 ;;; [[<Global Functions]]
 
 (defun cam/untabify-current-buffer ()
@@ -365,7 +373,6 @@
                 ac-quick-help-delay 0.2)
           (ac-config-default)
           (nconc ac-modes '(cider-repl-mode
-                            emacs-lisp-mode
                             ielm-mode))))
 
 
