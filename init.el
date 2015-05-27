@@ -138,6 +138,10 @@
   org-bookmark-jump-unhide)
 
 
+;;; autoloads
+(autoload #'byte-recompile-file "bytecomp")
+
+
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
 ;;; [[<Theme]]
@@ -539,7 +543,6 @@
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
 ;; byte-recompile ~/.emacs.d/*.el when applicable
-(autoload #'byte-recompile-file "bytecomp")
 (mapc (lambda (file)
         (when (string-match-p "^[^#]*\\.el$" file)
           (let ((compiled-file (concat file "c")))
