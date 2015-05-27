@@ -192,9 +192,11 @@
                         ((buffer-modified-p) "[modified] ")
                         (:else                " ")))
                 mode-line-buffer-identification
-                "   L%l/"
+                (:propertize " %n "               ; %n = 'Narrow' when narrowing is in effect
+                             face mode-line-buffer-id)
+                " L%l/"                           ; %l = line-number
                 (:eval (int-to-string (line-number-at-pos (point-max))))
-                "  C%c  "
+                "  C%c  "                         ; %c = column number
                 (vc-mode vc-mode)
                 "  "
                 (:propertize mode-name
@@ -220,7 +222,6 @@
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (global-diff-hl-mode 1)
 (global-undo-tree-mode 1)
-(global-wiki-nav-mode 1)
 (guide-key-mode 1)
 (projectile-global-mode 1)
 (ido-mode 1)
@@ -228,6 +229,7 @@
 (ido-vertical-mode 1)
 (rainbow-mode 1)                                  ; colorize strings like #224499
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
+(which-function-mode 1)                           ; display the current function on the mode line
 (winner-mode 1)
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
@@ -323,7 +325,8 @@
 
 (mapc (lambda (key-command-pair)
         (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
-      '(("<A-return>"    . #'wiki-nav-ido)
+      '(("<A-escape>"    . #'helm-global-mark-ring)
+        ("<A-return>"    . #'wiki-nav-ido)
         ("<C-M-s-down>"  . #'windmove-down)
         ("<C-M-s-left>"  . #'windmove-left)
         ("<C-M-s-right>" . #'windmove-right)
@@ -354,6 +357,8 @@
         ("C-x r r"       . #'register-list)       ; replaces copy-rectangle-to-register
         ("C-z"           . #'undo)
         ("ESC <up>"      . #'windmove-up)
+        ("H-M-a"         . #'mc/skip-to-previous-like-this)
+        ("H-M-e"         . #'mc/skip-to-next-like-this)
         ("H-a"           . #'mc/mark-previous-like-this)
         ("H-e"           . #'mc/mark-next-like-this)
         ("M-j"           . #'cam/join-next-line)
@@ -475,6 +480,7 @@
   (auto-complete-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
+  (wiki-nav-mode 1)
 
   (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
   (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
