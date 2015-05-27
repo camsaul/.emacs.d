@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; comment-column: 50; -*-
+;;; -*- lexical-binding: t; byte-compile-dynamic: t; coding: utf-8; comment-column: 50; -*-
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -38,9 +38,11 @@
 (mapc (lambda (mode)
         (when (boundp mode)
           (funcall mode -1)))
-      '(menu-bar-mode
-        scroll-bar-mode
+      '(scroll-bar-mode
         tool-bar-mode))
+
+(unless (eq window-system 'ns)
+  (menu-bar-mode -1))
 
 (setq inhibit-splash-screen t
       inhibit-startup-screen t)
@@ -82,6 +84,7 @@
     multiple-cursors
     moe-theme
     paredit
+    pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
     rainbow-mode
@@ -146,15 +149,20 @@
 ;;; [[<Theme]]
 
 (require 'moe-theme)
-(moe-light)
+(moe-dark)
+
+(defconst cam/mode-line-color "#fce94f")
 
 (defun cam/setup-frame ()
-  (set-frame-font "Source Code Pro-12"))
+  (set-frame-font "Source Code Pro-12")
+  ;; (moe-theme-random-color)
+  (set-face-foreground 'mode-line "#111111")
+  (set-face-background 'mode-line cam/mode-line-color)
+  (set-cursor-color (face-background 'mode-line))
+  (set-face-background 'mode-line-buffer-id nil)) ; Don't show a blue background behind buffer name on modeline for deselected frames
 (advice-add #'make-frame-command :after #'cam/setup-frame)
 
 (cam/setup-frame)
-
-(set-face-background 'mode-line-buffer-id nil)    ; Don't show a blue background behind buffer name on modeline for deselected frames
 
 (setq-default mode-line-format
               '("%e"
@@ -201,9 +209,13 @@
 (ido-everywhere 1)                                ; use ido for all buffer/file reading
 (ido-vertical-mode 1)
 (midnight-mode 1)
-(rainbow-mode 1)                                  ; Highlight color strings like #8844AA
+(rainbow-mode 1)                                  ; colorize strings like #224499
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
+
+;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
+(add-hook 'find-file-hook (lambda ()
+                            (rainbow-mode 1)))
 
 (mapc #'diminish
       '(anzu-mode
@@ -235,7 +247,6 @@
                            "custom.el"))
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
-      indent-tabs-mode nil                        ; disable insertion of tabs
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
       ns-right-option-modifier 'alt
@@ -247,7 +258,8 @@
       vc-make-backup-files t                      ; Make backups of files even if they're under VC
       visible-bell t)
 
-(setq-default truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
+(setq-default indent-tabs-mode nil                ; disable insertion of tabs
+              truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 
 ;;; [[<auto-mode-alist]]
@@ -321,6 +333,7 @@
         ("<H-return>"    . #'mc/mark-next-lines)
         ("<escape>"      . #'ace-jump-mode)
         ("<f11>"         . nil)                   ; Use <f11> <key> for toggling various minor modes
+        ("<f11> a"       . #'aggressive-indent-mode)
         ("<f11> p"       . #'paredit-mode)
         ("<f11> w"       . #'whitespace-mode)
         ("A-;"           . #'cam/loccur)
@@ -366,15 +379,52 @@
             nil
             :local))
 
+;; -------------------- OMG HAVE I LOST MY MIND --------------------
+(defun pos-tip-show (string &optional tip-color pos window timeout width frame-coordinates dx dy)
+  (let* ((char-width  (/ (float (window-pixel-width))
+                         (window-width)))
+         (char-height (/ (float (window-pixel-height))
+                         (window-height)))
+         (motion (compute-motion (window-start)
+                                 '(0 . 0)
+                                 pos
+                                 '(10000 . 10000)
+                                 nil
+                                 nil
+                                 (selected-window)))
+         (x (* (cadr motion) char-width))
+         (y (* (caddr motion) char-height))
+         (mouse-position (cdr (mouse-pixel-position)))
+         (mouse-x (car mouse-position))
+         (mouse-y (cdr mouse-position))
+         (x       (round (+ (- x mouse-x)
+                            char-width
+                            (or dx 0))))
+         (y       (round (+ (- y mouse-y)
+                            (* char-height 2)
+                            (or dy 0))))
+         (frame (if window (window-frame window)
+                  (selected-frame))))
+    (x-show-tip string frame nil timeout x y)))
+
+(provide 'pos-tip)
+(fset #'pos-tip-hide #'x-hide-tip)
 
 ;;; [[<auto-complete]]
 (eval-after-load 'auto-complete
-  '(progn (setq ac-delay 0.05
-                ac-auto-show-menu 0.1
-                ac-quick-help-delay 0.2)
-          (ac-config-default)
-          (nconc ac-modes '(cider-repl-mode
-                            ielm-mode))))
+  '(progn
+     ;; (require 'tooltip)
+     ;; (tooltip-show "OK!")
+     ;; (pos-tip-show "X")
+     ;; (require 'pos-tip)
+     (setq ac-delay 0.05
+           ac-auto-show-menu 0.1
+           ac-menu-height 20                      ; show 20 results instead of 10
+           ac-quick-help-prefer-pos-tip t         ; use native tooltips provided by pos-tip
+           ac-quick-help-delay 0.2)
+     (ac-config-default)
+     (nconc ac-modes '(cider-repl-mode
+                       ielm-mode))))
 
 
 ;;; [[<Clojure]]
