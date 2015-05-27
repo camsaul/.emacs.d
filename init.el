@@ -201,6 +201,7 @@
         undo-tree-mode
         wiki-nav-mode))
 
+
 ;;; [[<Global Settings]]
 
 (fset #'yes-or-no-p #'y-or-n-p)                   ; Prompt for 'y' or 'n' instead of 'yes' or 'no'
