@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; byte-compile-dynamic: t; comment-column: 50; -*-
+;;; -*- lexical-binding: t; comment-column: 50; -*-
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -172,6 +172,9 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
+(eval-when-compile
+  (require 'subr-x))                              ; when-let, etc.
+
 
 ;;; [[<Global Minor Modes]]
 
@@ -188,6 +191,7 @@
 (ido-mode 1)
 (ido-everywhere 1)                                ; use ido for all buffer/file reading
 (ido-vertical-mode 1)
+(midnight-mode 1)
 (rainbow-mode 1)                                  ; Highlight color strings like #8844AA
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
@@ -256,6 +260,19 @@
   (interactive)
   (kill-line 0))
 
+(defun cam/update-packages ()
+  "Update all packages."
+  (interactive)
+  (ignore-errors
+    (save-window-excursion
+      (let ((package-menu-async nil))
+        (package-list-packages)
+        (package-menu-mark-upgrades)
+        (package-menu-execute :no-query)
+        (package-menu-mark-obsolete-for-deletion)
+        (package-menu-execute :no-query)
+        (kill-buffer-and-window)))))
+
 
 ;;; [[<Global Hooks]]
 
@@ -265,6 +282,8 @@
             (set-buffer-file-coding-system 'utf-8-auto-unix)))
 
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
+
+(add-hook 'midnight-hook #'cam/update-packages)
 
 
 ;;; [[<Global Keybindings]]
@@ -405,14 +424,14 @@
 (defun cam/emacs-lisp-save-switch-to-ielm-if-visible ()
   (interactive)
   (save-buffer)
-  (let ((ielm-window (get-window-with-predicate (lambda (window)
-                                                  (string= (buffer-name (window-buffer window)) "*ielm*")))))
-    (when ielm-window
-      (select-window ielm-window)
-      (comint-clear-buffer)
-      (comint-kill-input))))
+  (when-let ((ielm-window (get-window-with-predicate (lambda (window)
+                                                       (string= (buffer-name (window-buffer window)) "*ielm*")))))
+    (select-window ielm-window)
+    (comint-clear-buffer)
+    (comint-kill-input)))
 
 (defun cam/emacs-lisp-mode-setup ()
+  (require 'subr-x) ; when-let, etc.
   (cam/lisp-mode-setup)
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
