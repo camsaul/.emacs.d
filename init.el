@@ -22,6 +22,7 @@
 ;;;    [[Find Things Fast]]
 ;;;    [[Guide Key]]
 ;;;    [[Magit]]
+;;;    [[Paredit]]
 ;;; [[Final Setup]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
@@ -496,6 +497,17 @@
 ;;; [[<Magit]]
 (setq magit-auto-revert-mode-lighter     ""
       magit-last-seen-setup-instructions "1.4.0")
+
+
+;;; [[<Paredit]]
+(eval-after-load 'paredit
+  ;; Tell paredit it's ok to delete selection in these contexts. Otherwise delete-selection-mode doesn't work with paredit
+  '(progn (put #'paredit-forward-delete  'delete-selection 'supersede)
+          (put #'paredit-backward-delete 'delete-selection 'supersede)
+          (put #'paredit-open-round      'delete-selection t)
+          (put #'paredit-open-square     'delete-selection t)
+          (put #'paredit-doublequote     'delete-selection t)
+          (put #'paredit-newline         'delete-selection t)))
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
