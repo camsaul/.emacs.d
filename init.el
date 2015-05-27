@@ -300,7 +300,8 @@
         (package-menu-execute :no-query)
         (package-menu-mark-obsolete-for-deletion)
         (package-menu-execute :no-query)
-        (kill-buffer-and-window)))))
+        (kill-buffer-and-window)
+        (package-autoremove)))))
 
 
 ;;; [[<Global Hooks]]
@@ -378,6 +379,7 @@
               (cam/untabify-current-buffer))
             nil
             :local))
+
 
 ;;; [[<auto-complete]]
 (eval-after-load 'auto-complete
