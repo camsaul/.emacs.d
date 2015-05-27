@@ -547,6 +547,7 @@
 ;;; [[<Web Mode]]
 (defun cam/web-mode-setup ()
   (aggressive-indent-mode 1)
+  (electric-pair-local-mode 1)
   (define-key web-mode-map
     (kbd "C-j") #'newline))                       ; instead of electric-newline-and-maybe-indent which doesn't indent :/
 (add-hook 'web-mode-hook #'cam/web-mode-setup)
