@@ -550,6 +550,12 @@
     (kbd "C-j") #'newline))                       ; instead of electric-newline-and-maybe-indent which doesn't indent :/
 (add-hook 'web-mode-hook #'cam/web-mode-setup)
 
+;;; after inserting a matching closing tag, fix its indentation
+(eval-after-load 'web-mode
+  '(advice-add #'web-mode-element-close :after (lambda ()
+                                                 (interactive)
+                                                 (call-interactively #'indent-for-tab-command))))
+
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
