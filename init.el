@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; coding: utf-8; comment-column: 50; -*-
+;;; -*- lexical-binding: t; coding: utf-8; byte-compile-dynamic: nil; comment-column: 50; -*-
 
 (unless (>= emacs-major-version 25)
   (error "This setup requires Emacs version 25 or newer."))
@@ -644,4 +644,4 @@
 
 (toggle-frame-maximized)
 
-(message "Loaded Emacs in: %s" (emacs-init-time))
+(message "Loaded Emacs in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0))
