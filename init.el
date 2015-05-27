@@ -381,30 +381,18 @@
 
 ;; -------------------- OMG HAVE I LOST MY MIND --------------------
 (defun pos-tip-show (string &optional tip-color pos window timeout width frame-coordinates dx dy)
-  (let* ((char-width  (/ (float (window-pixel-width))
-                         (window-width)))
-         (char-height (/ (float (window-pixel-height))
-                         (window-height)))
-         (motion (compute-motion (window-start)
-                                 '(0 . 0)
-                                 pos
-                                 '(10000 . 10000)
-                                 nil
-                                 nil
-                                 (selected-window)))
-         (x (* (cadr motion) char-width))
-         (y (* (caddr motion) char-height))
-         (mouse-position (cdr (mouse-pixel-position)))
-         (mouse-x (car mouse-position))
-         (mouse-y (cdr mouse-position))
-         (x       (round (+ (- x mouse-x)
-                            char-width
-                            (or dx 0))))
-         (y       (round (+ (- y mouse-y)
-                            (* char-height 2)
-                            (or dy 0))))
-         (frame (if window (window-frame window)
-                  (selected-frame))))
+  (let* ((frame (if window (window-frame window)
+                  (selected-frame)))
+         (x+y (pos-visible-in-window-p pos window :partially))
+         (mouse-pos (cdr (mouse-pixel-position)))
+         (dx      (or dx 10))
+         (dy      (or dy 20))
+         (x       (+ (car x+y)
+                     (- (car mouse-pos))
+                     dx))
+         (y       (+ (cadr x+y)
+                     (- (cdr mouse-pos))
+                     dy)))
     (x-show-tip string frame nil timeout x y)))
 
 (provide 'pos-tip)
