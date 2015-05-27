@@ -530,7 +530,9 @@
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
   (ac-emacs-lisp-mode-setup)
-  (morlock-mode 1))
+  (morlock-mode 1)
+
+  (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
 
 
