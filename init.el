@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; byte-compile-dynamic: t; coding: utf-8; comment-column: 50; -*-
+;;; -*- lexical-binding: t; coding: utf-8; comment-column: 50; -*-
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -208,7 +208,6 @@
 (ido-mode 1)
 (ido-everywhere 1)                                ; use ido for all buffer/file reading
 (ido-vertical-mode 1)
-(midnight-mode 1)
 (rainbow-mode 1)                                  ; colorize strings like #224499
 (save-place-mode 1)                               ; automatically save last place in files; reopen at that position
 (winner-mode 1)
@@ -288,21 +287,6 @@
   (interactive)
   (kill-line 0))
 
-(defun cam/update-packages ()
-  "Update all packages."
-  (interactive)
-  (message "Auto updating packages...")
-  (ignore-errors
-    (save-window-excursion
-      (let ((package-menu-async nil))
-        (package-list-packages)
-        (package-menu-mark-upgrades)
-        (package-menu-execute :no-query)
-        (package-menu-mark-obsolete-for-deletion)
-        (package-menu-execute :no-query)
-        (kill-buffer-and-window)
-        (package-autoremove)))))
-
 
 ;;; [[<Global Hooks]]
 
@@ -313,11 +297,6 @@
 
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
 
-(add-hook 'midnight-hook #'cam/update-packages)
-
-;; Recompile any elisp files that need it (recursive)
-(add-hook 'midnight-hook (lambda ()
-                           (byte-recompile-directory user-emacs-directory 0))) ; 0 = recompile even if there's no .elc file
 
 
 ;;; [[<Global Keybindings]]
