@@ -23,6 +23,7 @@
 ;;;    [[Find Things Fast]]
 ;;;    [[Guide Key]]
 ;;;    [[Magit]]
+;;;    [[Org]]
 ;;;    [[Paredit]]
 ;;;    [[Web Mode]]
 ;;; [[Final Setup]]
@@ -254,6 +255,7 @@
       save-interprogram-paste-before-kill t       ; Save clipboard strings (from other applications) into kill-ring before replacing them
       savehist-mode t                             ; Periodically save minibuffer history
       select-enable-clipboard t                   ; Cutting and pasting uses the clipboard
+      shift-select-mode nil                       ; real Emacs users don't use shift-selection
       vc-make-backup-files t                      ; Make backups of files even if they're under VC
       visible-bell t)
 
@@ -528,6 +530,16 @@
 
 (setq magit-auto-revert-mode-lighter     ""
       magit-last-seen-setup-instructions "1.4.0")
+
+
+;;; [[<Org]]
+(defun cam/org-mode-setup ()
+  (setq-local truncate-lines nil))
+(add-hook 'org-mode-hook #'cam/org-mode-setup)
+
+(eval-after-load 'org
+  '(progn
+     (setq org-support-shift-select nil)))
 
 
 ;;; [[<Paredit]]
