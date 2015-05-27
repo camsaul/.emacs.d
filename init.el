@@ -24,6 +24,7 @@
 ;;;    [[Guide Key]]
 ;;;    [[Magit]]
 ;;;    [[Paredit]]
+;;;    [[Web Mode]]
 ;;; [[Final Setup]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
@@ -541,6 +542,13 @@
           (put #'paredit-open-square     'delete-selection t)
           (put #'paredit-doublequote     'delete-selection t)
           (put #'paredit-newline         'delete-selection t)))
+
+
+;;; [[<Web Mode]]
+(defun cam/web-mode-setup ()
+  (define-key web-mode-map
+    (kbd "C-j") #'newline))                       ; instead of electric-newline-and-maybe-indent which doesn't indent :/
+(add-hook 'web-mode-hook #'cam/web-mode-setup)
 
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
