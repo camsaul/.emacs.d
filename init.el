@@ -138,10 +138,6 @@
   org-bookmark-jump-unhide)
 
 
-;;; autoloads
-(autoload #'byte-recompile-file "bytecomp")
-
-
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
 ;;; [[<Theme]]
@@ -542,14 +538,12 @@
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
-;; byte-recompile ~/.emacs.d/*.el when applicable
-(mapc (lambda (file)
-        (when (string-match-p "^[^#]*\\.el$" file)
-          (let ((compiled-file (concat file "c")))
-            (when (or (not compiled-file)
-                      (file-newer-than-file-p file compiled-file))
-              (byte-recompile-file file nil 0)))))
-      (directory-files user-emacs-directory))
+;; byte-compile init.el if needed
+(let* ((init-file (expand-file-name (concat user-emacs-directory "init.el"))) ; don't use var user-init-file because it will be set to the .elc file while loading
+       (compiled-init-file (concat init-file "c")))
+  (when (or (not compiled-init-file)
+            (file-newer-than-file-p init-file compiled-init-file))
+    (byte-compile-file init-file)))
 
 (ignore-errors
   (load-file custom-file))
