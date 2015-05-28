@@ -1,8 +1,7 @@
 ;;; -*- lexical-binding: t; coding: utf-8; byte-compile-dynamic: nil; comment-column: 50; -*-
 
-(cl-eval-when (eval)
-  (unless (>= emacs-major-version 25)
-    (error "This setup requires Emacs version 25 or newer.")))
+;; (unless (>= emacs-major-version 25)
+;;   (error "This setup requires Emacs version 25 or newer."))
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -16,6 +15,7 @@
 ;;;    [[auto-mode-alist]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
+;;;    [[Emacs 24 Workarounds]]
 ;;;    [[Global Keybindings]]
 ;;; [[Mode/Package Specific Setup]]
 ;;;    [[Lisp Modes]]
@@ -82,6 +82,7 @@
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
     company                                       ; auto-completion
+    dash
     diff-hl                                       ; mark uncommited changes in the fringe
     diminish                                      ; Replace or hide minor modes in mode-line
     dockerfile-mode                               ; Major mode for editing Dockerfiles
@@ -109,6 +110,7 @@
     rainbow-delimiters
     rainbow-mode
     register-list                                 ; dired-like editing of Emacs registers
+    saveplace                                     ; save position of point when killing a buffer
     skewer-mode                                   ; live JS web dev for emacs
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
@@ -204,6 +206,7 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
+(require 'saveplace)
 (eval-when-compile
   (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
 
@@ -227,7 +230,7 @@
         ido-everywhere                            ; use ido for all buffer/file reading
         ido-vertical-mode
         rainbow-mode                              ; colorize strings like #224499
-        save-place-mode                           ; automatically save last place in files; reopen at that position
+        ;; save-place-mode                           ; automatically save last place in files; reopen at that position
         winner-mode))
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
@@ -289,6 +292,7 @@
       visible-bell t)
 
 (setq-default indent-tabs-mode nil                ; disable insertion of tabs
+              save-place t                        ; Automatically save place in each file
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 
@@ -334,6 +338,12 @@
 
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
 
+
+;;; [[<Emacs 24 Workarounds]]
+(unless (fboundp #'electric-pair-local-mode)
+  (fset #'electric-pair-local-mode #'electric-pair-mode))
+(unless (fboundp #'comint-clear-buffer)
+  (fset #'comint-clear-buffer (lambda ()))) ; no-op
 
 
 ;;; [[<Global Keybindings]]
@@ -503,8 +513,8 @@
   (interactive)
   (save-buffer)
   (eval-buffer)
-  (when-let ((ielm-window (get-window-with-predicate (lambda (window)
-                                                       (string= (buffer-name (window-buffer window)) "*ielm*")))))
+  (-when-let ((ielm-window (get-window-with-predicate (lambda (window)
+                                                        (string= (buffer-name (window-buffer window)) "*ielm*")))))
     (select-window ielm-window)
     (comint-clear-buffer)
     (comint-kill-input)))
@@ -592,7 +602,7 @@
 
 ;;; [[<js2-mode]]
 (defun cam/js2-mode-setup ()
-  (electric-pair-mode 1)
+  (electric-pair-local-mode 1)
   (rainbow-delimiters-mode 1)
   (skewer-mode 1)
   (ac-js2-mode 1)
@@ -610,9 +620,9 @@
   "Visit the current git branch's PR on GitHub."
   (interactive)
   (browse-url (concat "http://github.com/"
-                      (thread-last (magit-get "remote" (magit-get-current-remote) "url")
-                        (string-remove-suffix ".git")
-                        (string-remove-prefix "git@github.com:"))
+                      (->> (magit-get "remote" (magit-get-current-remote) "url")
+                           (string-remove-suffix ".git")
+                           (string-remove-prefix "git@github.com:"))
                       "/pull/"
                       (magit-get-current-branch))))
 
@@ -672,4 +682,5 @@
 
 (setq cam/has-loaded-init t)
 
-(message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0))
+(ignore-errors ; only seems to work on Emacs 25+
+  (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
