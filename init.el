@@ -477,9 +477,8 @@
 
 
 ;;; [[<company]]
-(eval-after-load 'company
-  '(setq company-idle-delay 0.01
-         company-minimum-prefix-length 1))
+(setq company-idle-delay 0.01
+      company-minimum-prefix-length 1)
 
 
 ;;; [[<dired]]
@@ -534,11 +533,15 @@
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
 
+  (when (fboundp #'dash-enable-font-lock)
+    (dash-enable-font-lock))
+
   (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
 
-(eval-after-load 'lisp-mode
-  '(progn (put #'advice-add 'lisp-indent-function 2)))
+;; Indentation <3
+(eval-after-load 'nadvice
+  '(put #'advice-add 'lisp-indent-function 2))
 
 
 ;;; [[<Eval Expresssion (Minibuffer)]]
@@ -616,9 +619,7 @@
   (setq-local truncate-lines nil))
 (add-hook 'org-mode-hook #'cam/org-mode-setup)
 
-(eval-after-load 'org
-  '(progn
-     (setq org-support-shift-select nil)))
+(setq org-support-shift-select nil)
 
 
 ;;; [[<Paredit]]
