@@ -277,6 +277,8 @@
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
       ns-right-option-modifier 'alt
+      recentf-max-menu-items 50                   ; show more recent files in [Helm]recentf
+      recentf-max-saved-items 50
       require-final-newline t                     ; add final newline on save
       revert-without-query '(".*")                ; tell revert-buffer to revert all buffers without confirmation
       save-interprogram-paste-before-kill t       ; Save clipboard strings (from other applications) into kill-ring before replacing them
