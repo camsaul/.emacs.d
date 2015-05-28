@@ -381,6 +381,7 @@
         ("C-M-y"         . #'helm-show-kill-ring)
         ("C-M-S-k"       . #'backward-kill-sexp)
         ("C-S-k"         . #'cam/backward-kill-line)
+        ("C-c C-g"       . #'keyboard-quit)
         ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-g"       . #'keyboard-quit)
@@ -554,6 +555,7 @@
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
   (ac-emacs-lisp-mode-setup)
+  (elisp-slime-nav-mode 1)
   (morlock-mode 1)
 
   (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
