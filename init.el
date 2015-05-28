@@ -576,6 +576,17 @@
                                      "M-o"))
 
 
+;;; [[<Helm]]
+(eval-after-load 'helm-command
+  '(setq helm-M-x-fuzzy-match t))
+
+(eval-after-load 'helm-files
+  '(setq helm-recentf-fuzzy-match t))
+
+(eval-after-load 'helm-buffers
+  '(setq helm-buffers-fuzzy-matching t))
+
+
 ;;; [[<js2-mode]]
 (defun cam/js2-mode-setup ()
   (electric-pair-mode 1)
