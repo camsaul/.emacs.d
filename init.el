@@ -37,11 +37,11 @@
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
+(setq gc-cons-threshold (* 64 1024 1024)          ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 64MB (too much higher and GC becomes slooowww)
+      load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
+
 (defvar cam/has-loaded-init nil
   "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
-
-(setq gc-cons-threshold (* 32 1024 1024)          ; A more reasonable garbage collection threshold
-      load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
@@ -171,7 +171,8 @@
   (set-face-background 'mode-line-buffer-id nil)) ; Don't show a blue background behind buffer name on modeline for deselected frames
 (advice-add #'make-frame-command :after #'cam/setup-frame)
 
-(cam/setup-frame)
+(unless cam/has-loaded-init
+  (cam/setup-frame))
 
 (setq-default mode-line-format
               '("%e"
