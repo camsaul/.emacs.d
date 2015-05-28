@@ -43,7 +43,6 @@
 (defvar cam/has-loaded-init nil
   "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
 
-
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
 (mapc (lambda (mode)
