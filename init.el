@@ -663,13 +663,12 @@
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
-;; If we were loaded by eval and see if we need to byte-compile init.el
-(cl-eval-when (eval)
-  (let* ((init-file (expand-file-name (concat user-emacs-directory "init.el"))) ; don't use var user-init-file because it will be set to the .elc file while loading
-         (compiled-init-file (concat init-file "c")))
-    (when (or (not compiled-init-file)
-              (file-newer-than-file-p init-file compiled-init-file))
-      (byte-compile-file init-file))))
+;; Byte-compile init.el if needed for next time around
+(let* ((init-file (expand-file-name (concat user-emacs-directory "init.el"))) ; don't use var user-init-file because it will be set to the .elc file while loading
+       (compiled-init-file (concat init-file "c")))
+  (when (or (not compiled-init-file)
+            (file-newer-than-file-p init-file compiled-init-file))
+    (byte-compile-file init-file)))
 
 (ignore-errors
   (load-file custom-file))
