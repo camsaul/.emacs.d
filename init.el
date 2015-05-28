@@ -1,7 +1,8 @@
 ;;; -*- lexical-binding: t; coding: utf-8; byte-compile-dynamic: nil; comment-column: 50; -*-
 
-(unless (>= emacs-major-version 25)
-  (error "This setup requires Emacs version 25 or newer."))
+(cl-eval-when (eval)
+  (unless (>= emacs-major-version 25)
+    (error "This setup requires Emacs version 25 or newer.")))
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -36,8 +37,12 @@
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
+(defvar cam/has-loaded-init nil
+  "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
+
 (setq gc-cons-threshold (* 32 1024 1024)          ; A more reasonable garbage collection threshold
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
+
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
@@ -51,11 +56,11 @@
   (menu-bar-mode -1))
 
 (setq inhibit-splash-screen t
-      inhibit-startup-echo-area-message (user-login-name)
-      inhibit-startup-message t
       inhibit-startup-screen t)
 
-(eval '(setq inhibit-startup-echo-area-message "camsaul"))
+;; In an effort to be really annoying you can only suppress the startup echo area message if you set it through customize
+(custom-set-variables
+ '(inhibit-startup-echo-area-message (user-login-name)))
 
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
@@ -122,50 +127,50 @@
       cam/packages)
 
 (eval-when-compile
-  (mapc #'require cam/packages))
+  (mapc #'require cam/packages)
 
-;;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
-(defmacro declare-functions (file fn &rest more)
-  `(progn (declare-function ,fn ,file)
-          ,(when more
-             `(declare-functions ,file ,@more))))
-(put #'declare-functions 'lisp-indent-function 1)
+  ;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
+  (defmacro declare-functions (file fn &rest more)
+    `(progn (declare-function ,fn ,file)
+            ,(when more
+               `(declare-functions ,file ,@more))))
+  (put #'declare-functions 'lisp-indent-function 1)
 
-(declare-functions "auto-complete-config"
-  ac-emacs-lisp-mode-setup)
+  (declare-functions "auto-complete-config"
+    ac-emacs-lisp-mode-setup)
 
-(declare-functions "cider-interaction"
-  cider-current-ns
-  cider-load-buffer
-  cider-switch-to-last-clojure-buffer
-  cider-switch-to-relevant-repl-buffer)
+  (declare-functions "cider-interaction"
+    cider-current-ns
+    cider-load-buffer
+    cider-switch-to-last-clojure-buffer
+    cider-switch-to-relevant-repl-buffer)
 
-(declare-functions "cider-repl"
-  cider-repl-clear-buffer
-  cider-repl-return
-  cider-repl-set-ns)
+  (declare-functions "cider-repl"
+    cider-repl-clear-buffer
+    cider-repl-return
+    cider-repl-set-ns)
 
-(declare-functions "dired"
-  dired-hide-details-mode)
+  (declare-functions "dired"
+    dired-hide-details-mode)
 
-(declare-functions "loccur"
-  loccur)
+  (declare-functions "loccur"
+    loccur)
 
-(declare-functions "magit"
-  magit-get
-  magit-get-current-branch
-  magit-get-current-remote)
+  (declare-functions "magit"
+    magit-get
+    magit-get-current-branch
+    magit-get-current-remote)
 
-(declare-functions "org"
-  org-bookmark-jump-unhide)
+  (declare-functions "org"
+    org-bookmark-jump-unhide)
 
-(declare-functions "paredit"
-  paredit-backward-delete
-  paredit-doublequote
-  paredit-newline
-  paredit-open-round
-  paredit-open-square
-  paredit-forward-delete)
+  (declare-functions "paredit"
+    paredit-backward-delete
+    paredit-doublequote
+    paredit-newline
+    paredit-open-round
+    paredit-open-square
+    paredit-forward-delete))
 
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
@@ -173,7 +178,10 @@
 ;;; [[<Theme]]
 
 (require 'moe-theme)
-(moe-dark)
+
+;; Load the theme just once, otherwise the screen will flicker all cray if we try to eval this buffer again
+(unless cam/has-loaded-init
+  (moe-dark))
 
 (defconst cam/mode-line-color "#fce94f")
 
@@ -219,28 +227,30 @@
 
 (require 'editorconfig)
 (eval-when-compile
-  (require 'cl-lib)
   (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
 
 
 ;;; [[<Global Minor Modes]]
 
+;; Modes to disable
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
 
-(delete-selection-mode 1)                         ; typing will delete selected text
-(global-anzu-mode 1)                              ; show number of matches in mode-line while searching
-(global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
-(global-diff-hl-mode 1)
-(global-undo-tree-mode 1)
-(guide-key-mode 1)
-(projectile-global-mode 1)
-(ido-mode 1)
-(ido-everywhere 1)                                ; use ido for all buffer/file reading
-(ido-vertical-mode 1)
-(rainbow-mode 1)                                  ; colorize strings like #224499
-(save-place-mode 1)                               ; automatically save last place in files; reopen at that position
-(which-function-mode 1)                           ; display the current function on the mode line
-(winner-mode 1)
+;; Modes to enable
+(mapc (lambda (mode)
+        (funcall mode 1))
+      '(delete-selection-mode                     ; typing will delete selected text
+        global-anzu-mode                          ; show number of matches in mode-line while searching
+        global-auto-revert-mode                   ; automatically reload files when they change on disk
+        global-diff-hl-mode
+        global-undo-tree-mode
+        guide-key-mode
+        projectile-global-mode
+        ido-mode
+        ido-everywhere                            ; use ido for all buffer/file reading
+        ido-vertical-mode
+        rainbow-mode                              ; colorize strings like #224499
+        save-place-mode                           ; automatically save last place in files; reopen at that position
+        winner-mode))
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda ()
@@ -329,6 +339,11 @@
   (interactive)
   (kill-line 0))
 
+(defmacro cam/suppress-messages (&rest body)
+  `(cl-letf (((symbol-function 'message) (lambda (&rest _))))
+     ,@body))
+(put #'cam/suppress-messages 'lisp-indent-function 0)
+
 
 ;;; [[<Global Hooks]]
 
@@ -408,7 +423,7 @@
 
 ;;; [[<auto-complete]]
 (eval-after-load 'auto-complete
-  '(progn
+  '(cam/suppress-messages
      (require 'pos-tip)
 
      (setq ac-delay 0.05
@@ -474,6 +489,15 @@
                                              (interactive)
                                              (call-interactively #'delete-trailing-whitespace))))
 
+(defun cam/cider-repl-messages-buffer ()
+  (let ((messages-buffer nil))
+    (mapc (lambda (buf)
+            (unless messages-buffer
+              (when (string-match-p "^\*nrepl-server .*\*$" (buffer-name buf))
+                (setq messages-buffer buf))))
+          (buffer-list))
+    messages-buffer))
+
 
 ;;; [[<company]]
 (eval-after-load 'company
@@ -497,6 +521,7 @@
 (defun cam/emacs-lisp-save-switch-to-ielm-if-visible ()
   (interactive)
   (save-buffer)
+  (eval-buffer)
   (when-let ((ielm-window (get-window-with-predicate (lambda (window)
                                                        (string= (buffer-name (window-buffer window)) "*ielm*")))))
     (select-window ielm-window)
@@ -504,11 +529,10 @@
     (comint-kill-input)))
 
 (defun cam/emacs-lisp-mode-setup ()
-  (require 'cl-lib)
   (require 'subr-x) ; when-let, etc.
   (cam/lisp-mode-setup)
   (aggressive-indent-mode 1)
-  (cl-letf (((symbol-function 'message) (lambda (&rest _)))) ; suppress messages while activating auto-complete-mode
+  (cam/suppress-messages
     (auto-complete-mode 1))
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
@@ -534,6 +558,9 @@
 
   (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
+
+(eval-after-load 'lisp-mode
+  '(progn (put #'advice-add 'lisp-indent-function 2)))
 
 
 ;;; [[<Eval Expresssion (Minibuffer)]]
@@ -634,16 +661,20 @@
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
-;; byte-compile init.el if needed
-(let* ((init-file (expand-file-name (concat user-emacs-directory "init.el"))) ; don't use var user-init-file because it will be set to the .elc file while loading
-       (compiled-init-file (concat init-file "c")))
-  (when (or (not compiled-init-file)
-            (file-newer-than-file-p init-file compiled-init-file))
-    (byte-compile-file init-file)))
+;; If we were loaded by eval and see if we need to byte-compile init.el
+(cl-eval-when (eval)
+  (let* ((init-file (expand-file-name (concat user-emacs-directory "init.el"))) ; don't use var user-init-file because it will be set to the .elc file while loading
+         (compiled-init-file (concat init-file "c")))
+    (when (or (not compiled-init-file)
+              (file-newer-than-file-p init-file compiled-init-file))
+      (byte-compile-file init-file))))
 
 (ignore-errors
   (load-file custom-file))
 
-(toggle-frame-maximized)
+(unless cam/has-loaded-init
+  (toggle-frame-maximized))
 
-(message "Loaded Emacs in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0))
+(setq cam/has-loaded-init t)
+
+(message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0))
