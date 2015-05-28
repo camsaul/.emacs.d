@@ -136,41 +136,15 @@
                `(declare-functions ,file ,@more))))
   (put #'declare-functions 'lisp-indent-function 1)
 
-  (declare-functions "auto-complete-config"
-    ac-emacs-lisp-mode-setup)
-
-  (declare-functions "cider-interaction"
-    cider-current-ns
-    cider-load-buffer
-    cider-switch-to-last-clojure-buffer
-    cider-switch-to-relevant-repl-buffer)
-
-  (declare-functions "cider-repl"
-    cider-repl-clear-buffer
-    cider-repl-return
-    cider-repl-set-ns)
-
-  (declare-functions "dired"
-    dired-hide-details-mode)
-
-  (declare-functions "loccur"
-    loccur)
-
-  (declare-functions "magit"
-    magit-get
-    magit-get-current-branch
-    magit-get-current-remote)
-
-  (declare-functions "org"
-    org-bookmark-jump-unhide)
-
-  (declare-functions "paredit"
-    paredit-backward-delete
-    paredit-doublequote
-    paredit-newline
-    paredit-open-round
-    paredit-open-square
-    paredit-forward-delete))
+  (declare-functions "auto-complete"        ac-complete-functions ac-complete-symbols ac-complete-variables)
+  (declare-functions "auto-complete-config" ac-emacs-lisp-mode-setup)
+  (declare-functions "cider-interaction"    cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer)
+  (declare-functions "cider-repl"           cider-repl-clear-buffer cider-repl-return cider-repl-set-ns)
+  (declare-functions "dired"                dired-hide-details-mode)
+  (declare-functions "loccur"               loccur)
+  (declare-functions "magit"                magit-get magit-get-current-branch magit-get-current-remote)
+  (declare-functions "org"                  org-bookmark-jump-unhide)
+  (declare-functions "paredit"              paredit-backward-delete paredit-doublequote paredit-newline paredit-open-round paredit-open-square paredit-forward-delete))
 
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
