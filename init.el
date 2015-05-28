@@ -85,6 +85,7 @@
     dockerfile-mode                               ; Major mode for editing Dockerfiles
     editorconfig                                  ; Read EditorConfig files
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
+    esup                                          ; Emacs Start-Up Profiler <3
     find-things-fast
     git-timemachine                               ; Walk through git revisions of a file
     gitignore-mode                                ; Major mode for editing .gitignore files
