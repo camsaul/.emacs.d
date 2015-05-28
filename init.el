@@ -26,6 +26,7 @@
 ;;;    [[Emacs Lisp]]
 ;;;    [[Eval Expresssion (Minibuffer)]]
 ;;;    [[Find Things Fast]]
+;;;    [[Helm]]
 ;;;    [[Guide Key]]
 ;;;    [[js2-mode]]
 ;;;    [[Magit]]
@@ -71,6 +72,7 @@
                           ("marmalade" . "http://marmalade-repo.org/packages/")))
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
+    ac-js2                                        ; auto-complete <-> skewer <-> js2-mode
     ace-jump-mode
     ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
@@ -107,6 +109,7 @@
     rainbow-delimiters
     rainbow-mode
     register-list                                 ; dired-like editing of Emacs registers
+    skewer-mode                                   ; live JS web dev for emacs
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
     web-mode                                      ; major-mode for editing web templates
@@ -589,6 +592,12 @@
 (defun cam/js2-mode-setup ()
   (electric-pair-mode 1)
   (rainbow-delimiters-mode 1)
+  (skewer-mode 1)
+  (ac-js2-mode 1)
+
+  (unless (skewer-ping)
+    (run-skewer))
+
   (define-key js2-mode-map
     (kbd "C-j") #'newline))                       ; instead of electrict-newline-maybe-indent, which doesn't indent
 (add-hook 'js2-mode-hook #'cam/js2-mode-setup)
