@@ -373,6 +373,7 @@
         ("H-M-e"         . #'mc/skip-to-next-like-this)
         ("H-a"           . #'mc/mark-previous-like-this)
         ("H-e"           . #'mc/mark-next-like-this)
+        ("M-g"           . #'goto-line)           ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
         ("M-j"           . #'cam/join-next-line)
         ("M-x"           . #'helm-M-x)
         ("M-z"           . #'ace-jump-zap-up-to-char)
@@ -572,7 +573,7 @@
                                      "A-`"    "A-r"
                                      "A-~"    "C-c"
                                      "C-h"    "C-x"
-                                     "M-g"    "M-o"))
+                                     "M-o"))
 
 
 ;;; [[<js2-mode]]
