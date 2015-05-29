@@ -1,8 +1,7 @@
 ;;; -*- lexical-binding: t; coding: utf-8; byte-compile-dynamic: nil; comment-column: 50; -*-
 
-(cl-eval-when (eval)
-  (unless (>= emacs-major-version 25)
-    (error "This setup requires Emacs version 25 or newer.")))
+;; (unless (>= emacs-major-version 25)
+;;   (error "This setup requires Emacs version 25 or newer."))
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -10,12 +9,14 @@
 ;;; [[Global Setup]]
 ;;;    [[Theme]]
 ;;;    [[Global Requires]]
+;;;    [[Autoloads]]
 ;;;    [[Global Minor Modes]]
 ;;;    [[Diminished Minor Modes]]
 ;;;    [[Global Settings]]
 ;;;    [[auto-mode-alist]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
+;;;    [[Emacs 24 Workarounds]]
 ;;;    [[Global Keybindings]]
 ;;; [[Mode/Package Specific Setup]]
 ;;;    [[Lisp Modes]]
@@ -82,6 +83,7 @@
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
     company                                       ; auto-completion
+    dash
     diff-hl                                       ; mark uncommited changes in the fringe
     diminish                                      ; Replace or hide minor modes in mode-line
     dockerfile-mode                               ; Major mode for editing Dockerfiles
@@ -109,6 +111,7 @@
     rainbow-delimiters
     rainbow-mode
     register-list                                 ; dired-like editing of Emacs registers
+    saveplace                                     ; save position of point when killing a buffer
     skewer-mode                                   ; live JS web dev for emacs
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
@@ -130,25 +133,25 @@
       cam/packages)
 
 (eval-when-compile
-  (mapc #'require cam/packages)
+  (mapc #'require cam/packages))
 
-  ;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
-  (defmacro declare-functions (file fn &rest more)
-    `(progn (declare-function ,fn ,file)
-            ,(when more
-               `(declare-functions ,file ,@more))))
-  (put #'declare-functions 'lisp-indent-function 1)
+;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
+(defmacro declare-functions (file fn &rest more)
+  `(progn (declare-function ,fn ,file)
+          ,(when more
+             `(declare-functions ,file ,@more))))
+(put #'declare-functions 'lisp-indent-function 1)
 
-  (declare-functions "auto-complete"        ac-complete-functions ac-complete-symbols ac-complete-variables)
-  (declare-functions "auto-complete-config" ac-emacs-lisp-mode-setup)
-  (declare-functions "cider-interaction"    cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer)
-  (declare-functions "cider-repl"           cider-repl-clear-buffer cider-repl-return cider-repl-set-ns)
-  (declare-functions "dired"                dired-hide-details-mode)
-  (declare-functions "loccur"               loccur)
-  (declare-functions "magit"                magit-get magit-get-current-branch magit-get-current-remote)
-  (declare-functions "org"                  org-bookmark-jump-unhide)
-  (declare-functions "paredit"              paredit-backward-delete paredit-doublequote paredit-newline paredit-open-round paredit-open-square paredit-forward-delete))
-
+(declare-functions "auto-complete"        ac-complete-functions ac-complete-symbols ac-complete-variables)
+(declare-functions "auto-complete-config" ac-emacs-lisp-mode-setup)
+(declare-functions "cider-interaction"    cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer)
+(declare-functions "cider-repl"           cider-repl-clear-buffer cider-repl-return cider-repl-set-ns)
+(declare-functions "dired"                dired-hide-details-mode)
+(declare-functions "loccur"               loccur)
+(declare-functions "magit"                magit-get magit-get-current-branch magit-get-current-remote)
+(declare-functions "org"                  org-bookmark-jump-unhide)
+(declare-functions "paredit"              paredit-backward-delete paredit-doublequote paredit-newline paredit-open-round paredit-open-square paredit-forward-delete)
+(declare-functions "skewer-mode"          skewer-ping)
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
@@ -204,8 +207,13 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
+(require 'saveplace)
 (eval-when-compile
   (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
+
+;;; [[<Autoloads]]
+
+(autoload #'describe-minor-mode "help")
 
 
 ;;; [[<Global Minor Modes]]
@@ -227,7 +235,7 @@
         ido-everywhere                            ; use ido for all buffer/file reading
         ido-vertical-mode
         rainbow-mode                              ; colorize strings like #224499
-        save-place-mode                           ; automatically save last place in files; reopen at that position
+        ;; save-place-mode                           ; automatically save last place in files; reopen at that position
         winner-mode))
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
@@ -289,6 +297,7 @@
       visible-bell t)
 
 (setq-default indent-tabs-mode nil                ; disable insertion of tabs
+              save-place t                        ; Automatically save place in each file
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 
@@ -335,6 +344,12 @@
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
 
 
+;;; [[<Emacs 24 Workarounds]]
+(unless (fboundp #'electric-pair-local-mode)
+  (fset #'electric-pair-local-mode #'electric-pair-mode))
+(unless (fboundp #'comint-clear-buffer)
+  (fset #'comint-clear-buffer (lambda ()))) ; no-op
+
 
 ;;; [[<Global Keybindings]]
 
@@ -362,6 +377,7 @@
         ("C-M-S-k"       . #'backward-kill-sexp)
         ("C-S-k"         . #'cam/backward-kill-line)
         ("C-c C-g"       . #'keyboard-quit)
+        ("C-h M"         . #'describe-minor-mode)
         ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-g"       . #'keyboard-quit)
@@ -491,6 +507,15 @@
   (dired-hide-details-mode 1))
 (add-hook 'dired-mode-hook #'cam/dired-mode-setup)
 
+(eval-after-load 'dired
+  '(progn (require 'dired-x)                      ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
+          (advice-add #'dired-smart-shell-command ; after running a shell command in dired revert the buffer right away
+              :after (lambda (&rest _)
+                       (revert-buffer)))))
+
+(setq dired-recursive-copies  'always
+      dired-recursive-deletes 'always)
+
 
 ;;; [[<Emacs Lisp]]
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
@@ -502,9 +527,8 @@
 (defun cam/emacs-lisp-save-switch-to-ielm-if-visible ()
   (interactive)
   (save-buffer)
-  (eval-buffer)
-  (when-let ((ielm-window (get-window-with-predicate (lambda (window)
-                                                       (string= (buffer-name (window-buffer window)) "*ielm*")))))
+  (-when-let ((ielm-window (get-window-with-predicate (lambda (window)
+                                                        (string= (buffer-name (window-buffer window)) "*ielm*")))))
     (select-window ielm-window)
     (comint-clear-buffer)
     (comint-kill-input)))
@@ -515,6 +539,7 @@
   (aggressive-indent-mode 1)
   (cam/suppress-messages
     (auto-complete-mode 1))
+  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
   (wiki-nav-mode 1)
@@ -522,12 +547,12 @@
   (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
   (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
 
-  (add-hook 'after-save-hook
-            (lambda ()
-              (when (buffer-file-name)
-                (byte-compile-file (buffer-file-name))))
-            nil
-            :local))
+  (when (string= (buffer-file-name) user-init-file)
+    (add-hook 'after-save-hook
+              (lambda ()
+                (byte-compile-file (buffer-file-name) :load))
+              nil
+              :local)))
 (add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
 
 (defun cam/ielm-mode-setup ()
@@ -535,6 +560,7 @@
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
   (ac-emacs-lisp-mode-setup)
+  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
 
@@ -592,7 +618,7 @@
 
 ;;; [[<js2-mode]]
 (defun cam/js2-mode-setup ()
-  (electric-pair-mode 1)
+  (electric-pair-local-mode 1)
   (rainbow-delimiters-mode 1)
   (skewer-mode 1)
   (ac-js2-mode 1)
@@ -610,9 +636,9 @@
   "Visit the current git branch's PR on GitHub."
   (interactive)
   (browse-url (concat "http://github.com/"
-                      (thread-last (magit-get "remote" (magit-get-current-remote) "url")
-                        (string-remove-suffix ".git")
-                        (string-remove-prefix "git@github.com:"))
+                      (->> (magit-get "remote" (magit-get-current-remote) "url")
+                           (string-remove-suffix ".git")
+                           (string-remove-prefix "git@github.com:"))
                       "/pull/"
                       (magit-get-current-branch))))
 
@@ -672,4 +698,5 @@
 
 (setq cam/has-loaded-init t)
 
-(message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0))
+(ignore-errors ; only seems to work on Emacs 25+
+  (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
