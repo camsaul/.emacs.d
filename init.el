@@ -9,6 +9,7 @@
 ;;; [[Global Setup]]
 ;;;    [[Theme]]
 ;;;    [[Global Requires]]
+;;;    [[Autoloads]]
 ;;;    [[Global Minor Modes]]
 ;;;    [[Diminished Minor Modes]]
 ;;;    [[Global Settings]]
@@ -210,6 +211,10 @@
 (eval-when-compile
   (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
 
+;;; [[<Autoloads]]
+
+(autoload #'describe-minor-mode "help")
+
 
 ;;; [[<Global Minor Modes]]
 
@@ -372,6 +377,7 @@
         ("C-M-S-k"       . #'backward-kill-sexp)
         ("C-S-k"         . #'cam/backward-kill-line)
         ("C-c C-g"       . #'keyboard-quit)
+        ("C-h M"         . #'describe-minor-mode)
         ("C-x C-b"       . #'helm-buffers-list)
         ("C-x C-f"       . #'helm-find-files)
         ("C-x C-g"       . #'keyboard-quit)
@@ -501,6 +507,15 @@
   (dired-hide-details-mode 1))
 (add-hook 'dired-mode-hook #'cam/dired-mode-setup)
 
+(eval-after-load 'dired
+  '(progn (require 'dired-x)                      ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
+          (advice-add #'dired-smart-shell-command :after
+            (lambda ()                            ; after running a shell command in dired revert the buffer right away
+              (revert-buffer)))))
+
+(setq dired-recursive-copies  'always
+      dired-recursive-deletes 'always)
+
 
 ;;; [[<Emacs Lisp]]
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
@@ -512,7 +527,6 @@
 (defun cam/emacs-lisp-save-switch-to-ielm-if-visible ()
   (interactive)
   (save-buffer)
-  (eval-buffer)
   (-when-let ((ielm-window (get-window-with-predicate (lambda (window)
                                                         (string= (buffer-name (window-buffer window)) "*ielm*")))))
     (select-window ielm-window)
@@ -525,6 +539,7 @@
   (aggressive-indent-mode 1)
   (cam/suppress-messages
     (auto-complete-mode 1))
+  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
   (wiki-nav-mode 1)
@@ -532,12 +547,12 @@
   (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
   (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
 
-  (add-hook 'after-save-hook
-            (lambda ()
-              (when (buffer-file-name)
-                (byte-compile-file (buffer-file-name))))
-            nil
-            :local))
+  (when (string= (buffer-file-name) user-init-file)
+    (add-hook 'after-save-hook
+              (lambda ()
+                (byte-compile-file (buffer-file-name) :load))
+              nil
+              :local)))
 (add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
 
 (defun cam/ielm-mode-setup ()
@@ -545,6 +560,7 @@
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
   (ac-emacs-lisp-mode-setup)
+  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
 
