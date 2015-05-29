@@ -37,6 +37,7 @@
         ace-jump-done
         ace-jump-mode
         beginning-of-buffer
+        cam/clojure-save-load-switch-to-cider
         end-of-buffer
         helm-M-x
         jump-to-register

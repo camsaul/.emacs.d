@@ -461,6 +461,7 @@
   (auto-complete-mode 1)
   (ac-cider-setup)
   (clj-refactor-mode 1)
+  (eldoc-mode 1)
   (require 'clojure-mode-extra-font-locking)
 
   (define-key clojure-mode-map
