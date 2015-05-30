@@ -83,6 +83,7 @@
     cider                                         ; Clojure Interactive Development Environment that Rocks
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
+    clojure-snippets                              ; Clojure snippets!
     company                                       ; auto-completion
     dash
     diff-hl                                       ; mark uncommited changes in the fringe
@@ -229,6 +230,7 @@
 (global-anzu-mode 1)                              ; show number of matches in mode line while searching
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
+(global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
 (global-undo-tree-mode 1)
 (guide-key-mode 1)                                ; Show list of completions for keystrokes after a delay
 (projectile-global-mode 1)
@@ -464,13 +466,17 @@
   (auto-complete-mode 1)
   (ac-cider-setup)
   (clj-refactor-mode 1)
-  (eldoc-mode 1)
   (require 'clojure-mode-extra-font-locking)
+
+  (nconc ac-sources '(ac-source-yasnippet))
 
   (define-key clojure-mode-map
     (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
   (cljr-add-keybindings-with-modifier "A-H-"))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
+
+(eval-after-load 'clojure
+  '(clojure-snippets-initialize))
 
 (defun cam/cider-repl-mode-setup ()
   (cam/lisp-mode-setup)
@@ -543,7 +549,6 @@
   (aggressive-indent-mode 1)
   (cam/suppress-messages
     (auto-complete-mode 1))
-  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
   (wiki-nav-mode 1)
@@ -564,7 +569,6 @@
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
   (ac-emacs-lisp-mode-setup)
-  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
 
