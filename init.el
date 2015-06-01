@@ -404,6 +404,7 @@
         ("M-j"           . #'cam/join-next-line)
         ("M-x"           . #'helm-M-x)
         ("M-z"           . #'ace-jump-zap-up-to-char)
+        ("M-/"           . #'hippie-expand)       ; Instead of dabbrev-expand
         ("s-Z"           . #'undo-tree-redo)
         ("s-f"           . #'ftf-grepsource)
         ("s-o"           . #'ftf-find-file)))
