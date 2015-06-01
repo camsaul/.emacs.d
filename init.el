@@ -40,7 +40,7 @@
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
-(setq gc-cons-threshold (* 128 1024 1024)          ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
+(setq gc-cons-threshold (* 128 1024 1024)         ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
 (defvar cam/has-loaded-init nil
@@ -470,7 +470,7 @@
   (clj-refactor-mode 1)
   (require 'clojure-mode-extra-font-locking)
 
-  (nconc ac-sources '(ac-source-yasnippet))
+  (add-to-list 'ac-sources 'ac-source-yasnippet)
 
   (define-key clojure-mode-map
     (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
