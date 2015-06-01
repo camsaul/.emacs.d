@@ -287,6 +287,7 @@
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       garbage-collection-messages t               ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
+      next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
       ns-right-option-modifier 'alt
