@@ -634,11 +634,12 @@
   (ac-js2-mode 1)
 
   (unless (skewer-ping)
-    (run-skewer))
-
-  (define-key js2-mode-map
-    (kbd "C-j") #'newline))                       ; instead of electrict-newline-maybe-indent, which doesn't indent
+    (run-skewer)))
 (add-hook 'js2-mode-hook #'cam/js2-mode-setup)
+
+(eval-after-load 'js2-mode
+  '(progn (define-key js2-mode-map (kbd "C-j") #'newline) ; instead of electrict-newline-maybe-indent, which doesn't indent
+          (define-key js2-mode-map (kbd "M-j") nil)))     ; keep #'cam/join-next-line instead of whatever weird js2-mode fn
 
 
 ;;; [[<Magit]]
