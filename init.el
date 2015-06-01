@@ -34,12 +34,13 @@
 ;;;    [[Org]]
 ;;;    [[Paredit]]
 ;;;    [[Web Mode]]
+;;;    [[YASnippet]]
 ;;; [[Final Setup]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
-(setq gc-cons-threshold (* 64 1024 1024)          ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 64MB (too much higher and GC becomes slooowww)
+(setq gc-cons-threshold (* 128 1024 1024)          ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
 (defvar cam/has-loaded-init nil
@@ -82,6 +83,7 @@
     cider                                         ; Clojure Interactive Development Environment that Rocks
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
+    clojure-snippets                              ; Clojure snippets!
     company                                       ; auto-completion
     dash
     diff-hl                                       ; mark uncommited changes in the fringe
@@ -117,7 +119,8 @@
     undo-tree
     web-mode                                      ; major-mode for editing web templates
     wiki-nav                                      ; Navigate a file using [[WikiStrings]]
-    yaml-mode))
+    yaml-mode
+    yasnippet))                                   ; OK, we will use snippets
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents nil)
@@ -154,6 +157,7 @@
 (declare-functions "paredit"              paredit-backward-delete paredit-doublequote paredit-newline paredit-open-round paredit-open-square paredit-forward-delete)
 (declare-functions "skewer-mode"          skewer-ping)
 
+
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
 ;;; [[<Theme]]
@@ -164,7 +168,7 @@
 (unless cam/has-loaded-init
   (moe-dark))
 
-(defconst cam/mode-line-color "#fce94f")
+(defconst cam/mode-line-color "#FCE94F")
 
 (defun cam/setup-frame ()
   (set-frame-font "Source Code Pro-12")
@@ -208,7 +212,6 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
-(require 'saveplace)
 (eval-when-compile
   (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
 
@@ -223,21 +226,21 @@
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
 
 ;; Modes to enable
-(mapc (lambda (mode)
-        (funcall mode 1))
-      '(delete-selection-mode                     ; typing will delete selected text
-        global-anzu-mode                          ; show number of matches in mode-line while searching
-        global-auto-revert-mode                   ; automatically reload files when they change on disk
-        global-diff-hl-mode
-        global-undo-tree-mode
-        guide-key-mode
-        projectile-global-mode
-        ido-mode
-        ido-everywhere                            ; use ido for all buffer/file reading
-        ido-vertical-mode
-        rainbow-mode                              ; colorize strings like #224499
-        ;; save-place-mode                           ; automatically save last place in files; reopen at that position
-        winner-mode))
+(delete-selection-mode 1)                         ; typing will delete selected text
+(global-anzu-mode 1)                              ; show number of matches in mode line while searching
+(global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
+(global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
+(global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
+(global-undo-tree-mode 1)
+(guide-key-mode 1)                                ; Show list of completions for keystrokes after a delay
+(projectile-global-mode 1)
+(ido-mode 1)
+(ido-everywhere 1)
+(ido-vertical-mode 1)
+(rainbow-mode 1)                                  ; Colorize strings like #FCE94F
+(save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
+(winner-mode 1)
+(yas-global-mode 1)                               ; Snippets. ~400 ms !
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda ()
@@ -282,7 +285,9 @@
                    (concat user-emacs-directory
                            "custom.el"))
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
+      garbage-collection-messages t               ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
+      next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
       ns-right-option-modifier 'alt
@@ -462,13 +467,17 @@
   (auto-complete-mode 1)
   (ac-cider-setup)
   (clj-refactor-mode 1)
-  (eldoc-mode 1)
   (require 'clojure-mode-extra-font-locking)
+
+  (nconc ac-sources '(ac-source-yasnippet))
 
   (define-key clojure-mode-map
     (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
   (cljr-add-keybindings-with-modifier "A-H-"))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
+
+(eval-after-load 'clojure
+  '(clojure-snippets-initialize))
 
 (defun cam/cider-repl-mode-setup ()
   (cam/lisp-mode-setup)
@@ -541,7 +550,6 @@
   (aggressive-indent-mode 1)
   (cam/suppress-messages
     (auto-complete-mode 1))
-  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
   (wiki-nav-mode 1)
@@ -562,7 +570,6 @@
   (aggressive-indent-mode 1)
   (auto-complete-mode 1)
   (ac-emacs-lisp-mode-setup)
-  (eldoc-mode 1)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
 
@@ -681,6 +688,10 @@
   (define-key web-mode-map
     (kbd "C-j") #'newline))                       ; instead of electric-newline-and-maybe-indent which doesn't indent :/
 (add-hook 'web-mode-hook #'cam/web-mode-setup)
+
+
+;;; [[<YASnippet]]
+(setq yas-verbosity 0)                            ; Don't need to see a message every time a snippet file is loaded
 
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
