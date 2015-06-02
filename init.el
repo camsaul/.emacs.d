@@ -715,3 +715,15 @@
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
+
+
+;;; ---------------------------------------- EXPERIMENTAL STUFF ----------------------------------------
+
+(defun cam/insert-spaces-to-goal-column ()
+  (interactive)
+  (unless goal-column
+    (setq-local goal-column (string-to-number (read-string "Goal column: "))))
+  (while (> goal-column (current-column))
+    (insert " ")))
+
+(global-set-key (kbd "s-;") #'cam/insert-spaces-to-goal-column)
