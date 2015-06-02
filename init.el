@@ -664,10 +664,24 @@
 
 ;;; [[<Org]]
 (defun cam/org-mode-setup ()
-  (setq-local truncate-lines nil))
+  (setq-local truncate-lines nil)
+
+  (define-key org-mode-map (kbd "C-c c") #'cam/org-insert-code-block))
 (add-hook 'org-mode-hook #'cam/org-mode-setup)
 
 (setq org-support-shift-select nil)
+
+(defun cam/org-insert-code-block ()
+  "Insert a new Org code block and start editing it."
+  (interactive)
+  (org-return-indent)
+  (insert "#+BEGIN_SRC emacs-lisp")
+  (org-return-indent)
+  (insert "#+END_SRC")
+  (forward-line -1)
+  (org-end-of-line)
+  (org-return-indent)
+  (org-edit-src-code))
 
 
 ;;; [[<Paredit]]

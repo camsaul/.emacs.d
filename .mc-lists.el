@@ -15,6 +15,7 @@
         kill-region
         kill-sexp
         kmacro-end-or-call-macro
+        org-self-insert-command
         paredit-backslash
         paredit-backward
         paredit-close-curly

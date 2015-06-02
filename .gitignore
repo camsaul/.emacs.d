@@ -1,6 +1,8 @@
 *.elc
 \#*\#
 ac-comphist.dat
+auto-save-list/
+backups
 custom.el
 elpa/
 eshell/
