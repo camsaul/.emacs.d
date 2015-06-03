@@ -140,10 +140,10 @@
 
 ;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
 (defmacro declare-functions (file fn &rest more)
+  (declare (indent 1))
   `(progn (declare-function ,fn ,file)
           ,(when more
              `(declare-functions ,file ,@more))))
-(put #'declare-functions 'lisp-indent-function 1)
 
 (declare-functions "auto-complete"        ac-complete-functions ac-complete-symbols ac-complete-variables)
 (declare-functions "auto-complete-config" ac-emacs-lisp-mode-setup)
@@ -168,16 +168,16 @@
 (unless cam/has-loaded-init
   (moe-dark))
 
-(defconst cam/mode-line-color "#FCE94F")
+;; (defconst cam/mode-line-color "#FCE94F")
 
 (defun cam/setup-frame ()
   (set-frame-font "Source Code Pro-12")
 
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
 
-  ;; (moe-theme-random-color)
+  (moe-theme-random-color)
   (set-face-foreground 'mode-line "#111111")
-  (set-face-background 'mode-line cam/mode-line-color)
+  ;; (set-face-background 'mode-line cam/mode-line-color)
   (set-cursor-color (face-background 'mode-line))
   (set-face-background 'mode-line-buffer-id nil)) ; Don't show a blue background behind buffer name on modeline for deselected frames
 (advice-add #'make-frame-command :after #'cam/setup-frame)
@@ -335,9 +335,9 @@
   (kill-line 0))
 
 (defmacro cam/suppress-messages (&rest body)
+  (declare (indent 0))
   `(cl-letf (((symbol-function 'message) (lambda (&rest _))))
      ,@body))
-(put #'cam/suppress-messages 'lisp-indent-function 0)
 
 
 ;;; [[<Global Hooks]]
@@ -577,10 +577,11 @@
   (when (fboundp #'dash-enable-font-lock)
     (dash-enable-font-lock))
 
-  (define-key inferior-emacs-lisp-mode-map (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp)
-
   (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
+
+(eval-after-load 'ielm
+  '(define-key inferior-emacs-lisp-mode-map (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp))
 
 ;; Indentation <3
 (eval-after-load 'nadvice
