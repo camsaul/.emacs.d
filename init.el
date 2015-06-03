@@ -577,6 +577,8 @@
   (when (fboundp #'dash-enable-font-lock)
     (dash-enable-font-lock))
 
+  (define-key inferior-emacs-lisp-mode-map (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp)
+
   (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
 
