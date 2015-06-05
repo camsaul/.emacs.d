@@ -48,11 +48,10 @@
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
-(mapc (lambda (mode)
-        (when (boundp mode)
-          (funcall mode -1)))
-      '(scroll-bar-mode
-        tool-bar-mode))
+(dolist (mode '(scroll-bar-mode
+                tool-bar-mode))
+  (when (boundp mode)
+    (funcall mode -1)))
 
 (unless (eq window-system 'ns)
   (menu-bar-mode -1))
@@ -124,16 +123,15 @@
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents nil)
-(mapc (lambda (package)
-        (unless (package-installed-p package)
-          (unless cam/has-refreshed-package-contents
-            (ignore-errors
-              (package-refresh-contents))
-            (setq cam/has-refreshed-package-contents t))
-          (condition-case err
-              (package-install package)
-            (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
-      cam/packages)
+(dolist (package cam/packages)
+  (unless (package-installed-p package)
+    (unless cam/has-refreshed-package-contents
+      (ignore-errors
+        (package-refresh-contents))
+      (setq cam/has-refreshed-package-contents t))
+    (condition-case err
+        (package-install package)
+      (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
 
 (eval-when-compile
   (mapc #'require cam/packages))
@@ -258,12 +256,11 @@
         undo-tree-mode))
 
 ;; for minor modes that get selectively loaded add a hook to diminish them after they're enabled
-(mapc (lambda (hook.mode)
-        (add-hook (car hook.mode) (lambda ()
-                                    (diminish (cdr hook.mode)))))
-      '((button-lock-mode-hook           . button-lock-mode)
-        (highlight-parentheses-mode-hook . highlight-parentheses-mode)
-        (wiki-nav-mode-hook              . wiki-nav-mode)))
+(dolist (hook.mode '((button-lock-mode-hook           . button-lock-mode)
+                     (highlight-parentheses-mode-hook . highlight-parentheses-mode)
+                     (wiki-nav-mode-hook              . wiki-nav-mode)))
+  (add-hook (car hook.mode) (lambda ()
+                              (diminish (cdr hook.mode)))))
 
 
 ;;; [[<Global Settings]]
@@ -309,7 +306,7 @@
 
 ;;; [[<auto-mode-alist]]
 ;;; Tell Emacs how to open files with certain extensions
-(mapc (apply-partially #'add-to-list 'auto-mode-alist)
+(mapc(apply-partially #'add-to-list 'auto-mode-alist)
       '(("\.html$" . web-mode)
         ("\.js$"   . js2-mode)))
 
@@ -513,11 +510,10 @@
 
 (defun cam/cider-repl-messages-buffer ()
   (let ((messages-buffer nil))
-    (mapc (lambda (buf)
-            (unless messages-buffer
-              (when (string-match-p "^\*nrepl-server .*\*$" (buffer-name buf))
-                (setq messages-buffer buf))))
-          (buffer-list))
+    (dolist (buf (buffer-list))
+      (unless messages-buffer
+        (when (string-match-p "^\*nrepl-server .*\*$" (buffer-name buf))
+          (setq messages-buffer buf))))
     messages-buffer))
 
 
