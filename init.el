@@ -339,6 +339,18 @@
   `(cl-letf (((symbol-function 'message) (lambda (&rest _))))
      ,@body))
 
+(defun cam/windmove-left-or-other-frame ()
+  (interactive)
+  (condition-case _
+      (call-interactively #'windmove-left)
+    (error (call-interactively #'other-frame))))
+
+(defun cam/windmove-right-or-other-frame ()
+  (interactive)
+  (condition-case _
+      (call-interactively #'windmove-right)
+    (error (call-interactively #'other-frame))))
+
 
 ;;; [[<Global Hooks]]
 
@@ -364,8 +376,8 @@
       '(("<A-escape>"    . #'helm-mark-ring)
         ("<A-return>"    . #'wiki-nav-ido)
         ("<C-M-s-down>"  . #'windmove-down)
-        ("<C-M-s-left>"  . #'windmove-left)
-        ("<C-M-s-right>" . #'windmove-right)
+        ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
+        ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)
         ("<C-M-s-up>"    . #'windmove-up)
         ("<H-SPC>"       . #'mc/mark-all-like-this)
         ("<H-escape>"    . #'ace-jump-line-mode)
