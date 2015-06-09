@@ -664,9 +664,16 @@
                       "/pull/"
                       (magit-get-current-branch))))
 
+(defun cam/magit-shell-command ()
+  "Replacement for `shell-command' in `magit-status-mode'.
+Calls `magit-refresh' after the command finishes."
+  (interactive)
+  (call-interactively #'shell-command)
+  (call-interactively #'magit-refresh))
+
 (defun cam/magit-status-mode-setup ()
-  (define-key magit-status-mode-map
-    (kbd "V") #'cam/magit-visit-pull-request-url))
+  (define-key magit-status-mode-map (kbd "M-!") #'cam/magit-shell-command)
+  (define-key magit-status-mode-map (kbd "V")   #'cam/magit-visit-pull-request-url))
 (add-hook 'magit-status-mode-hook #'cam/magit-status-mode-setup)
 
 (setq magit-auto-revert-mode-lighter     ""
