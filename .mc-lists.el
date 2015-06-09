@@ -5,6 +5,7 @@
       '(
         backward-sexp
         cam/join-next-line
+        cljr-slash
         clojure-toggle-keyword-string
         electric-newline-and-maybe-indent
         electric-pair-delete-pair
@@ -40,6 +41,7 @@
         ace-jump-mode
         beginning-of-buffer
         cam/clojure-save-load-switch-to-cider
+        cider-refresh
         end-of-buffer
         helm-M-x
         jump-to-register
