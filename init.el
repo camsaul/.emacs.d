@@ -137,11 +137,11 @@
   (mapc #'require cam/packages))
 
 ;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
-(defmacro declare-functions (file fn &rest more)
+(defmacro declare-functions (file &rest funs)
   (declare (indent 1))
-  `(progn (declare-function ,fn ,file)
-          ,(when more
-             `(declare-functions ,file ,@more))))
+  `(progn ,@(mapcar (lambda (fun)
+                      `(declare-function ,fun ,file))
+                    funs)))
 
 (declare-functions "auto-complete"        ac-complete-functions ac-complete-symbols ac-complete-variables)
 (declare-functions "auto-complete-config" ac-emacs-lisp-mode-setup)
