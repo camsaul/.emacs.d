@@ -363,7 +363,8 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 
 (defun cam/javadocs-search (search-term)
   "Open a browser window and search javadocs.org for SEARCH-TERM."
-  (interactive (list (read-string "Search javadocs.org for: " (string-remove-suffix "." (symbol-name (sexp-at-point))))))
+  (interactive (list (read-string "Search javadocs.org for: " (when (symbol-at-point)
+                                                                (string-remove-suffix "." (symbol-name (symbol-at-point)))))))
   (browse-url (format "http://javadocs.org/%s" search-term)))
 
 
