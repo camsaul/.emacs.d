@@ -350,7 +350,7 @@
 
 (defun cam/javadocs-search (search-term)
   "Open a browser window and search javadocs.org for SEARCH-TERM."
-  (interactive (list (read-string "Search javadocs.org for: " (symbol-name (sexp-at-point)))))
+  (interactive (list (read-string "Search javadocs.org for: " (string-remove-suffix "." (symbol-name (sexp-at-point))))))
   (browse-url (format "http://javadocs.org/%s" search-term)))
 
 
