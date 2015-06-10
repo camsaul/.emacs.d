@@ -348,6 +348,19 @@
       (call-interactively #'windmove-right)
     (error (call-interactively #'other-frame))))
 
+(defvar cam/insert-spaces-goal-col nil)
+(defun cam/insert-spaces-to-goal-column (arg)
+  "Called without a prefix arg, insert spaces until we reach `cam/insert-spaces-goal-col'.
+Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point."
+  (interactive "P")
+  (if arg (progn (setq-local cam/insert-spaces-goal-col (current-column))
+                 (message "Insert spaces to column %d." (current-column)))
+    (progn
+      (unless cam/insert-spaces-goal-col
+        (error "Don't know where to insert spaces to! Call this function with a prefix arg to set it."))
+      (while (> goal-column (current-column))
+        (insert " ")))))
+
 (defun cam/javadocs-search (search-term)
   "Open a browser window and search javadocs.org for SEARCH-TERM."
   (interactive (list (read-string "Search javadocs.org for: " (string-remove-suffix "." (symbol-name (sexp-at-point))))))
@@ -418,6 +431,7 @@
                             ("M-x"           . #'helm-M-x)
                             ("M-z"           . #'ace-jump-zap-up-to-char)
                             ("M-/"           . #'hippie-expand)       ; Instead of dabbrev-expand
+                            ("s-;"           . #'cam/insert-spaces-to-goal-column)
                             ("s-Z"           . #'undo-tree-redo)
                             ("s-f"           . #'ftf-grepsource)
                             ("s-o"           . #'ftf-find-file)))
@@ -754,15 +768,3 @@ Calls `magit-refresh' after the command finishes."
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
-
-
-;;; ---------------------------------------- EXPERIMENTAL STUFF ----------------------------------------
-
-(defun cam/insert-spaces-to-goal-column ()
-  (interactive)
-  (unless goal-column
-    (setq-local goal-column (string-to-number (read-string "Goal column: "))))
-  (while (> goal-column (current-column))
-    (insert " ")))
-
-(global-set-key (kbd "s-;") #'cam/insert-spaces-to-goal-column)
