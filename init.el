@@ -361,10 +361,27 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
       (while (> goal-column (current-column))
         (insert " ")))))
 
+(defun cam/string-remove-text-properties (string)
+  "Return a copy of STRING with all of its text properties removed."
+  (let ((s (copy-seq string)))
+    (set-text-properties 0 (length s) nil s)
+    s))
+
+(defun cam/instant-clojure-cheatsheet-search (search-term)
+  "Open a browser window and search Instant Clojure Cheatsheet for SEARCH-TERM."
+  (interactive (list (read-string "Search Instant Clojure Cheatsheet for: " (when (symbol-at-point)
+                                                                              (-> (symbol-at-point)
+                                                                                  symbol-name
+                                                                                  cam/string-remove-text-properties)))))
+  (browse-url (format "http://localhost:13370/#?q=%s" search-term)))
+
 (defun cam/javadocs-search (search-term)
   "Open a browser window and search javadocs.org for SEARCH-TERM."
   (interactive (list (read-string "Search javadocs.org for: " (when (symbol-at-point)
-                                                                (string-remove-suffix "." (symbol-name (symbol-at-point)))))))
+                                                                (->> (symbol-at-point)
+                                                                     symbol-name
+                                                                     cam/string-remove-text-properties
+                                                                     (string-remove-suffix "."))))))
   (browse-url (format "http://javadocs.org/%s" search-term)))
 
 
@@ -401,6 +418,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                             ("<f11> a"       . #'aggressive-indent-mode)
                             ("<f11> p"       . #'paredit-mode)
                             ("<f11> w"       . #'whitespace-mode)
+                            ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
                             ("<f12> j"       . #'cam/javadocs-search)
                             ("A-;"           . #'cam/loccur)
                             ("A-r l"         . #'rotate-layout)
@@ -499,34 +517,34 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (clj-refactor-mode 1)
   (require 'clojure-mode-extra-font-locking)
 
-  (add-to-list 'ac-sources 'ac-source-yasnippet)
-
-  (define-key clojure-mode-map
-    (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
-  (cljr-add-keybindings-with-modifier "A-H-"))
+  (add-to-list 'ac-sources 'ac-source-yasnippet))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
 
 (eval-after-load 'clojure
-  '(clojure-snippets-initialize))
+  '(progn
+     (clojure-snippets-initialize)
+
+     (define-key clojure-mode-map (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
+
+     (cljr-add-keybindings-with-modifier "A-H-")))
 
 (defun cam/cider-repl-mode-setup ()
   (cam/lisp-mode-setup)
   (auto-complete-mode 1)
   (ac-cider-setup)
-  (aggressive-indent-mode 1)
-
-  (setq cider-auto-select-error-buffer nil
-        cider-repl-use-pretty-printing t)
-
-  (define-key cider-repl-mode-map
-    (kbd "M-RET") #'cider-switch-to-last-clojure-buffer))
+  (aggressive-indent-mode 1))
 (add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
 
 ;; Delete trailing whitespace that may have been introduced by auto-complete
 (eval-after-load 'cider
-  '(advice-add #'cider-repl-return :before (lambda ()
-                                             (interactive)
-                                             (call-interactively #'delete-trailing-whitespace))))
+  '(progn (advice-add #'cider-repl-return :before (lambda ()
+                                                    (interactive)
+                                                    (call-interactively #'delete-trailing-whitespace)))
+
+          (define-key cider-repl-mode-map (kbd "M-RET") #'cider-switch-to-last-clojure-buffer)))
+
+(setq cider-auto-select-error-buffer nil
+      cider-repl-use-pretty-printing t)
 
 (defun cam/cider-repl-messages-buffer ()
   (let ((messages-buffer nil))
