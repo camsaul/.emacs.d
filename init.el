@@ -348,6 +348,11 @@
       (call-interactively #'windmove-right)
     (error (call-interactively #'other-frame))))
 
+(defun cam/javadocs-search (search-term)
+  "Open a browser window and search javadocs.org for SEARCH-TERM."
+  (interactive (list (read-string "Search javadocs.org for: " (symbol-name (sexp-at-point)))))
+  (browse-url (format "http://javadocs.org/%s" search-term)))
+
 
 ;;; [[<Global Hooks]]
 
@@ -368,55 +373,55 @@
 
 ;;; [[<Global Keybindings]]
 
-(mapc (lambda (key-command-pair)
-        (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
-      '(("<A-escape>"    . #'helm-mark-ring)
-        ("<A-return>"    . #'wiki-nav-ido)
-        ("<C-M-s-down>"  . #'windmove-down)
-        ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
-        ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)
-        ("<C-M-s-up>"    . #'windmove-up)
-        ("<H-SPC>"       . #'mc/mark-all-like-this)
-        ("<H-escape>"    . #'ace-jump-line-mode)
-        ("<H-return>"    . #'mc/mark-next-lines)
-        ("<escape>"      . #'ace-jump-mode)
-        ("<f11>"         . nil)                   ; Use <f11> <key> for toggling various minor modes
-        ("<f11> a"       . #'aggressive-indent-mode)
-        ("<f11> p"       . #'paredit-mode)
-        ("<f11> w"       . #'whitespace-mode)
-        ("A-;"           . #'cam/loccur)
-        ("A-r l"         . #'rotate-layout)
-        ("A-r w"         . #'rotate-window)
-        ("C-="           . #'magit-status)
-        ("C-M-y"         . #'helm-show-kill-ring)
-        ("C-M-S-k"       . #'backward-kill-sexp)
-        ("C-S-k"         . #'cam/backward-kill-line)
-        ("C-c C-g"       . #'keyboard-quit)
-        ("C-h M"         . #'describe-minor-mode)
-        ("C-x C-b"       . #'helm-buffers-list)
-        ("C-x C-f"       . #'helm-find-files)
-        ("C-x C-g"       . #'keyboard-quit)
-        ("C-x C-r"       . #'helm-recentf)
-        ("C-x C-z"       . nil)                   ; instead of suspend-frame
-        ("C-x b"         . #'helm-buffers-list)
-        ("C-x C-d"       . #'dired)               ; instead of ido-list-directory
-        ("C-x f"         . #'helm-find-files)
-        ("C-x k"         . #'kill-this-buffer)
-        ("C-x r r"       . #'register-list)       ; replaces copy-rectangle-to-register
-        ("C-z"           . #'undo)
-        ("ESC <up>"      . #'windmove-up)
-        ("H-M-a"         . #'mc/skip-to-previous-like-this)
-        ("H-M-e"         . #'mc/skip-to-next-like-this)
-        ("H-a"           . #'mc/mark-previous-like-this)
-        ("H-e"           . #'mc/mark-next-like-this)
-        ("M-g"           . #'goto-line)           ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
-        ("M-j"           . #'cam/join-next-line)
-        ("M-x"           . #'helm-M-x)
-        ("M-z"           . #'ace-jump-zap-up-to-char)
-        ("M-/"           . #'hippie-expand)       ; Instead of dabbrev-expand
-        ("s-Z"           . #'undo-tree-redo)
-        ("s-f"           . #'ftf-grepsource)
-        ("s-o"           . #'ftf-find-file)))
+(dolist (key-command-pair '(("<A-escape>"    . #'helm-mark-ring)
+                            ("<A-return>"    . #'wiki-nav-ido)
+                            ("<C-M-s-down>"  . #'windmove-down)
+                            ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
+                            ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)
+                            ("<C-M-s-up>"    . #'windmove-up)
+                            ("<H-SPC>"       . #'mc/mark-all-like-this)
+                            ("<H-escape>"    . #'ace-jump-line-mode)
+                            ("<H-return>"    . #'mc/mark-next-lines)
+                            ("<escape>"      . #'ace-jump-mode)
+                            ("<f11>"         . nil)                   ; Use <f11> <key> for toggling various minor modes
+                            ("<f11> a"       . #'aggressive-indent-mode)
+                            ("<f11> p"       . #'paredit-mode)
+                            ("<f11> w"       . #'whitespace-mode)
+                            ("<f12> j"       . #'cam/javadocs-search)
+                            ("A-;"           . #'cam/loccur)
+                            ("A-r l"         . #'rotate-layout)
+                            ("A-r w"         . #'rotate-window)
+                            ("C-="           . #'magit-status)
+                            ("C-M-y"         . #'helm-show-kill-ring)
+                            ("C-M-S-k"       . #'backward-kill-sexp)
+                            ("C-S-k"         . #'cam/backward-kill-line)
+                            ("C-c C-g"       . #'keyboard-quit)
+                            ("C-h M"         . #'describe-minor-mode)
+                            ("C-x C-b"       . #'helm-buffers-list)
+                            ("C-x C-f"       . #'helm-find-files)
+                            ("C-x C-g"       . #'keyboard-quit)
+                            ("C-x C-r"       . #'helm-recentf)
+                            ("C-x C-z"       . nil)                   ; instead of suspend-frame
+                            ("C-x b"         . #'helm-buffers-list)
+                            ("C-x C-d"       . #'dired)               ; instead of ido-list-directory
+                            ("C-x f"         . #'helm-find-files)
+                            ("C-x k"         . #'kill-this-buffer)
+                            ("C-x r r"       . #'register-list)       ; replaces copy-rectangle-to-register
+                            ("C-z"           . #'undo)
+                            ("ESC <up>"      . #'windmove-up)
+                            ("H-M-a"         . #'mc/skip-to-previous-like-this)
+                            ("H-M-e"         . #'mc/skip-to-next-like-this)
+                            ("H-a"           . #'mc/mark-previous-like-this)
+                            ("H-e"           . #'mc/mark-next-like-this)
+                            ("M-g"           . #'goto-line)           ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
+                            ("M-j"           . #'cam/join-next-line)
+                            ("M-x"           . #'helm-M-x)
+                            ("M-z"           . #'ace-jump-zap-up-to-char)
+                            ("M-/"           . #'hippie-expand)       ; Instead of dabbrev-expand
+                            ("s-Z"           . #'undo-tree-redo)
+                            ("s-f"           . #'ftf-grepsource)
+                            ("s-o"           . #'ftf-find-file)))
+  (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
 
 
 ;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
@@ -588,6 +593,8 @@
   (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
 
+(eval-when-compile
+  (require 'ielm))
 (eval-after-load 'ielm
   '(define-key inferior-emacs-lisp-mode-map (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp))
 
