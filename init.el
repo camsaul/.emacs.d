@@ -358,7 +358,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
     (progn
       (unless cam/insert-spaces-goal-col
         (error "Don't know where to insert spaces to! Call this function with a prefix arg to set it."))
-      (while (> goal-column (current-column))
+      (while (> cam/insert-spaces-goal-col (current-column))
         (insert " ")))))
 
 (defun cam/string-remove-text-properties (string)
