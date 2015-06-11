@@ -523,7 +523,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (add-to-list 'ac-sources 'ac-source-yasnippet))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
 
-(eval-after-load 'clojure
+(eval-after-load 'clojure-mode
   '(progn
      (clojure-snippets-initialize)
 
