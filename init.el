@@ -358,8 +358,9 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
     (progn
       (unless cam/insert-spaces-goal-col
         (error "Don't know where to insert spaces to! Call this function with a prefix arg to set it."))
-      (while (> cam/insert-spaces-goal-col (current-column))
-        (insert " ")))))
+      (let ((num-spaces (- cam/insert-spaces-goal-col (current-column))))
+        (if (< num-spaces 0) (delete-char num-spaces)
+          (insert-char ?  num-spaces))))))
 
 (defun cam/string-remove-text-properties (string)
   "Return a copy of STRING with all of its text properties removed."
@@ -787,3 +788,37 @@ Calls `magit-refresh' after the command finishes."
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
+
+
+;; ---------------------------------------- Experimental ----------------------------------------
+(defun cam/get-max-col (&optional max)
+  (save-excursion
+    (condition-case _
+        (progn
+          (backward-sexp 2)                          ; Move from end of val to beginning of key
+          (forward-sexp)                             ; Move to end of key
+          (let ((col (+ (current-column) 1)))        ; val should start one space after key
+            (backward-sexp)                          ; Move back to start of key
+            (cam/get-max-col (max (or max 0) col)))) ; recurse until error is thrown when we reach the first key
+      (error (message "Max column is %d" max)
+             max))))
+
+(defun cam/align-map-args-to-column ()
+  (save-excursion
+    (ignore-errors
+      (backward-sexp)                                ; move to start of val
+      (cam/insert-spaces-to-goal-column nil)         ; insert spaces
+      (backward-sexp)                                ; move to start of key
+      (cam/align-map-args-to-column))))              ; recurse until error is thrown when we reach the first sexp
+
+(defun cam/align-map ()
+  (interactive)
+  (save-excursion
+    (when (paredit-in-string-p)                      ; If we're in a string jump out so we don't insert a } when calling (paredit-close-curly)
+      (paredit-forward-up))
+    (paredit-close-curly)                            ; jump to char after closing }
+    (backward-char)                                  ; move back onto } -- end of last sexp
+    (setq-local cam/insert-spaces-goal-col (cam/get-max-col))
+    (cam/align-map-args-to-column)))
+
+(global-set-key (kbd "C-s-;") #'cam/align-map)
