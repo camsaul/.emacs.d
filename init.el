@@ -150,9 +150,11 @@
 (declare-functions "dired"                dired-hide-details-mode)
 (declare-functions "dired-x"              dired-smart-shell-command)
 (declare-functions "loccur"               loccur)
-(declare-functions "magit"                magit-get magit-get-current-branch magit-get-current-remote)
-(declare-functions "org"                  org-bookmark-jump-unhide)
-(declare-functions "paredit"              paredit-backward-delete paredit-doublequote paredit-newline paredit-open-round paredit-open-square paredit-forward-delete)
+(declare-functions "magit"                magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
+(declare-functions "org"                  org-bookmark-jump-unhide org-end-of-line org-return-indent)
+(declare-functions "org-src"              org-edit-src-code)
+(declare-functions "paredit"              paredit-backward-delete paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p
+                                          paredit-newline paredit-open-round paredit-open-square)
 (declare-functions "skewer-mode"          skewer-ping)
 
 
