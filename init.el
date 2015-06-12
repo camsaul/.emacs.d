@@ -6,6 +6,7 @@
 ;;; TOC:
 ;;; [[Initial Setup]]
 ;;; [[Package Setup]]
+;;;    [[Function Declarations]]
 ;;; [[Global Setup]]
 ;;;    [[Theme]]
 ;;;    [[Global Requires]]
@@ -79,6 +80,7 @@
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
     anzu                                          ; Show number of matches in mode-line while searching
     auto-complete                                 ; auto-completion
+    auto-yasnippet                                ; quickly create disposable yasnippets
     cider                                         ; Clojure Interactive Development Environment that Rocks
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
@@ -143,6 +145,10 @@
                       `(declare-function ,fun ,file))
                     funs)))
 
+
+;;; [[<Function Declarations]]
+
+(declare-functions "auto-yasnippet"       aya-create aya-expand)
 (declare-functions "auto-complete"        ac-complete-functions ac-complete-symbols ac-complete-variables)
 (declare-functions "auto-complete-config" ac-emacs-lisp-mode-setup)
 (declare-functions "cider-interaction"    cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer)
@@ -214,6 +220,7 @@
 (require 'editorconfig)
 (eval-when-compile
   (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
+
 
 ;;; [[<Autoloads]]
 
@@ -767,6 +774,11 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<YASnippet]]
+(eval-after-load 'yasnippet
+  '(progn
+     (define-key yas-minor-mode-map (kbd "H-w") #'aya-create)
+     (define-key yas-minor-mode-map (kbd "H-y") #'aya-expand)))
+
 (setq yas-verbosity 0)                            ; Don't need to see a message every time a snippet file is loaded
 
 
