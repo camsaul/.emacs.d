@@ -835,3 +835,16 @@ Calls `magit-refresh' after the command finishes."
     (cam/align-map-args-to-column)))
 
 (global-set-key (kbd "C-s-;") #'cam/align-map)
+
+
+;; New fake "Fn" modifier -- F-
+;; just translate "F-" to "C-M-S-s-"
+;;; Map the Fn key or Application Key in Karabiner
+(advice-add #'kbd :around
+  (lambda (f key)
+    (funcall f (or (when (and (stringp key)
+                              (string-prefix-p "F-" key))
+                     (concat "C-M-S-s-" (string-remove-prefix "F-" key)))
+                   key))))
+
+(global-set-key (kbd "F-SPC") #'eval-expression)
