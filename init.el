@@ -836,15 +836,26 @@ Calls `magit-refresh' after the command finishes."
 
 (global-set-key (kbd "C-s-;") #'cam/align-map)
 
-
-;; New fake "Fn" modifier -- F-
-;; just translate "F-" to "C-M-S-s-"
-;;; Map the Fn key or Application Key in Karabiner
+;; New fake "Fn" modifier -- F-, and "Insert" -- I-
+;; Add this to Karabiner:
+;; <item>
+;;      <name>Change Insert to A-C-H-M</name>
+;;      <identifier>private.insert_to_achm</identifier>
+;;      <autogen>__KeyToKey__ KeyCode::PC_INSERT, KeyCode::CONTROL_L, ModifierFlag::OPTION_L, ModifierFlag::CONTROL_R, ModifierFlag::OPTION_R</autogen>
+;; </item>
+;; <item>
+;;      <name>Change Application Key to A-C-H</name>
+;;      <identifier>private.application_to_ach</identifier>
+;;      <autogen>__KeyToKey__ KeyCode::PC_APPLICATION, KeyCode::CONTROL_L, ModifierFlag::OPTION_L, ModifierFlag::CONTROL_R</autogen>
+;; </item>
 (advice-add #'kbd :around
   (lambda (f key)
     (funcall f (or (when (and (stringp key)
                               (string-prefix-p "F-" key))
-                     (concat "C-M-S-s-" (string-remove-prefix "F-" key)))
+                     (concat "C-H-M-" (string-remove-prefix "F-" key)))
+                   (when (and (stringp key)
+                              (string-prefix-p "I-" key))
+                     (concat "A-C-H-M-" (string-remove-prefix "I-" key)))
                    key))))
 
 (global-set-key (kbd "F-SPC") #'eval-expression)
