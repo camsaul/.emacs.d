@@ -505,13 +505,12 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (interactive)
   (save-buffer)
 
-  (condition-case _
-      (progn
-        (cider-load-buffer)
-        (cider-repl-set-ns (cider-current-ns))
-        (cider-switch-to-relevant-repl-buffer)
-        (cider-repl-clear-buffer))
-    (error (cider-jack-in))))
+  (if (not (cider-connected-p)) (cider-jack-in)
+    (progn
+      (cider-load-buffer)
+      (cider-repl-set-ns (cider-current-ns))
+      (cider-switch-to-relevant-repl-buffer)
+      (cider-repl-clear-buffer))))
 
 (defun cam/clojure-mode-setup ()
   (cam/lisp-mode-setup)
