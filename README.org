@@ -1,0 +1,6 @@
+* My ~.emacs.d~ directory
+
+
+  #+BEGIN_SRC emacs-lisp
+    (setq emacs-is-awesome-p t)
+  #+END_SRC
