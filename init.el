@@ -34,6 +34,7 @@
 ;;;    [[Magit]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
+;;;    [[Sly]]
 ;;;    [[Web Mode]]
 ;;;    [[YASnippet]]
 ;;; [[Final Setup]]
@@ -77,6 +78,7 @@
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
     ac-js2                                        ; auto-complete <-> skewer <-> js2-mode
+    ac-sly                                        ; auto-complete <-> sly
     ace-jump-mode
     ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
@@ -117,6 +119,7 @@
     rainbow-mode
     register-list                                 ; dired-like editing of Emacs registers
     saveplace                                     ; save position of point when killing a buffer
+    sly                                           ; Common Lisp IDE
     skewer-mode                                   ; live JS web dev for emacs
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
@@ -769,6 +772,19 @@ Calls `magit-refresh' after the command finishes."
           (put #'paredit-open-square     'delete-selection t)
           (put #'paredit-doublequote     'delete-selection t)
           (put #'paredit-newline         'delete-selection t)))
+
+
+;;; [[[<Sly]]
+(setq inferior-lisp-program "/usr/local/bin/sbcl")
+
+(defun cam/sly-setup ()
+  (cam/lisp-mode-setup)
+  (auto-complete-mode 1)
+
+  (require 'ac-sly)
+  (set-up-sly-ac :fuzzy))
+
+(add-hook 'sly-mode-hook #'cam/sly-setup)
 
 
 ;;; [[<Web Mode]]
