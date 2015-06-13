@@ -602,6 +602,15 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
     (comint-clear-buffer)
     (comint-kill-input)))
 
+(eval-after-load 'elisp-slime-nav-mode
+  '(define-key elisp-slime-nav-mode-map (kbd "C-c C-d") #'elisp-slime-nav-describe-elisp-thing-at-point)) ; instead of C-c C-d d
+
+(eval-after-load (if (>= emacs-major-version 25) 'elisp-mode ; Emacs Lisp stuff was moved to elisp-mode in Emacs 25
+                   'lisp-mode)
+  '(progn
+     (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
+     (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)))
+
 (defun cam/emacs-lisp-mode-setup ()
   (require 'subr-x) ; when-let, etc.
   (cam/lisp-mode-setup)
@@ -611,9 +620,6 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
   (wiki-nav-mode 1)
-
-  (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
-  (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
 
   (when (string= (buffer-file-name) user-init-file)
     (add-hook 'after-save-hook
@@ -639,6 +645,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 
 (eval-when-compile
   (require 'ielm))
+
 (eval-after-load 'ielm
   '(define-key inferior-emacs-lisp-mode-map (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp))
 
