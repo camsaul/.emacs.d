@@ -45,7 +45,7 @@
 (setq gc-cons-threshold (* 128 1024 1024)         ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
-(defvar cam/has-loaded-init nil
+(defvar cam/has-loaded-init-p nil
   "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
@@ -130,13 +130,13 @@
     yasnippet))                                   ; OK, we will use snippets
 
 ;;; Install packages as needed
-(defvar cam/has-refreshed-package-contents nil)
+(defvar cam/has-refreshed-package-contents-p nil)
 (dolist (package cam/packages)
   (unless (package-installed-p package)
-    (unless cam/has-refreshed-package-contents
+    (unless cam/has-refreshed-package-contents-p
       (ignore-errors
         (package-refresh-contents))
-      (setq cam/has-refreshed-package-contents t))
+      (setq cam/has-refreshed-package-contents-p t))
     (condition-case err
         (package-install package)
       (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
@@ -178,7 +178,7 @@
 (require 'moe-theme)
 
 ;; Load the theme just once, otherwise the screen will flicker all cray if we try to eval this buffer again
-(unless cam/has-loaded-init
+(unless cam/has-loaded-init-p
   (moe-dark))
 
 ;; (defconst cam/mode-line-color "#FCE94F")
@@ -195,7 +195,7 @@
   (set-face-background 'mode-line-buffer-id nil)) ; Don't show a blue background behind buffer name on modeline for deselected frames
 (advice-add #'make-frame-command :after #'cam/setup-frame)
 
-(unless cam/has-loaded-init
+(unless cam/has-loaded-init-p
   (cam/setup-frame))
 
 (setq-default mode-line-format
@@ -824,10 +824,10 @@ Calls `magit-refresh' after the command finishes."
 (ignore-errors
   (load-file custom-file))
 
-(unless cam/has-loaded-init
+(unless cam/has-loaded-init-p
   (toggle-frame-maximized))
 
-(setq cam/has-loaded-init t)
+(setq cam/has-loaded-init-p t)
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
