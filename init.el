@@ -70,8 +70,10 @@
 (require 'package)
 (package-initialize)
 
-(nconc package-archives '(("melpa" . "http://melpa.milkbox.net/packages/")
-                          ("marmalade" . "http://marmalade-repo.org/packages/")))
+(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
+                         ("melpa" . "http://melpa.milkbox.net/packages/")
+                         ("marmalade" . "http://marmalade-repo.org/packages/")))
+
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
     ac-js2                                        ; auto-complete <-> skewer <-> js2-mode
@@ -859,3 +861,4 @@ Calls `magit-refresh' after the command finishes."
                    key))))
 
 (global-set-key (kbd "F-SPC") #'eval-expression)
+(global-set-key (kbd "I-SPC") #'ielm)
