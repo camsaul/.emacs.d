@@ -628,6 +628,9 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
      (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
      (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)))
 
+(eval-after-load 'dash
+  '(dash-enable-font-lock))
+
 (defun cam/emacs-lisp-mode-setup ()
   (require 'subr-x) ; when-let, etc.
   (cam/lisp-mode-setup)
@@ -653,9 +656,6 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (ac-emacs-lisp-mode-setup)
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
-
-  (when (fboundp #'dash-enable-font-lock)
-    (dash-enable-font-lock))
 
   (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
 (add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
