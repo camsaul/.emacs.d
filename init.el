@@ -96,6 +96,7 @@
     dockerfile-mode                               ; Major mode for editing Dockerfiles
     editorconfig                                  ; Read EditorConfig files
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
+    ert                                           ; Emacs Lisp Regression Testing
     esup                                          ; Emacs Start-Up Profiler <3
     find-things-fast
     git-timemachine                               ; Walk through git revisions of a file
@@ -140,6 +141,14 @@
     (condition-case err
         (package-install package)
       (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
+
+;;; Uninstall selected packages that aren't included in cam/packages
+(dolist (package package-selected-packages)
+  (unless (member package cam/packages)
+    (message "Package '%s' is installed but not part of cam/packages. Deleting..." (symbol-name package))
+    (dolist (package-desc (alist-get package package-alist))
+      (ignore-errors
+        (package-delete package-desc)))))
 
 (eval-when-compile
   (mapc #'require cam/packages))
