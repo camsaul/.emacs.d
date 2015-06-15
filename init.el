@@ -100,6 +100,7 @@
     esup                                          ; Emacs Start-Up Profiler <3
     find-things-fast
     git-timemachine                               ; Walk through git revisions of a file
+    gitconfig-mode
     gitignore-mode                                ; Major mode for editing .gitignore files
     guide-key
     helm
