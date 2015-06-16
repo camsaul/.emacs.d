@@ -609,12 +609,21 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 
 
 ;;; [[<dired]]
+(defun cam/after-dired-find-file ()
+  "After-advice for `dired-find-file'. Kill all `dired' buffers
+unless they are the current buffer."
+  (dolist (buf (buffer-list))
+    (unless (eq buf (current-buffer))
+      (with-current-buffer buf
+        (when (eq major-mode 'dired-mode)
+          (kill-buffer buf))))))
+
 (defun cam/dired-mode-setup ()
   (dired-hide-details-mode 1))
 (add-hook 'dired-mode-hook #'cam/dired-mode-setup)
 
 (defun cam/revert-dired-buffers ()
-  "Revert all `dired-mode' buffers."
+  "Revert all `dired' buffers."
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when (eq major-mode 'dired-mode)
@@ -642,6 +651,7 @@ any buffers that were visiting files that were children of that directory."
      (add-hook 'focus-in-hook #'cam/revert-dired-buffers)
 
      (advice-add #'dired-do-delete :around #'cam/around-dired-do-delete)
+     (advice-add #'dired-find-file :after  #'cam/after-dired-find-file)
 
      (advice-add #'dired-smart-shell-command      ; after running a shell command in dired revert the buffer right away
          :after (lambda (&rest _)
