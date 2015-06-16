@@ -337,7 +337,7 @@
 
 ;;; [[<auto-mode-alist]]
 ;;; Tell Emacs how to open files with certain extensions
-(mapc(apply-partially #'add-to-list 'auto-mode-alist)
+(mapc (apply-partially #'add-to-list 'auto-mode-alist)
       '(("\.html$" . web-mode)
         ("\.js$"   . js2-mode)))
 
@@ -894,3 +894,6 @@ Calls `magit-refresh' after the command finishes."
     (cam/align-map-args-to-column)))
 
 (global-set-key (kbd "C-s-;") #'cam/align-map)
+
+
+(prog1 100)
