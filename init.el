@@ -71,9 +71,10 @@
 (require 'package)
 (package-initialize)
 
-(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
-                         ("melpa" . "http://melpa.milkbox.net/packages/")
-                         ("marmalade" . "http://marmalade-repo.org/packages/")))
+(setq package-archives '(("gnu"       . "http://elpa.gnu.org/packages/")
+                         ("melpa"     . "http://melpa.milkbox.net/packages/")
+                         ("marmalade" . "http://marmalade-repo.org/packages/")
+                         ("org"       . "http://orgmode.org/elpa/")))
 
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
@@ -115,6 +116,7 @@
     multiple-cursors
     moe-theme
     nyan-mode                                     ; Nyan Cat shows position in mode-line
+    org                                           ; Get latest version of org from Org package archive
     paredit
     pos-tip                                       ; Native tooltips
     projectile
