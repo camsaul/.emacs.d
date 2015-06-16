@@ -621,7 +621,6 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 (setq dired-recursive-copies  'always
       dired-recursive-deletes 'always)
 
-
 ;;; [[<Emacs Lisp]]
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
   (interactive)
@@ -772,13 +771,20 @@ Calls `magit-refresh' after the command finishes."
   (call-interactively #'shell-command)
   (call-interactively #'magit-refresh))
 
-(defun cam/magit-status-mode-setup ()
-  (define-key magit-status-mode-map (kbd "M-!") #'cam/magit-shell-command)
-  (define-key magit-status-mode-map (kbd "V")   #'cam/magit-visit-pull-request-url))
-(add-hook 'magit-status-mode-hook #'cam/magit-status-mode-setup)
+(defun cam/refresh-magit-buffers ()
+  "Refresh all `magit-status-mode' buffers."
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (eq major-mode 'magit-status-mode)
+        (magit-refresh)))))
 
 (eval-after-load 'magit
-  '(define-key magit-status-mode-map (kbd "s-u") #'magit-refresh))
+  '(progn
+     (define-key magit-status-mode-map (kbd "M-!") #'cam/magit-shell-command)
+     (define-key magit-status-mode-map (kbd "V")   #'cam/magit-visit-pull-request-url)
+     (define-key magit-status-mode-map (kbd "s-u") #'magit-refresh)
+
+     (add-hook 'focus-in-hook #'cam/refresh-magit-buffers)))
 
 (setq magit-auto-revert-mode-lighter     ""
       magit-last-seen-setup-instructions "1.4.0")
@@ -901,7 +907,11 @@ Calls `magit-refresh' after the command finishes."
     (paredit-close-curly)                            ; jump to char after closing }
     (backward-char)                                  ; move back onto } -- end of last sexp
     (setq-local cam/insert-spaces-goal-col (cam/get-max-col))
-    (cam/align-map-args-to-column)))
+    (cam/align-map-args-to-column))
+  (paredit-reindent-defun))
 
 (global-set-key (kbd "C-s-;") #'cam/align-map)
 
+(defun cam/auto-update-packages ()
+  (message "Emacs has been inactive for 60 minutes!"))
+(run-with-idle-timer (* 60 60) :repeat #'cam/auto-update-packages)
