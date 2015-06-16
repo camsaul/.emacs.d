@@ -764,6 +764,7 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; [[<Org]]
 (defun cam/org-mode-setup ()
+  (ispell-minor-mode 1)
   (setq-local truncate-lines nil)
 
   (define-key org-mode-map (kbd "C-c c") #'cam/org-insert-code-block))
