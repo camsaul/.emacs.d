@@ -484,6 +484,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                             ("C-x C-z"       . nil)                                  ; instead of suspend-frame
                             ("C-x b"         . #'helm-buffers-list)
                             ("C-x C-d"       . #'dired)                              ; instead of ido-list-directory
+                            ("C-x C-q"       . nil)                                  ; remove keybinding for read-only-mode since I almost never press it on purpose
                             ("C-x f"         . #'helm-find-files)
                             ("C-x k"         . #'kill-this-buffer)
                             ("C-x r r"       . #'register-list)                      ; replaces copy-rectangle-to-register
@@ -612,11 +613,39 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (dired-hide-details-mode 1))
 (add-hook 'dired-mode-hook #'cam/dired-mode-setup)
 
+(defun cam/revert-dired-buffers ()
+  "Revert all `dired-mode' buffers."
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (eq major-mode 'dired-mode)
+        (revert-buffer)))))
+
+(defun cam/around-dired-do-delete (fun &optional arg)
+  "Around-advice for `dired-do-delete'. When deleting a file, check
+if its a directory; if so, and the directory is deleted, ask to kill
+any buffers that were visiting files that were children of that directory."
+  (let* ((file (dired-get-filename))
+         (deleting-directory-p (file-directory-p file)))
+    (let ((result (funcall fun arg)))
+      (when (and deleting-directory-p
+                 (not (file-exists-p file))) ; check that file was actually deleted
+        (dolist (buf (buffer-list))
+          (-when-let (buffer-file (buffer-file-name buf))
+            (when (string-prefix-p (expand-file-name file) (expand-file-name buffer-file))
+              (kill-buffer-ask buf)))))
+      result)))
+
 (eval-after-load 'dired
-  '(progn (require 'dired-x)                      ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
-          (advice-add #'dired-smart-shell-command ; after running a shell command in dired revert the buffer right away
-              :after (lambda (&rest _)
-                       (revert-buffer)))))
+  '(progn
+     (require 'dired-x)                           ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
+
+     (add-hook 'focus-in-hook #'cam/revert-dired-buffers)
+
+     (advice-add #'dired-do-delete :around #'cam/around-dired-do-delete)
+
+     (advice-add #'dired-smart-shell-command      ; after running a shell command in dired revert the buffer right away
+         :after (lambda (&rest _)
+                  (revert-buffer)))))
 
 (setq dired-recursive-copies  'always
       dired-recursive-deletes 'always)
