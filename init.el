@@ -407,6 +407,14 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                                                                                   cam/string-remove-text-properties)))))
   (browse-url (format "http://localhost:13370/#?q=%s" search-term)))
 
+(defun cam/bing-search (search-term)
+  "Open a browser window and search BING for SEARCH-TERM."
+  (interactive (list (read-string "Search Bing for: " (when (symbol-at-point)
+                                                        (-> (symbol-at-point)
+                                                            symbol-name
+                                                            cam/string-remove-text-properties)))))
+  (browse-url (format "http://bing.com/search?q=%s" search-term)))
+
 (defun cam/browse-korma-dox ()
   "Open a browser window with the SQL Korma documentation."
   (interactive)
@@ -455,6 +463,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                             ("<f11> a"       . #'aggressive-indent-mode)
                             ("<f11> p"       . #'paredit-mode)
                             ("<f11> w"       . #'whitespace-mode)
+                            ("<f12> b"       . #'cam/bing-search)
                             ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
                             ("<f12> j"       . #'cam/javadocs-search)
                             ("<f12> k"       . #'cam/browse-korma-dox)
