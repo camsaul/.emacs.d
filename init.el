@@ -453,13 +453,13 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                             ("<A-return>"    . #'wiki-nav-ido)
                             ("<C-M-s-down>"  . #'windmove-down)
                             ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
-                            ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)
+                            ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)  ; Use <f11> <key> for toggling various minor modes
                             ("<C-M-s-up>"    . #'windmove-up)
                             ("<H-SPC>"       . #'mc/mark-all-like-this)
                             ("<H-escape>"    . #'ace-jump-line-mode)
                             ("<H-return>"    . #'mc/mark-next-lines)
                             ("<escape>"      . #'ace-jump-mode)
-                            ("<f11>"         . nil)                   ; Use <f11> <key> for toggling various minor modes
+                            ("<f11>"         . nil)
                             ("<f11> a"       . #'aggressive-indent-mode)
                             ("<f11> p"       . #'paredit-mode)
                             ("<f11> w"       . #'whitespace-mode)
@@ -480,23 +480,23 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                             ("C-x C-f"       . #'helm-find-files)
                             ("C-x C-g"       . #'keyboard-quit)
                             ("C-x C-r"       . #'helm-recentf)
-                            ("C-x C-z"       . nil)                   ; instead of suspend-frame
+                            ("C-x C-z"       . nil)                                  ; instead of suspend-frame
                             ("C-x b"         . #'helm-buffers-list)
-                            ("C-x C-d"       . #'dired)               ; instead of ido-list-directory
+                            ("C-x C-d"       . #'dired)                              ; instead of ido-list-directory
                             ("C-x f"         . #'helm-find-files)
                             ("C-x k"         . #'kill-this-buffer)
-                            ("C-x r r"       . #'register-list)       ; replaces copy-rectangle-to-register
+                            ("C-x r r"       . #'register-list)                      ; replaces copy-rectangle-to-register
                             ("C-z"           . #'undo)
                             ("ESC <up>"      . #'windmove-up)
                             ("H-M-a"         . #'mc/skip-to-previous-like-this)
                             ("H-M-e"         . #'mc/skip-to-next-like-this)
                             ("H-a"           . #'mc/mark-previous-like-this)
                             ("H-e"           . #'mc/mark-next-like-this)
-                            ("M-g"           . #'goto-line)           ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
+                            ("M-g"           . #'goto-line)                          ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
                             ("M-j"           . #'cam/join-next-line)
                             ("M-x"           . #'helm-M-x)
                             ("M-z"           . #'ace-jump-zap-up-to-char)
-                            ("M-/"           . #'hippie-expand)       ; Instead of dabbrev-expand
+                            ("M-/"           . #'hippie-expand)                      ; Instead of dabbrev-expand
                             ("s-;"           . #'cam/insert-spaces-to-goal-column)
                             ("s-Z"           . #'undo-tree-redo)
                             ("s-f"           . #'ftf-grepsource)
@@ -644,7 +644,8 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                    'lisp-mode)
   '(progn
      (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
-     (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)))
+     (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
+     (define-key emacs-lisp-mode-map (kbd "C-x C-e")        #'pp-eval-last-sexp)))
 
 (eval-after-load 'dash
   '(dash-enable-font-lock))
