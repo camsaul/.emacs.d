@@ -28,8 +28,9 @@
 ;;;    [[Emacs Lisp]]
 ;;;    [[Eval Expresssion (Minibuffer)]]
 ;;;    [[Find Things Fast]]
-;;;    [[Helm]]
+;;;    [[Git Commit Mode]]
 ;;;    [[Guide Key]]
+;;;    [[Helm]]
 ;;;    [[js2-mode]]
 ;;;    [[Magit]]
 ;;;    [[Org]]
@@ -710,6 +711,12 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                           "*.yml")))
 
 
+;;; [[<Git Commit Mode]]
+(defun cam/git-commit-mode-setup ()
+  (flyspell-mode 1))
+(add-hook 'git-commit-mode-hook #'cam/git-commit-mode-setup)
+
+
 ;;; [[<Guide Key]]
 (setq guide-key/idle-delay 1.0
       guide-key/recursive-key-sequence-flag t
@@ -769,6 +776,9 @@ Calls `magit-refresh' after the command finishes."
   (define-key magit-status-mode-map (kbd "M-!") #'cam/magit-shell-command)
   (define-key magit-status-mode-map (kbd "V")   #'cam/magit-visit-pull-request-url))
 (add-hook 'magit-status-mode-hook #'cam/magit-status-mode-setup)
+
+(eval-after-load 'magit
+  '(define-key magit-status-mode-map (kbd "s-u") #'magit-refresh))
 
 (setq magit-auto-revert-mode-lighter     ""
       magit-last-seen-setup-instructions "1.4.0")
@@ -895,5 +905,3 @@ Calls `magit-refresh' after the command finishes."
 
 (global-set-key (kbd "C-s-;") #'cam/align-map)
 
-
-(prog1 100)
