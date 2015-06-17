@@ -47,6 +47,12 @@
 (setq gc-cons-threshold (* 128 1024 1024)         ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
+;; EXPERIMENTAL !!!
+;; Set garbage collection threshold to something crazy,
+;; Then run garbage collection only when Emacs is idle
+(setq gc-cons-threshold (* 1024 1024 1024 8))     ; 8 GB?
+(run-with-idle-timer (* 60 2) :repeat #'garbage-collect)
+
 (defvar cam/has-loaded-init-p nil
   "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
 
@@ -151,7 +157,9 @@
  `(package-selected-packages ',cam/packages))
 
 (eval-when-compile
-  (mapc #'require cam/packages))
+  (require 'moe-theme)
+  ;; (mapc #'require cam/packages)
+  )
 
 ;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
 (defmacro declare-functions (file &rest funs)
@@ -266,7 +274,8 @@
 (rainbow-mode 1)                                  ; Colorize strings like #FCE94F
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
-(yas-global-mode 1)                               ; Snippets. ~400 ms !
+(time
+ (yas-global-mode 1))                               ; Snippets. ~400 ms !
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda ()
@@ -568,6 +577,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 
 (eval-after-load 'clojure-mode
   '(progn
+     (message "EVAL AFTER LOAD CLOJURE MODE!!!")
      (clojure-snippets-initialize)
 
      (define-key clojure-mode-map (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
@@ -991,7 +1001,8 @@ Calls `magit-refresh' after the command finishes."
 
 (defun cam/should-delete-buffer (buf)
   (and (or (not (buffer-file-name buf))
-           (not (buffer-modified-p buf)))
+           (not (buffer-modified-p buf))
+           (get-buffer-process buf))
        (not (cam/buffer-window buf))
        (cl-notany (lambda (pattern)
                     (string-match pattern (buffer-name buf)))
@@ -1036,3 +1047,26 @@ Calls `magit-refresh' after the command finishes."
     (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
 
 (advice-add #'message :after #'cam/scroll-messages-async)
+
+
+;; ---------------------------------------- [[<cam/time]] ----------------------------------------
+
+(defmacro time (&rest body)
+  "Evaluate BODY and echo the amount of time it took, and return its result.
+Like Clojure's `time'."
+  (let ((start-time (cl-gensym "start-time-"))
+        (result     (cl-gensym "result-"))
+        (end-time   (cl-gensym "end-time-")))
+    `(let* ((,start-time (current-time))
+            (,result     (progn
+                           ,@body))
+            (,end-time   (current-time)))
+       (let ((elapsed-microseconds (+ (* (- (cl-second ,end-time)
+                                            (cl-second ,start-time)) 1000000)
+                                      (- (cl-third ,end-time)
+                                         (cl-third ,start-time)))))
+         (apply #'message "Elapsed time: %.1f %s." (cond
+                                                    ((< elapsed-microseconds 1000)    `(,elapsed-microseconds "µs"))
+                                                    ((< elapsed-microseconds 1000000) `(,(/ elapsed-microseconds 1000.0) "ms"))
+                                                    (:else                            `(,(/ elapsed-microseconds 1000000.0) "seconds")))))
+       ,result)))
