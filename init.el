@@ -255,6 +255,54 @@
 
 ;;; [[<Global Minor Modes]]
 
+(require 'cl-lib)
+
+(defmacro time (&rest body)
+  "Evaluate BODY and echo the amount of time it took, and return its result.
+Like Clojure's `time'."
+  (let ((start-time (cl-gensym "start-time-"))
+        (result     (cl-gensym "result-"))
+        (end-time   (cl-gensym "end-time-")))
+    `(let* ((,start-time (current-time))
+            (,result     (progn
+                           ,@body))
+            (,end-time   (current-time)))
+       (let ((elapsed-microseconds (+ (* (- (cl-second ,end-time)
+                                            (cl-second ,start-time)) 1000000)
+                                      (- (cl-third ,end-time)
+                                         (cl-third ,start-time)))))
+         (apply #'message "Elapsed time: %.1f %s." (cond
+                                                    ((< elapsed-microseconds 1000)    `(,elapsed-microseconds "µs"))
+                                                    ((< elapsed-microseconds 1000000) `(,(/ elapsed-microseconds 1000.0) "ms"))
+                                                    (:else                            `(,(/ elapsed-microseconds 1000000.0) "seconds")))))
+       ,result)))
+
+(cl-defmacro cam/lazily-call (function &key (delay 5) args after)
+  (declare (indent 1))
+  (let* ((function-name (symbol-name function))
+         (will-load     (intern (concat "cam/will-lazily-call-" function-name "-p")))
+         (has-loaded    (intern (concat "cam/has-lazily-called-" function-name "-p")))
+         (hook          (intern (concat "cam/" function-name "-lazily-called-hook"))))
+    `(progn
+       (defvar ,will-load nil)
+       (defvar ,has-loaded nil)
+       (cond
+        (,has-loaded ,(when after
+                        `(funcall ,after)))
+        (,will-load  ,(when after
+                        `(add-hook ',hook ,after)))
+        (:else       (setq ,will-load t)
+                     (message ,(format "%s will be lazily called after %.1f seconds of inactivity." function-name delay))
+                     (run-with-idle-timer ,delay nil (lambda ()
+                                                       (message ,(format "Calling `%s'..." function-name))
+                                                       (time (,function ,@(when args
+                                                                            (if (atom args) `(,args)
+                                                                              args))))
+                                                       (setq ,has-loaded t)
+                                                       (run-hooks ',hook)
+                                                       ,@(when after
+                                                           `((funcall ,after))))))))))
+
 ;; Modes to disable
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
 
@@ -262,10 +310,8 @@
 (delete-selection-mode 1)                         ; typing will delete selected text
 (global-anzu-mode 1)                              ; show number of matches in mode line while searching
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
-(global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
 (global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
 (global-undo-tree-mode 1)
-(guide-key-mode 1)                                ; Show list of completions for keystrokes after a delay
 (projectile-global-mode 1)
 (ido-mode 1)
 (ido-everywhere 1)
@@ -274,8 +320,18 @@
 (rainbow-mode 1)                                  ; Colorize strings like #FCE94F
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
-(time
- (yas-global-mode 1))                               ; Snippets. ~400 ms !
+
+;; lazily loaded global minor modes
+(cam/lazily-call guide-key-mode                   ; Show list of completions for keystrokes after a delay
+                 :args 1
+                 :after (lambda ()
+                          (diminish 'guide-key-mode)))
+
+(cam/lazily-call global-diff-hl-mode              ; Show which lines have changed since last git commit in the fringe
+                 :args 1
+                 :after (lambda ()
+                          (diminish 'diff-hl-mode)))
+
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda ()
@@ -287,8 +343,6 @@
 ;; hide minor modes that are always going to be loaded
 (mapc #'diminish
       '(anzu-mode
-        diff-hl-mode
-        guide-key-mode
         rainbow-mode
         undo-tree-mode))
 
@@ -320,6 +374,7 @@
                            "custom.el"))
 
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
+      frame-resize-pixelwise t                    ; maximize as much as possible rather than rounding to closest whole line
       garbage-collection-messages t               ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
       next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
@@ -572,13 +627,18 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (clj-refactor-mode 1)
   (require 'clojure-mode-extra-font-locking)
 
-  (add-to-list 'ac-sources 'ac-source-yasnippet))
+  (cam/lazily-call yas-global-mode
+                   :args  (1)
+                   :after (lambda ()
+                            (add-to-list 'ac-sources 'ac-source-yasnippet))))
 (add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
 
 (eval-after-load 'clojure-mode
   '(progn
-     (message "EVAL AFTER LOAD CLOJURE MODE!!!")
-     (clojure-snippets-initialize)
+     (cam/lazily-call yas-global-mode
+                      :args  (1)
+                      :after (lambda ()
+                               (clojure-snippets-initialize)))
 
      (define-key clojure-mode-map (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
 
@@ -706,6 +766,12 @@ any buffers that were visiting files that were children of that directory."
   (elisp-slime-nav-mode 1)
   (morlock-mode 1)
   (wiki-nav-mode 1)
+
+  (cam/lazily-call yas-global-mode :args 1)
+
+  (cam/lazily-call wiki-nav-mode
+                   :args 1
+                   :delay 0.5)
 
   (when (string= (buffer-file-name) user-init-file)
     (add-hook 'after-save-hook
@@ -917,7 +983,7 @@ Calls `magit-refresh' after the command finishes."
   (load-file custom-file))
 
 (unless cam/has-loaded-init-p
-  (toggle-frame-maximized))
+  (cam/lazily-call toggle-frame-maximized :delay 0.1))
 
 (setq cam/has-loaded-init-p t)
 
@@ -1047,26 +1113,3 @@ Calls `magit-refresh' after the command finishes."
     (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
 
 (advice-add #'message :after #'cam/scroll-messages-async)
-
-
-;; ---------------------------------------- [[<cam/time]] ----------------------------------------
-
-(defmacro time (&rest body)
-  "Evaluate BODY and echo the amount of time it took, and return its result.
-Like Clojure's `time'."
-  (let ((start-time (cl-gensym "start-time-"))
-        (result     (cl-gensym "result-"))
-        (end-time   (cl-gensym "end-time-")))
-    `(let* ((,start-time (current-time))
-            (,result     (progn
-                           ,@body))
-            (,end-time   (current-time)))
-       (let ((elapsed-microseconds (+ (* (- (cl-second ,end-time)
-                                            (cl-second ,start-time)) 1000000)
-                                      (- (cl-third ,end-time)
-                                         (cl-third ,start-time)))))
-         (apply #'message "Elapsed time: %.1f %s." (cond
-                                                    ((< elapsed-microseconds 1000)    `(,elapsed-microseconds "µs"))
-                                                    ((< elapsed-microseconds 1000000) `(,(/ elapsed-microseconds 1000.0) "ms"))
-                                                    (:else                            `(,(/ elapsed-microseconds 1000000.0) "seconds")))))
-       ,result)))
