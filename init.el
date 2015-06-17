@@ -8,7 +8,6 @@
 ;;;    [[Bootstrapping]]
 ;;     [[Auxilary Init File Setup]]
 ;;; [[Package Setup]]
-;;;    [[Function Declarations]]
 ;;; [[Global Setup]]
 ;;;    [[Theme]]
 ;;;    [[Global Requires]]
@@ -16,7 +15,6 @@
 ;;;    [[Global Minor Modes]]
 ;;;    [[Diminished Minor Modes]]
 ;;;    [[Global Settings]]
-;;;    [[auto-mode-alist]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
 ;;;    [[Emacs 24 Workarounds]]
@@ -350,12 +348,6 @@
               save-place t                        ; Automatically save place in each file
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
-
-;;; [[<auto-mode-alist]]
-;;; Tell Emacs how to open files with certain extensions
-(mapc (apply-partially #'add-to-list 'auto-mode-alist)
-      '(("\.html$" . web-mode)
-        ("\.js$"   . js2-mode)))
 
 
 ;;; [[<Global Functions]]
@@ -795,7 +787,8 @@ any buffers that were visiting files that were children of that directory."
   :setup ((unless (skewer-ping)
             (run-skewer)))
   :keys (("C-j" . #'newline)
-         ("M-j" . nil)))
+         ("M-j" . nil))
+  :auto-mode-alist ("\.js$"))
 
 (cam/use-package skewer-mode
   :declare (skewer-ping))
@@ -893,7 +886,8 @@ Calls `magit-refresh' after the command finishes."
   :minor-modes (aggressive-indent-mode
                 electric-pair-local-mode
                 rainbow-delimiters-mode)
-  :keys (("C-j" . #'newline)))
+  :keys (("C-j" . #'newline))
+  :auto-mode-alist ("\.html$"))
 
 
 ;;; [[<YASnippet]]

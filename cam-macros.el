@@ -34,7 +34,8 @@
                                       local-vars
                                       local-hooks
                                       (keymap (intern (format "%s-map" (symbol-name mode-name))))
-                                      keys)
+                                      keys
+                                      auto-mode-alist)
   (declare (indent 1))
   `(progn
      (eval-when-compile
@@ -86,7 +87,11 @@
                    (mapcar (lambda (hook.fun)
                              `(add-hook ',(car hook.fun) ,(cdr hook.fun) ,(not :append) :local))
                            local-hooks)))
-             (add-hook ',hook-name (function ,setup-fn-name)))))))
+             (add-hook ',hook-name (function ,setup-fn-name)))))
+     ,@(when auto-mode-alist
+         (mapcar (lambda (pattern)
+                   `(add-to-list 'auto-mode-alist '(,pattern . ,mode-name)))
+                 auto-mode-alist))))
 
 
 ;; ---------------------------------------- [[<time]] ----------------------------------------
