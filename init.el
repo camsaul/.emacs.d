@@ -1,10 +1,12 @@
-;;; -*- lexical-binding: t; coding: utf-8; byte-compile-dynamic: nil; comment-column: 50; -*-
+;;; -*- lexical-binding: t; cam/byte-compile: t; coding: utf-8; byte-compile-dynamic: nil; comment-column: 50; -*-
 
 ;; (unless (>= emacs-major-version 25)
 ;;   (error "This setup requires Emacs version 25 or newer."))
 
 ;;; TOC:
 ;;; [[Initial Setup]]
+;;;    [[Bootstrapping]]
+;;     [[Auxilary Init File Setup]]
 ;;; [[Package Setup]]
 ;;;    [[Function Declarations]]
 ;;; [[Global Setup]]
@@ -32,6 +34,7 @@
 ;;;    [[Guide Key]]
 ;;;    [[Helm]]
 ;;;    [[js2-mode]]
+;;;    [[loccur]]
 ;;;    [[Magit]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
@@ -42,25 +45,20 @@
 ;;; [[Experimental]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
+
+;;; [[<Bootstrapping]]
 ;;; (Things that need to happen as soon as this file starts loading)
 
 (setq gc-cons-threshold (* 128 1024 1024)         ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
-;; EXPERIMENTAL !!!
-;; Set garbage collection threshold to something crazy,
-;; Then run garbage collection only when Emacs is idle
-(setq gc-cons-threshold (* 1024 1024 1024 8))     ; 8 GB?
-(run-with-idle-timer (* 60 2) :repeat #'garbage-collect)
-
-(defvar cam/has-loaded-init-p nil
-  "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
+(add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
+(add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
-(dolist (mode '(scroll-bar-mode
-                tool-bar-mode))
-  (when (boundp mode)
+(dolist (mode '(scroll-bar-mode tool-bar-mode))
+  (when (fboundp mode)
     (funcall mode -1)))
 
 (unless (eq window-system 'ns)
@@ -69,15 +67,62 @@
 (setq inhibit-splash-screen t
       inhibit-startup-screen t)
 
+(let ((scratch-buffer (get-buffer "*scratch")))
+  (when scratch-buffer
+    (kill-buffer scratch-buffer)))
+
 ;; In an effort to be really annoying you can only suppress the startup echo area message if you set it through customize
 (custom-set-variables
  '(inhibit-startup-echo-area-message (user-login-name)))
 
 
+;;; [[<Auxilary Init File Setup]]
+
+;; Check to make sure init file is up-to-date
+;; user-init-file is the .elc file when LOADING
+(when (string-suffix-p "elc" user-init-file)
+  (let ((init-file-source (concat user-emacs-directory "init.el")))
+    (when (file-newer-than-file-p init-file-source user-init-file)
+      ;; If not, trash .elc file and kill Emacs. We'll recompile on next launch
+      (delete-file user-init-file)
+      (kill-emacs))))
+
+;; ignore the warnings about having ~/.emacs.d in the load path
+(eval-after-load 'warnings
+  '(advice-add #'display-warning :around
+     (lambda (function type message &optional level buffer-name)
+       (unless (and (eq type 'initialization)
+                    (string-prefix-p "Your `load-path' seems to contain" message))
+         (funcall function type message level buffer-name)))))
+(add-to-list 'load-path (expand-file-name user-emacs-directory) :append)
+
+(defconst cam/autoloads-file (concat user-emacs-directory "autoloads.el"))
+
+;; byte recompile the other files in this dir if needed
+(defconst cam/auxilary-init-files
+  (eval-when-compile (let (files)
+                       (dolist (file (directory-files user-emacs-directory))
+                         (when (and (string-match "^[-[:alpha:]]+\\.el$" file)
+                                    (not (member file '("autoloads.el" "custom.el" "init.el"))))
+                           (push file files)))
+                       files)))
+
+(eval-when-compile
+  (dolist (file cam/auxilary-init-files)
+    (unless (file-exists-p (concat file "c"))
+      (byte-compile-file file :load)
+      (update-file-autoloads file :save-after cam/autoloads-file))))
+
+(load-file cam/autoloads-file)
+
+(defvar cam/has-loaded-init-p nil
+  "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
+
+
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
 
-(require 'package)
-(package-initialize)
+(time
+  (package-initialize))
 
 (setq package-archives '(("gnu"       . "http://elpa.gnu.org/packages/")
                          ("melpa"     . "http://melpa.milkbox.net/packages/")
@@ -156,60 +201,27 @@
 (custom-set-variables
  `(package-selected-packages ',cam/packages))
 
-(eval-when-compile
-  (require 'moe-theme)
-  ;; (mapc #'require cam/packages)
-  )
-
-;; Declare some functions so byte compiler stops bitching about them possibly not being defined at runtime
-(defmacro declare-functions (file &rest funs)
-  (declare (indent 1))
-  `(progn ,@(mapcar (lambda (fun)
-                      `(declare-function ,fun ,file))
-                    funs)))
-
-
-;;; [[<Function Declarations]]
-
-(declare-functions "auto-yasnippet"       aya-create aya-expand)
-(declare-functions "auto-complete"        ac-complete-functions ac-complete-symbols ac-complete-variables)
-(declare-functions "auto-complete-config" ac-emacs-lisp-mode-setup)
-(declare-functions "cider"                cider-jack-in)
-(declare-functions "cider-interaction"    cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer)
-(declare-functions "cider-repl"           cider-repl-clear-buffer cider-repl-return cider-repl-set-ns)
-(declare-functions "dired"                dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
-(declare-functions "dired-x"              dired-smart-shell-command)
-(declare-functions "loccur"               loccur)
-(declare-functions "magit"                magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
-(declare-functions "org"                  org-bookmark-jump-unhide org-end-of-line org-return-indent)
-(declare-functions "org-src"              org-edit-src-code)
-(declare-functions "paredit"              paredit-backward-delete paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p
-                                          paredit-newline paredit-open-round paredit-open-square)
-(declare-functions "skewer-mode"          skewer-ping)
-
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
 ;;; [[<Theme]]
 
+(eval-when-compile
+  (require 'moe-theme))
 (require 'moe-theme)
 
 ;; Load the theme just once, otherwise the screen will flicker all cray if we try to eval this buffer again
 (unless cam/has-loaded-init-p
-  (moe-dark))
-
-;; (defconst cam/mode-line-color "#FCE94F")
+  (moe-dark)
+  (set-frame-font "Source Code Pro-12" (not :keep-size) t)) ; t = apply font to all frames going forward & save setting to custom.el (supposedly)
 
 (defun cam/setup-frame ()
-  (set-frame-font "Source Code Pro-12")
-
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
 
   (moe-theme-random-color)
   (set-face-foreground 'mode-line "#111111")
-  ;; (set-face-background 'mode-line cam/mode-line-color)
   (set-cursor-color (face-background 'mode-line))
-  (set-face-background 'mode-line-buffer-id nil)) ; Don't show a blue background behind buffer name on modeline for deselected frames
+  (set-face-background 'mode-line-buffer-id nil)) ;  Don't show a blue background behind buffer name on modeline for deselected frames
 (advice-add #'make-frame-command :after #'cam/setup-frame)
 
 (unless cam/has-loaded-init-p
@@ -244,8 +256,11 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
+
 (eval-when-compile
-  (require 'subr-x))                              ; when-let, thread-last, string-remove-prefix, etc.
+  (require 'cl-lib)
+  (require 'dash)
+  (require 'subr-x)) ; when-let, thread-last, string-remove-prefix, etc.
 
 
 ;;; [[<Autoloads]]
@@ -255,101 +270,39 @@
 
 ;;; [[<Global Minor Modes]]
 
-(require 'cl-lib)
-
-(defmacro time (&rest body)
-  "Evaluate BODY and echo the amount of time it took, and return its result.
-Like Clojure's `time'."
-  (let ((start-time (cl-gensym "start-time-"))
-        (result     (cl-gensym "result-"))
-        (end-time   (cl-gensym "end-time-")))
-    `(let* ((,start-time (current-time))
-            (,result     (progn
-                           ,@body))
-            (,end-time   (current-time)))
-       (let ((elapsed-microseconds (+ (* (- (cl-second ,end-time)
-                                            (cl-second ,start-time)) 1000000)
-                                      (- (cl-third ,end-time)
-                                         (cl-third ,start-time)))))
-         (apply #'message "Elapsed time: %.1f %s." (cond
-                                                    ((< elapsed-microseconds 1000)    `(,elapsed-microseconds "µs"))
-                                                    ((< elapsed-microseconds 1000000) `(,(/ elapsed-microseconds 1000.0) "ms"))
-                                                    (:else                            `(,(/ elapsed-microseconds 1000000.0) "seconds")))))
-       ,result)))
-
-(cl-defmacro cam/lazily-call (function &key (delay 5) args after)
-  (declare (indent 1))
-  (let* ((function-name (symbol-name function))
-         (will-load     (intern (concat "cam/will-lazily-call-" function-name "-p")))
-         (has-loaded    (intern (concat "cam/has-lazily-called-" function-name "-p")))
-         (hook          (intern (concat "cam/" function-name "-lazily-called-hook"))))
-    `(progn
-       (defvar ,will-load nil)
-       (defvar ,has-loaded nil)
-       (cond
-        (,has-loaded ,(when after
-                        `(funcall ,after)))
-        (,will-load  ,(when after
-                        `(add-hook ',hook ,after)))
-        (:else       (setq ,will-load t)
-                     (message ,(format "%s will be lazily called after %.1f seconds of inactivity." function-name delay))
-                     (run-with-idle-timer ,delay nil (lambda ()
-                                                       (message ,(format "Calling `%s'..." function-name))
-                                                       (time (,function ,@(when args
-                                                                            (if (atom args) `(,args)
-                                                                              args))))
-                                                       (setq ,has-loaded t)
-                                                       (run-hooks ',hook)
-                                                       ,@(when after
-                                                           `((funcall ,after))))))))))
-
 ;; Modes to disable
 (blink-cursor-mode -1)                            ; disable annoying blinking cursor
 
 ;; Modes to enable
 (delete-selection-mode 1)                         ; typing will delete selected text
-(global-anzu-mode 1)                              ; show number of matches in mode line while searching
-(global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
-(global-undo-tree-mode 1)
-(projectile-global-mode 1)
 (ido-mode 1)
 (ido-everywhere 1)
 (ido-vertical-mode 1)
 (nyan-mode 1)                                     ; Nyan Cat in mode line
-(rainbow-mode 1)                                  ; Colorize strings like #FCE94F
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
 
-;; lazily loaded global minor modes
-(cam/lazily-call guide-key-mode                   ; Show list of completions for keystrokes after a delay
-                 :args 1
-                 :after (lambda ()
-                          (diminish 'guide-key-mode)))
-
-(cam/lazily-call global-diff-hl-mode              ; Show which lines have changed since last git commit in the fringe
-                 :args 1
-                 :after (lambda ()
-                          (diminish 'diff-hl-mode)))
+;; Modes to lazily enable
+(cam/lazy-enable global-anzu-mode        :global t :diminish anzu-mode)       ; show number of matches in mode line while searching
+(cam/lazy-enable global-undo-tree-mode   :global t :diminish undo-tree-mode)
+(cam/lazy-enable guide-key-mode          :global t :diminish t)               ; Show list of completions for keystrokes after a delay
+(cam/lazy-enable global-auto-revert-mode :global t :diminish t)               ; automatically reload files when they change on disk
+(cam/lazy-enable global-diff-hl-mode     :global t :diminish diff-hl-mode)    ; Show which lines have changed since last git commit in the fringe
+(cam/lazy-enable projectile-global-mode  :global t :diminish projectile-mode)
+(cam/lazy-enable rainbow-mode            :global t :diminish t)               ; Colorize strings like #FCE94F
 
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda ()
-                            (rainbow-mode 1)))
+                            (cam/lazy-enable rainbow-mode)))
 
 
 ;;; [[<Diminished Minor Modes]]
 
-;; hide minor modes that are always going to be loaded
-(mapc #'diminish
-      '(anzu-mode
-        rainbow-mode
-        undo-tree-mode))
-
 ;; for minor modes that get selectively loaded add a hook to diminish them after they're enabled
 (dolist (hook.mode '((button-lock-mode-hook           . button-lock-mode)
-                     (highlight-parentheses-mode-hook . highlight-parentheses-mode)
-                     (wiki-nav-mode-hook              . wiki-nav-mode)))
+                     (highlight-parentheses-mode-hook . highlight-parentheses-mode)))
   (add-hook (car hook.mode) (lambda ()
                               (diminish (cdr hook.mode)))))
 
@@ -381,6 +334,7 @@ Like Clojure's `time'."
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
       ns-right-option-modifier 'alt
+      print-gensym t                              ; print uninterned symbols with prefixes to differentiate them from interned ones
       recentf-max-menu-items 50                   ; show more recent files in [Helm]recentf
       recentf-max-saved-items 50
       require-final-newline t                     ; add final newline on save
@@ -414,6 +368,7 @@ Like Clojure's `time'."
   (interactive)
   (join-line -1))
 
+;; TODO - why not just make this an autoload???
 (defun cam/loccur ()
   (interactive)
   (require 'loccur)
@@ -423,11 +378,6 @@ Like Clojure's `time'."
   "Kill line from current cursor position to beginning of line."
   (interactive)
   (kill-line 0))
-
-(defmacro cam/suppress-messages (&rest body)
-  (declare (indent 0))
-  `(cl-letf (((symbol-function 'message) (lambda (&rest _))))
-     ,@body))
 
 (defun cam/windmove-left-or-other-frame ()
   (interactive)
@@ -457,7 +407,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 
 (defun cam/string-remove-text-properties (string)
   "Return a copy of STRING with all of its text properties removed."
-  (let ((s (copy-seq string)))
+  (let ((s (copy-sequence string)))
     (set-text-properties 0 (length s) nil s)
     s))
 
@@ -570,6 +520,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 
 ;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
 
+
 ;;; [[<Lisp Modes]]
 (defun cam/lisp-mode-setup ()
   (highlight-parentheses-mode 1)
@@ -578,34 +529,35 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (show-paren-mode 1)
 
   (add-hook 'before-save-hook
-            (lambda ()
-              (cam/untabify-current-buffer))
-            nil
+            #'cam/untabify-current-buffer
+            (not :append)
             :local))
 
 
 ;;; [[<auto-complete]]
-(eval-after-load 'auto-complete
-  '(cam/suppress-messages
-     (require 'pos-tip)
+(cam/use-package auto-complete
+  :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
+  :vars ((ac-delay . 0.05)
+         (ac-auto-show-menu . 0.1)
+         (ac-candidate-menu-height . 30)
+         (ac-menu-height . 30)         ; show 20 results instead of 10
+         (ac-quick-help-prefer-pos-tip . t) ; use native tooltips provided by pos-tip
+         (ac-quick-help-delay . 0.2)
+         (ac-use-menu-map . t))
+  :load ((cam/suppress-messages
+           (require 'pos-tip)
 
-     (setq ac-delay 0.05
-           ac-auto-show-menu 0.1
-           ac-candidate-menu-height 30
-           ac-menu-height 30                      ; show 20 results instead of 10
-           ac-quick-help-prefer-pos-tip t         ; use native tooltips provided by pos-tip
-           ac-quick-help-delay 0.2
-           ac-use-menu-map t)                     ; enable mode-map when AC menu is visible
+           (ac-config-default)
 
-     (ac-config-default)
+           (add-to-list 'ac-modes 'cider-repl-mode)
+           (add-to-list 'ac-modes 'ielm-mode)))
+  :keymap ac-menu-map
+  :keys (("A-f" . #'ac-complete-functions)
+         ("A-s" . #'ac-complete-symbols)
+         ("A-v" . #'ac-complete-variables)))
 
-     (nconc ac-modes '(cider-repl-mode
-                       ielm-mode))
-
-     ;; Define some keybindings that will allow use to filter ac results by type
-     (define-key ac-menu-map (kbd "A-f") #'ac-complete-functions)
-     (define-key ac-menu-map (kbd "A-s") #'ac-complete-symbols)
-     (define-key ac-menu-map (kbd "A-v") #'ac-complete-variables)))
+(cam/use-package auto-complete-config
+  :declare (ac-emacs-lisp-mode-setup))
 
 
 ;;; [[<Clojure]]
@@ -614,53 +566,27 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
   (save-buffer)
 
   (if (not (cider-connected-p)) (cider-jack-in)
-    (progn
-      (cider-load-buffer)
-      (cider-repl-set-ns (cider-current-ns))
-      (cider-switch-to-relevant-repl-buffer)
-      (cider-repl-clear-buffer))))
+    (cider-load-buffer)
+    (cider-repl-set-ns (cider-current-ns))
+    (cider-switch-to-relevant-repl-buffer)
+    (cider-repl-clear-buffer)))
 
-(defun cam/clojure-mode-setup ()
-  (cam/lisp-mode-setup)
-  (auto-complete-mode 1)
-  (ac-cider-setup)
-  (clj-refactor-mode 1)
-  (require 'clojure-mode-extra-font-locking)
-
-  (cam/lazily-call yas-global-mode
-                   :args  (1)
-                   :after (lambda ()
-                            (add-to-list 'ac-sources 'ac-source-yasnippet))))
-(add-hook 'clojure-mode-hook #'cam/clojure-mode-setup)
-
-(eval-after-load 'clojure-mode
-  '(progn
-     (cam/lazily-call yas-global-mode
-                      :args  (1)
-                      :after (lambda ()
-                               (clojure-snippets-initialize)))
-
-     (define-key clojure-mode-map (kbd "<C-M-s-return>") #'cam/clojure-save-load-switch-to-cider)
-
-     (cljr-add-keybindings-with-modifier "A-H-")))
-
-(defun cam/cider-repl-mode-setup ()
-  (cam/lisp-mode-setup)
-  (auto-complete-mode 1)
-  (ac-cider-setup)
-  (aggressive-indent-mode 1))
-(add-hook 'cider-repl-mode-hook #'cam/cider-repl-mode-setup)
-
-;; Delete trailing whitespace that may have been introduced by auto-complete
-(eval-after-load 'cider
-  '(progn (advice-add #'cider-repl-return :before (lambda ()
-                                                    (interactive)
-                                                    (call-interactively #'delete-trailing-whitespace)))
-
-          (define-key cider-repl-mode-map (kbd "M-RET") #'cider-switch-to-last-clojure-buffer)))
-
-(setq cider-auto-select-error-buffer nil
-      cider-repl-use-pretty-printing t)
+(cam/use-package clojure-mode
+  :mode-name clojure-mode
+  :require (clojure-mode-extra-font-locking)
+  :load ((cam/lazy-enable yas-global-mode :global t)
+         (eval-after-load 'yasnippet
+           '(clojure-snippets-initialize)))
+  :minor-modes (auto-complete-mode
+                clj-refactor-mode)
+  :setup ((cam/lisp-mode-setup)
+          (ac-cider-setup)
+          (eval-after-load 'yasnippet
+            '(add-to-list 'ac-sources 'ac-source-yasnippet))
+          (cljr-add-keybindings-with-modifier "A-H-"))
+  :local-vars nil
+  :local-hooks nil
+  :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)))
 
 (defun cam/cider-repl-messages-buffer ()
   (let ((messages-buffer nil))
@@ -670,10 +596,32 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
           (setq messages-buffer buf))))
     messages-buffer))
 
+(cam/use-package cider
+  :mode-name cider-repl-mode
+  :declare (cider-jack-in)
+  :vars ((cider-auto-select-error-buffer . nil)
+         (cider-repl-use-pretty-printing . t))
+  :advice ((#'cider-repl-return :before (lambda ()
+                                          "Delete trailing whitespace that may have been introduced by `auto-complete'."
+                                          (interactive)
+                                          (call-interactively #'delete-trailing-whitespace))))
+  :minor-modes (auto-complete-mode
+                aggressive-indent-mode)
+  :setup ((cam/lisp-mode-setup)
+          (ac-cider-setup))
+  :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)))
+
+(cam/use-package cider-interaction
+  :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
+
+(cam/use-package cider-repl
+  :declare (cider-repl-clear-buffer cider-repl-return cider-repl-set-ns))
+
 
 ;;; [[<company]]
-(setq company-idle-delay 0.01
-      company-minimum-prefix-length 1)
+(cam/use-package company
+  :vars ((company-idle-delay . 0.01)
+         (company-minimum-prefix-length . 1)))
 
 
 ;;; [[<dired]]
@@ -685,10 +633,6 @@ unless they are the current buffer."
       (with-current-buffer buf
         (when (eq major-mode 'dired-mode)
           (kill-buffer buf))))))
-
-(defun cam/dired-mode-setup ()
-  (dired-hide-details-mode 1))
-(add-hook 'dired-mode-hook #'cam/dired-mode-setup)
 
 (defun cam/revert-dired-buffers ()
   "Revert all `dired' buffers."
@@ -712,23 +656,28 @@ any buffers that were visiting files that were children of that directory."
               (kill-buffer-ask buf)))))
       result)))
 
-(eval-after-load 'dired
-  '(progn
-     (require 'dired-x)                           ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
+(cam/use-package dired
+  :declare (dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
+  :vars ((dired-recursive-copies  . 'always)
+         (dired-recursive-deletes . 'always))
+  :require (dired-x)                              ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
+  :advice ((#'dired-do-delete :around #'cam/around-dired-do-delete)
+           (#'dired-find-file :after  #'cam/after-dired-find-file)
+           (#'dired-smart-shell-command :after (lambda (&rest _)
+                                                 (revert-buffer))))
+  :load ((add-hook 'focus-in-hook #'cam/revert-dired-buffers))
+  :minor-modes (dired-hide-details-mode))
 
-     (add-hook 'focus-in-hook #'cam/revert-dired-buffers)
+(cam/use-package dired-x
+  :declare (dired-smart-shell-command))
 
-     (advice-add #'dired-do-delete :around #'cam/around-dired-do-delete)
-     (advice-add #'dired-find-file :after  #'cam/after-dired-find-file)
-
-     (advice-add #'dired-smart-shell-command      ; after running a shell command in dired revert the buffer right away
-         :after (lambda (&rest _)
-                  (revert-buffer)))))
-
-(setq dired-recursive-copies  'always
-      dired-recursive-deletes 'always)
 
 ;;; [[<Emacs Lisp]]
+(defvar-local cam/byte-compile nil
+  "Make this a file-local variable and we'll byte compile it whenever it's saved.")
+
+(defvar-local cam/generate-autoloads nil)
+
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
   (interactive)
   (call-interactively #'pp-macroexpand-last-sexp)
@@ -744,127 +693,117 @@ any buffers that were visiting files that were children of that directory."
     (comint-clear-buffer)
     (comint-kill-input)))
 
-(eval-after-load 'elisp-slime-nav
-  '(define-key elisp-slime-nav-mode-map (kbd "C-c C-d") #'elisp-slime-nav-describe-elisp-thing-at-point)) ; instead of C-c C-d d
+;; TODO - Emacs 25 only
+(cam/use-package elisp-mode
+  :mode-name emacs-lisp-mode
+  :minor-modes (aggressive-indent-mode
+                auto-complete-mode
+                morlock-mode
+                (:lazy elisp-slime-nav-mode)
+                (:lazy yas-global-mode :global t)
+                (:lazy wiki-nav-mode :diminish t))
+  :setup ((cam/lisp-mode-setup)
 
-(eval-after-load (if (>= emacs-major-version 25) 'elisp-mode ; Emacs Lisp stuff was moved to elisp-mode in Emacs 25
-                   'lisp-mode)
-  '(progn
-     (define-key emacs-lisp-mode-map (kbd "<C-M-s-return>") #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
-     (define-key emacs-lisp-mode-map (kbd "C-c RET")        #'cam/emacs-lisp-macroexpand-last-sexp)
-     (define-key emacs-lisp-mode-map (kbd "C-x C-e")        #'pp-eval-last-sexp)))
+          (unless (member 'ac-source-variables 'ac-sources) ; not sure why but it seems we need to call this manually on the first Emacs Lisp file we visit
+            (ac-emacs-lisp-mode-setup)))
+  :local-hooks ((after-save-hook . (lambda ()
+                                     (when cam/byte-compile
+                                       (byte-compile-file (buffer-file-name) :load))
+                                     (when cam/generate-autoloads
+                                       (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
+  :keys (("<C-M-s-return>" . #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
+         ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
+         ("C-x C-e"        . #'pp-eval-last-sexp)))
 
-(eval-after-load 'dash
-  '(dash-enable-font-lock))
+(cam/use-package dash
+  :declare (dash-enable-font-lock)
+  :load ((dash-enable-font-lock)))
 
-(defun cam/emacs-lisp-mode-setup ()
-  (require 'subr-x) ; when-let, etc.
-  (cam/lisp-mode-setup)
-  (aggressive-indent-mode 1)
-  (cam/suppress-messages
-    (auto-complete-mode 1))
-  (elisp-slime-nav-mode 1)
-  (morlock-mode 1)
-  (wiki-nav-mode 1)
+(cam/use-package elisp-slime-nav
+  :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
-  (cam/lazily-call yas-global-mode :args 1)
+(cam/use-package ielm
+  :mode-name inferior-emacs-lisp-mode
+  :minor-modes (aggressive-indent-mode
+                auto-complete-mode
+                elisp-slime-nav-mode
+                morlock-mode)
+  :setup ((ac-emacs-lisp-mode-setup))
+  :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
+  :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)))
 
-  (cam/lazily-call wiki-nav-mode
-                   :args 1
-                   :delay 0.5)
-
-  (when (string= (buffer-file-name) user-init-file)
-    (add-hook 'after-save-hook
-              (lambda ()
-                (byte-compile-file (buffer-file-name) :load))
-              nil
-              :local)))
-(add-hook 'emacs-lisp-mode-hook #'cam/emacs-lisp-mode-setup)
-
-(defun cam/ielm-mode-setup ()
-  (cam/lisp-mode-setup)
-  (aggressive-indent-mode 1)
-  (auto-complete-mode 1)
-  (ac-emacs-lisp-mode-setup)
-  (elisp-slime-nav-mode 1)
-  (morlock-mode 1)
-
-  (setq-local indent-line-function #'lisp-indent-line)) ; automatically indent multi-line forms correctly
-(add-hook 'ielm-mode-hook #'cam/ielm-mode-setup)
-
-(eval-when-compile
-  (require 'ielm))
-
-(eval-after-load 'ielm
-  '(define-key inferior-emacs-lisp-mode-map (kbd "C-c RET") #'cam/emacs-lisp-macroexpand-last-sexp))
-
-;; Indentation <3
-(eval-after-load 'nadvice
-  '(put #'advice-add 'lisp-indent-function 2))
+(cam/use-package nadvice
+  :load ((put #'advice-add 'lisp-indent-function 2)))
 
 
 ;;; [[<Eval Expresssion (Minibuffer)]]
-(defun cam/eval-expression-minibuffer-setup ()
-  (company-mode 1)
-  (paredit-mode 1)
-  (setq-local company-echo-delay 10))
-(add-hook 'eval-expression-minibuffer-setup-hook #'cam/eval-expression-minibuffer-setup)
+(cam/use-package simple
+  :hook-name eval-expression-minibuffer-setup-hook
+  :minor-modes (company-mode
+                paredit-mode)
+  :local-vars ((company-echo-delay . 10)))
 
 
 ;;; [[<Find Things Fast]]
-(eval-after-load 'find-things-fast
-  '(nconc ftf-filetypes '("*.clj"
-                          "*.css"
-                          "*.el"
-                          "*.html"
-                          "*.js"
-                          "*.java"
-                          "*.md"
-                          "*.yml")))
+(cam/use-package find-things-fast
+  :load ((nconc ftf-filetypes '("*.clj"
+                                "*.css"
+                                "*.el"
+                                "*.html"
+                                "*.js"
+                                "*.java"
+                                "*.md"
+                                "*.yml"))))
 
 
 ;;; [[<Git Commit Mode]]
-(defun cam/git-commit-mode-setup ()
-  (flyspell-mode 1))
-(add-hook 'git-commit-mode-hook #'cam/git-commit-mode-setup)
+(cam/use-package git-commit-mode
+  :mode-name git-commit-mode
+  :minor-modes (flyspell-mode))
 
 
 ;;; [[<Guide Key]]
-(setq guide-key/idle-delay 1.0
-      guide-key/recursive-key-sequence-flag t
-      guide-key/guide-key-sequence '("<f12>" "<f1>"
-                                     "<help>" "A-'"
-                                     "A-*"    "A-,"
-                                     "A-/"    "A-1"
-                                     "A-3"    "A-\""
-                                     "A-^"    "A-_"
-                                     "A-`"    "A-r"
-                                     "A-~"    "C-c"
-                                     "C-h"    "C-x"
-                                     "M-o"))
+(cam/use-package guide-key
+  :vars ((guide-key/idle-delay . 1.0)
+         (guide-key/recursive-key-sequence-flag . t)
+         (guide-key/guide-key-sequence . '("<f12>" "<f1>"
+                                           "<help>" "A-'"
+                                           "A-*"    "A-,"
+                                           "A-/"    "A-1"
+                                           "A-3"    "A-\""
+                                           "A-^"    "A-_"
+                                           "A-`"    "A-r"
+                                           "A-~"    "C-c"
+                                           "C-h"    "C-x"
+                                           "M-o"))))
 
 
 ;;; [[<Helm]]
-(setq helm-buffers-fuzzy-matching t               ; enable fuzzy matching for helm
-      helm-recentf-fuzzy-match t
-      helm-M-x-fuzzy-match t)
+(cam/use-package helm
+  :vars ((helm-buffers-fuzzy-matching . t) ; enable fuzzy matching for helm
+         (helm-recentf-fuzzy-match    . t)
+         (helm-M-x-fuzzy-match        . t)))
 
 
 ;;; [[<js2-mode]]
-(defun cam/js2-mode-setup ()
-  (electric-pair-local-mode 1)
-  (rainbow-delimiters-mode 1)
-  (skewer-mode 1)
-  (ac-js2-mode 1)
+(cam/use-package js2-mode
+  :mode-name js2-mode
+  :minor-modes (electric-pair-local-mode
+                rainbow-delimiters-mode
+                skewer-mode
+                ac-js2-mode)
+  :setup ((unless (skewer-ping)
+            (run-skewer)))
+  :keys (("C-j" . #'newline)
+         ("M-j" . nil)))
 
-  (unless (skewer-ping)
-    (run-skewer)))
-(add-hook 'js2-mode-hook #'cam/js2-mode-setup)
+(cam/use-package skewer-mode
+  :declare (skewer-ping))
 
-(eval-after-load 'js2-mode
-  '(progn (define-key js2-mode-map (kbd "C-j") #'newline) ; instead of electrict-newline-maybe-indent, which doesn't indent
-          (define-key js2-mode-map (kbd "M-j") nil)))     ; keep #'cam/join-next-line instead of whatever weird js2-mode fn
 
+;;; [[<loccur]]
+(cam/use-package loccur
+  :declare (loccur))
 
 ;;; [[<Magit]]
 (defun cam/magit-visit-pull-request-url ()
@@ -891,28 +830,18 @@ Calls `magit-refresh' after the command finishes."
       (when (eq major-mode 'magit-status-mode)
         (magit-refresh)))))
 
-(eval-after-load 'magit
-  '(progn
-     (define-key magit-status-mode-map (kbd "M-!") #'cam/magit-shell-command)
-     (define-key magit-status-mode-map (kbd "V")   #'cam/magit-visit-pull-request-url)
-     (define-key magit-status-mode-map (kbd "s-u") #'magit-refresh)
-
-     (add-hook 'focus-in-hook #'cam/refresh-magit-buffers)))
-
-(setq magit-auto-revert-mode-lighter     ""
-      magit-last-seen-setup-instructions "1.4.0")
+(cam/use-package magit
+  :mode-name magit-status-mode
+  :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
+  :vars ((magit-auto-revert-mode-lighter     . "")
+         (magit-last-seen-setup-instructions . "1.4.0"))
+  :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
+  :keys (("M-!" . #'cam/magit-shell-command)
+         ("V"   . #'cam/magit-visit-pull-request-url)
+         ("s-u" . #'magit-refresh)))
 
 
 ;;; [[<Org]]
-(defun cam/org-mode-setup ()
-  (flyspell-mode 1)
-  (setq-local truncate-lines nil)
-
-  (define-key org-mode-map (kbd "C-c c") #'cam/org-insert-code-block))
-(add-hook 'org-mode-hook #'cam/org-mode-setup)
-
-(setq org-support-shift-select nil)
-
 (defun cam/org-insert-code-block ()
   "Insert a new Org code block and start editing it."
   (interactive)
@@ -925,49 +854,57 @@ Calls `magit-refresh' after the command finishes."
   (org-return-indent)
   (org-edit-src-code))
 
+(cam/use-package org
+  :declare (org-bookmark-jump-unhide org-end-of-line org-return-indent)
+  :vars ((org-support-shift-select . nil))
+  :minor-modes (flyspell-mode)
+  :local-vars ((truncate-lines . nil))
+  :keys (("C-c c" . #'cam/org-insert-code-block)))
+
+(cam/use-package org-src
+  :declare (org-edit-src-code))
+
 
 ;;; [[<Paredit]]
-(eval-after-load 'paredit
+(cam/use-package paredit
+  :declare (paredit-backward-delete
+            paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline paredit-open-round paredit-open-square)
   ;; Tell paredit it's ok to delete selection in these contexts. Otherwise delete-selection-mode doesn't work with paredit
-  '(progn (put #'paredit-forward-delete  'delete-selection 'supersede)
-          (put #'paredit-backward-delete 'delete-selection 'supersede)
-          (put #'paredit-open-round      'delete-selection t)
-          (put #'paredit-open-square     'delete-selection t)
-          (put #'paredit-doublequote     'delete-selection t)
-          (put #'paredit-newline         'delete-selection t)))
+  :load ((put #'paredit-forward-delete  'delete-selection 'supersede)
+         (put #'paredit-backward-delete 'delete-selection 'supersede)
+         (put #'paredit-open-round      'delete-selection t)
+         (put #'paredit-open-square     'delete-selection t)
+         (put #'paredit-doublequote     'delete-selection t)
+         (put #'paredit-newline         'delete-selection t)))
 
 
 ;;; [[[<Sly]]
-(setq inferior-lisp-program "/usr/local/bin/sbcl")
-
-(defun cam/sly-setup ()
-  (cam/lisp-mode-setup)
-  (auto-complete-mode 1)
-
-  (require 'ac-sly)
-  (set-up-sly-ac :fuzzy))
-
-(add-hook 'sly-mode-hook #'cam/sly-setup)
+(cam/use-package sly
+  :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
+  :require (ac-sly)
+  :minor-modes (auto-complete-mode)
+  :setup ((cam/lisp-mode-setup)
+          (set-up-sly-ac :fuzzy)))
 
 
 ;;; [[<Web Mode]]
-(defun cam/web-mode-setup ()
-  (aggressive-indent-mode 1)
-  (electric-pair-local-mode 1)
-  (rainbow-delimiters-mode 1)
-
-  (define-key web-mode-map
-    (kbd "C-j") #'newline))                       ; instead of electric-newline-and-maybe-indent which doesn't indent :/
-(add-hook 'web-mode-hook #'cam/web-mode-setup)
+(cam/use-package web-mode
+  :mode-name web-mode
+  :minor-modes (aggressive-indent-mode
+                electric-pair-local-mode
+                rainbow-delimiters-mode)
+  :keys (("C-j" . #'newline)))
 
 
 ;;; [[<YASnippet]]
-(eval-after-load 'yasnippet
-  '(progn
-     (define-key yas-minor-mode-map (kbd "H-w") #'aya-create)
-     (define-key yas-minor-mode-map (kbd "H-y") #'aya-expand)))
+(cam/use-package yasnippet
+  :mode-name yas-minor-mode
+  :vars ((yas-verbosity . 0))
+  :keys (("H-w" . #'aya-create)
+         ("H-y" . #'aya-expand)))
 
-(setq yas-verbosity 0)                            ; Don't need to see a message every time a snippet file is loaded
+(cam/use-package auto-yasnippet
+  :declare (aya-create aya-expand))
 
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
@@ -983,7 +920,7 @@ Calls `magit-refresh' after the command finishes."
   (load-file custom-file))
 
 (unless cam/has-loaded-init-p
-  (cam/lazily-call toggle-frame-maximized :delay 0.1))
+  (toggle-frame-maximized))
 
 (setq cam/has-loaded-init-p t)
 
@@ -1076,7 +1013,6 @@ Calls `magit-refresh' after the command finishes."
 
 (defun cam/cleanup-extra-buffers ()
   "Remove unused buffers whenever Emacs has been idle for 2 minutes."
-  (message "Cleaning extra buffers...")
   (let ((case-fold-search :ignore-case))
     (dolist (buf (buffer-list))
       (when (cam/should-delete-buffer buf)
