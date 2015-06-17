@@ -39,6 +39,7 @@
 ;;;    [[Web Mode]]
 ;;;    [[YASnippet]]
 ;;; [[Final Setup]]
+;;; [[Experimental]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
@@ -146,13 +147,8 @@
         (package-install package)
       (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
 
-;;; Uninstall selected packages that aren't included in cam/packages
-(dolist (package package-selected-packages)
-  (unless (member package cam/packages)
-    (message "Package '%s' is installed but not part of cam/packages. Deleting..." (symbol-name package))
-    (dolist (package-desc (alist-get package package-alist))
-      (ignore-errors
-        (package-delete package-desc)))))
+(custom-set-variables
+ `(package-selected-packages ',cam/packages))
 
 (eval-when-compile
   (mapc #'require cam/packages))
@@ -173,7 +169,7 @@
 (declare-functions "cider"                cider-jack-in)
 (declare-functions "cider-interaction"    cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer)
 (declare-functions "cider-repl"           cider-repl-clear-buffer cider-repl-return cider-repl-set-ns)
-(declare-functions "dired"                dired-hide-details-mode)
+(declare-functions "dired"                dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
 (declare-functions "dired-x"              dired-smart-shell-command)
 (declare-functions "loccur"               loccur)
 (declare-functions "magit"                magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
@@ -310,9 +306,10 @@
                  (concat user-emacs-directory
                          "backups"))))
 
-      custom-file (expand-file-name               ; write customizations to ~/.emacs.d/custom.el instead of init.el
+      custom-file (expand-file-name
                    (concat user-emacs-directory
                            "custom.el"))
+
       echo-keystrokes 0.1                         ; show keystrokes in progress in minibuffer after 0.1 seconds instead of 1 second
       garbage-collection-messages t               ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
@@ -494,6 +491,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                             ("H-M-e"         . #'mc/skip-to-next-like-this)
                             ("H-a"           . #'mc/mark-previous-like-this)
                             ("H-e"           . #'mc/mark-next-like-this)
+                            ("M-:"           . #'pp-eval-expression)                 ; Instead of regular eval-expression
                             ("M-g"           . #'goto-line)                          ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
                             ("M-j"           . #'cam/join-next-line)
                             ("M-x"           . #'helm-M-x)
@@ -917,7 +915,9 @@ Calls `magit-refresh' after the command finishes."
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
 
 
-;; ---------------------------------------- Experimental ----------------------------------------
+;; ---------------------------------------- [[<Experimental]] ----------------------------------------
+
+;; ---------------------------------------- [[<cam/align-map]] ----------------------------------------
 (defun cam/get-max-col (&optional max)
   (save-excursion
     (condition-case _
@@ -951,6 +951,88 @@ Calls `magit-refresh' after the command finishes."
 
 (global-set-key (kbd "C-s-;") #'cam/align-map)
 
+
+;; ---------------------------------------- [[<cam/auto-update-packages]] ----------------------------------------
+
 (defun cam/auto-update-packages ()
-  (message "Emacs has been inactive for 60 minutes!"))
+  (message "Emacs has been inactive for 60 minutes! Auto-updating packages...")
+  (package-refresh-contents)
+  (cl-letf (((symbol-function 'save-some-buffers) (lambda (&rest _)))
+            ((symbol-function 'y-or-n-p)          (lambda (_) t)))
+    (save-window-excursion
+      (package-list-packages-no-fetch)
+      (package-menu-mark-upgrades)
+      (ignore-errors
+        (package-menu-execute :noquery))
+      (package-menu-mark-obsolete-for-deletion)
+      (ignore-errors
+        (package-menu-execute :noquery))
+      (package-autoremove)
+      ;; Kill all the package buffers in case there's more than one
+      (ignore-errors
+        (while (kill-buffer "*Packages*"))))))
 (run-with-idle-timer (* 60 60) :repeat #'cam/auto-update-packages)
+
+
+;; ---------------------------------------- [[<cam/cleanup-extra-buffers]] ----------------------------------------
+
+(cl-defun cam/buffer-window (buffer)
+  "Return the first window on any frame showing BUFFER, if any."
+  (dolist (frame (frame-list))
+    (dolist (w (window-list frame))
+      (when (eq (window-buffer w) buffer)
+        (cl-return-from cam/buffer-window w)))))
+
+(defconst cam/buffer-auto-delete-exclusion-patterns
+  '("^\\*Messages\\*$"
+    "^\\*cider-repl"
+    "^\\*nrepl-server")
+  "Patterns of buffer names that should never be deleted by `cam/cleanup-extra-buffers'.")
+
+(defun cam/should-delete-buffer (buf)
+  (and (or (not (buffer-file-name buf))
+           (not (buffer-modified-p buf)))
+       (not (cam/buffer-window buf))
+       (cl-notany (lambda (pattern)
+                    (string-match pattern (buffer-name buf)))
+                  cam/buffer-auto-delete-exclusion-patterns)))
+
+(defun cam/cleanup-extra-buffers ()
+  "Remove unused buffers whenever Emacs has been idle for 2 minutes."
+  (message "Cleaning extra buffers...")
+  (let ((case-fold-search :ignore-case))
+    (dolist (buf (buffer-list))
+      (when (cam/should-delete-buffer buf)
+        (kill-buffer buf)))))
+(run-with-idle-timer (* 30) :repeat #'cam/cleanup-extra-buffers)
+
+
+;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
+
+(defun cam/scroll-messages-to-end ()
+  "Scroll to the end of the *Messages* buffer if needed if it is currently visible."
+  (when-let (messages-buffer (get-buffer "*Messages*"))
+    (when-let (w (cam/buffer-window messages-buffer))
+      (when (< (window-end w) (point-max))
+        (with-selected-window w
+          (set-window-start w (save-excursion
+                                (goto-char (point-max))
+                                (forward-line (- (- (window-height) 3)))
+                                (point))))))))
+
+(defvar cam/scroll-messages-async-delay 2
+  "Number of seconds to wait before asynchronously scrolling the *Messages* buffer.")
+
+(defvar cam/scroll-messages-timer nil)
+
+(defun cam/scroll-messages-and-reset-timer ()
+  (unwind-protect
+      (unless (eq (current-buffer) (get-buffer "*Messages*")) ; don't scroll if *Messages* is the current buffer
+        (cam/scroll-messages-to-end))
+    (setq cam/scroll-messages-timer nil)))
+
+(defun cam/scroll-messages-async (&rest _)
+  (unless cam/scroll-messages-timer
+    (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
+
+(advice-add #'message :after #'cam/scroll-messages-async)
