@@ -12,6 +12,7 @@
 ;;;    [[Autoloads]]
 ;;;    [[Diminished Minor Modes]]
 ;;;    [[Global Settings]]
+;;;    [[Global Macros]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
 ;;;    [[Emacs 24 Workarounds]]
@@ -266,11 +267,12 @@
 ;;; [[<Global Macros]]
 
 (defmacro cam/suppress-messages (&rest body)
+  "Evaluate BODY with the `message' function temporarily bound to `ignore'."
   (declare (indent 0))
-  `(cl-letf (((symbol-function 'message) (lambda (&rest _))))
+  `(cl-letf (((symbol-function 'message) #'ignore))
      ,@body))
 
-(defmacro time (&rest body)
+(defmacro cam/time (&rest body)
   "Evaluate BODY and echo the amount of time it took, and return its result.
 Like Clojure's `time'."
   (declare (indent 0))
@@ -292,10 +294,11 @@ Like Clojure's `time'."
                     (:else                `(,(/ ,elapsed 1000000.0) "seconds"))))
        ,result)))
 
-(defmacro time* (&rest forms)
+(defmacro cam/time* (&rest forms)
+  "Evalute each form in FORMS and echo a message about how long each took to execute."
   (declare (indent 0))
   `(progn ,@(mapcar (lambda (form)
-                      `(time ,form))
+                      `(cam/time ,form))
                     forms)))
 
 (cl-defmacro cam/use-package (package &key
@@ -316,58 +319,36 @@ Like Clojure's `time'."
   (declare (indent 1))
   `(progn
      (eval-when-compile
-       ,(when (or vars advice load setup local-vars local-hooks keys)
-          `(ignore-errors
-             (require ',package)))
-       ,@(when require
-           (mapcar (lambda (other-package)
-                     `(require ',other-package))
-                   require)))
-     ,@(when declare
-         (mapcar (lambda (f)
-                   `(declare-function ,f ,(symbol-name package)))
-                 declare))
-     ,@(when vars
-         (mapcar (lambda (var.value)
-                   `(setq ,(car var.value) ,(cdr var.value)))
-                 vars))
+       (ignore-errors
+         ,@(cl-loop for p in (cons package require)
+                    collect `(require ',p))))
+     ,@(cl-loop for f in declare
+                collect `(declare-function ,f ,(symbol-name package)))
+     ,@(cl-loop for (var . value) in vars
+                collect `(setq ,var ,value))
      ,(when (or require advice load keys)
         `(eval-after-load ',package
            '(progn
-              ,@(when require
-                  (mapcar (lambda (other-package)
-                            `(require ',other-package))
-                          require))
-              ,@(when advice
-                  (mapcar (lambda (item)
-                            `(advice-add ,@item))
-                          advice))
+              ,@(cl-loop for other-package in require
+                         collect `(require ',other-package))
+              ,@(cl-loop for item in advice
+                         collect `(advice-add ,@item))
               ,@load
-              ,@(when keys
-                  (mapcar (lambda (binding.command)
-                            `(define-key ,keymap (kbd ,(car binding.command)) ,(cdr binding.command)))
-                          keys)))))
+              ,@(cl-loop for (binding . command) in keys
+                         collect `(define-key ,keymap (kbd ,binding) ,command)))))
      ,@(when (or minor-modes setup local-vars local-hooks)
          (let ((setup-fn-name (intern (format "cam/%s-setup" (symbol-name mode-name)))))
            `((defun ,setup-fn-name ()
-               ,@(when minor-modes
-                   (mapcar (lambda (minor-mode)
-                             `(,minor-mode 1))
-                           minor-modes))
+               ,@(cl-loop for minor-mode in minor-modes
+                          collect `(,minor-mode 1))
                ,@setup
-               ,@(when local-vars
-                   (mapcar (lambda (var.value)
-                             `(setq-local ,(car var.value) ,(cdr var.value)))
-                           local-vars))
-               ,@(when local-hooks
-                   (mapcar (lambda (hook.fun)
-                             `(add-hook ',(car hook.fun) ,(cdr hook.fun) ,(not :append) :local))
-                           local-hooks)))
+               ,@(cl-loop for (var . value) in local-vars
+                          collect `(setq-local ,var ,value))
+               ,@(cl-loop for (hook . fun) in local-hooks
+                          collect `(add-hook ',hook ,fun ,(not :append) :local)))
              (add-hook ',hook-name (function ,setup-fn-name)))))
-     ,@(when auto-mode-alist
-         (mapcar (lambda (pattern)
-                   `(add-to-list 'auto-mode-alist '(,pattern . ,mode-name)))
-                 auto-mode-alist))))
+     ,@(cl-loop for pattern in auto-mode-alist
+                collect `(add-to-list 'auto-mode-alist '(,pattern . ,mode-name)))))
 
 
 ;;; [[<Global Functions]]
@@ -820,7 +801,8 @@ any buffers that were visiting files that were children of that directory."
                 auto-complete-mode
                 elisp-slime-nav-mode
                 morlock-mode)
-  :setup ((ac-emacs-lisp-mode-setup))
+  :setup ((cam/lisp-mode-setup)
+          (ac-emacs-lisp-mode-setup))
   :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
   :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)))
 
