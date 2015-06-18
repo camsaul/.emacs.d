@@ -317,7 +317,8 @@ Like Clojure's `time'."
   `(progn
      (eval-when-compile
        ,(when (or vars advice load setup local-vars local-hooks keys)
-          `(require ',package))
+          `(ignore-errors
+             (require ',package)))
        ,@(when require
            (mapcar (lambda (other-package)
                      `(require ',other-package))
@@ -879,10 +880,10 @@ any buffers that were visiting files that were children of that directory."
 ;;; [[<js2-mode]]
 (cam/use-package js2-mode
   :mode-name js2-mode
-  :minor-modes (electric-pair-local-mode
+  :minor-modes (ac-js2-mode
+                electric-pair-local-mode
                 rainbow-delimiters-mode
-                skewer-mode
-                ac-js2-mode)
+                skewer-mode)
   :setup ((unless (skewer-ping)
             (run-skewer)))
   :keys (("C-j" . #'newline)
@@ -1036,7 +1037,8 @@ Calls `magit-refresh' after the command finishes."
                 guide-key-mode
                 projectile-mode
                 rainbow-mode
-                undo-tree-mode))
+                undo-tree-mode
+                yas-minor-mode))
   (diminish mode))
 
 
