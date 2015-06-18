@@ -1080,13 +1080,13 @@ Calls `magit-refresh' after the command finishes."
 (defconst cam/buffer-auto-delete-exclusion-patterns
   '("^\\*Messages\\*$"
     "^\\*cider-repl"
-    "^\\*nrepl-server")
+    "^\\*sly-mrepl for sbcl\\*$")
   "Patterns of buffer names that should never be deleted by `cam/cleanup-extra-buffers'.")
 
 (defun cam/should-delete-buffer (buf)
   (and (or (not (buffer-file-name buf))
-           (not (buffer-modified-p buf))
-           (get-buffer-process buf))
+           (not (buffer-modified-p buf)))
+       (not (get-buffer-process buf))
        (not (cam/buffer-window buf))
        (cl-notany (lambda (pattern)
                     (string-match pattern (buffer-name buf)))
