@@ -272,30 +272,37 @@
 
 ;; Modes to enable
 (delete-selection-mode 1)                         ; typing will delete selected text
+(global-anzu-mode 1)                              ; show number of matches in mode line while searching
+(global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
+(global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
 (global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
+(global-undo-tree-mode 1)
+(guide-key-mode 1)                                ; Show list of completions for keystrokes after a delay
 (ido-mode 1)
 (ido-everywhere 1)
 (ido-vertical-mode 1)
 (nyan-mode 1)                                     ; Nyan Cat in mode line
+(projectile-global-mode 1)
+(rainbow-mode 1)                                  ; Colorize strings like #FCE94F
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
-
-;; Modes to lazily enable
-(cam/lazy-enable global-anzu-mode        :global t :diminish anzu-mode)       ; show number of matches in mode line while searching
-(cam/lazy-enable global-undo-tree-mode   :global t :diminish undo-tree-mode)
-(cam/lazy-enable guide-key-mode          :global t :diminish t)               ; Show list of completions for keystrokes after a delay
-(cam/lazy-enable global-auto-revert-mode :global t :diminish t)               ; automatically reload files when they change on disk
-(cam/lazy-enable global-diff-hl-mode     :global t :diminish diff-hl-mode)    ; Show which lines have changed since last git commit in the fringe
-(cam/lazy-enable projectile-global-mode  :global t :diminish projectile-mode)
-(cam/lazy-enable rainbow-mode            :global t :diminish t)               ; Colorize strings like #FCE94F
-
+(yas-global-mode 1)
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda ()
-                            (cam/lazy-enable rainbow-mode)))
+                            (rainbow-mode 1)))
 
 
 ;;; [[<Diminished Minor Modes]]
+
+(dolist (mode '(anzu-mode
+                diff-hl-mode
+                global-auto-revert-mode
+                guide-key-mode
+                projectile-mode
+                rainbow-mode
+                undo-tree-mode))
+  (diminish mode))
 
 ;; for minor modes that get selectively loaded add a hook to diminish them after they're enabled
 (dolist (hook.mode '((button-lock-mode-hook           . button-lock-mode)
@@ -330,6 +337,7 @@
       next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
+      ;;
       ns-right-option-modifier 'alt
       print-gensym t                              ; print uninterned symbols with prefixes to differentiate them from interned ones
       recentf-max-menu-items 50                   ; show more recent files in [Helm]recentf
@@ -432,6 +440,43 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                                                                      (string-remove-suffix "."))))))
   (browse-url (format "http://javadocs.org/%s" search-term)))
 
+(cl-defun cam/realign-eol-comment-current-line ()
+  "Realign the end-of-line comment for the current line to `comment-column'."
+  (interactive)
+  (unless comment-column
+    (error "comment-column is not set!"))
+  (save-excursion
+    (beginning-of-line)
+    (let ((current-line (line-number-at-pos (point))))
+      (search-forward ";")
+      (backward-char)
+      ;; Check to make sure we're still on the same line
+      (unless (= (line-number-at-pos (point)) current-line)
+        (cl-return-from cam/realign-eol-comment-current-line)))
+    ;; Make sure this is just a single ";"
+    (when (= (char-after (1+ (point))) ?\;)
+      (cl-return-from cam/realign-eol-comment-current-line))
+    ;; calculate the number of spaces to add / remove and do so
+    (let ((cols-difference (- comment-column
+                              (current-column))))
+      ;; TODO - should we make sure we don't delete any chars that aren't spaces ?
+      (cond
+       ((> cols-difference 0) (insert-char ?  cols-difference))
+       ((< cols-difference 0) (delete-char cols-difference))))))
+
+(defun cam/realign-eol-comments ()
+  "Re-align end-of-line comments to `comment-column' in the current region
+if it is active; otherwise re-align comments on the current line."
+  (interactive)
+  (if (not (region-active-p)) (cam/realign-eol-comment-current-line)
+    (let ((last-line (line-number-at-pos (region-end)))
+          (line (line-number-at-pos (region-beginning))))
+      (save-excursion
+        (goto-char (region-beginning))
+        (while (<= (prog1 line (cl-incf line)) last-line)
+          (cam/realign-eol-comment-current-line)
+          (forward-line))))))
+
 
 ;;; [[<Global Hooks]]
 
@@ -494,6 +539,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
                             ("ESC <up>"      . #'windmove-up)
                             ("H-M-a"         . #'mc/skip-to-previous-like-this)
                             ("H-M-e"         . #'mc/skip-to-next-like-this)
+                            ("H-;"           . #'cam/realign-eol-comments)
                             ("H-a"           . #'mc/mark-previous-like-this)
                             ("H-e"           . #'mc/mark-next-like-this)
                             ("M-:"           . #'pp-eval-expression)                 ; Instead of regular eval-expression
@@ -565,9 +611,7 @@ Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point
 (cam/use-package clojure-mode
   :mode-name clojure-mode
   :require (clojure-mode-extra-font-locking)
-  :load ((cam/lazy-enable yas-global-mode :global t)
-         (eval-after-load 'yasnippet
-           '(clojure-snippets-initialize)))
+  :load ((clojure-snippets-initialize))
   :minor-modes (auto-complete-mode
                 clj-refactor-mode)
   :setup ((cam/lisp-mode-setup)
@@ -689,10 +733,9 @@ any buffers that were visiting files that were children of that directory."
   :mode-name emacs-lisp-mode
   :minor-modes (aggressive-indent-mode
                 auto-complete-mode
+                elisp-slime-nav-mode
                 morlock-mode
-                (:lazy elisp-slime-nav-mode)
-                (:lazy yas-global-mode :global t)
-                (:lazy wiki-nav-mode :diminish t))
+                (wiki-nav-mode :diminish t))
   :setup ((cam/lisp-mode-setup)
 
           (unless (member 'ac-source-variables 'ac-sources) ; not sure why but it seems we need to call this manually on the first Emacs Lisp file we visit

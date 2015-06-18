@@ -74,9 +74,14 @@
            `((defun ,setup-fn-name ()
                ,@(when minor-modes
                    (mapcar (lambda (minor-mode)
-                             (cond
-                              ((atom minor-mode)           `(,minor-mode 1))
-                              ((eq (car minor-mode) :lazy) `(cam/lazy-enable ,@(cdr minor-mode)))))
+                             (if (atom minor-mode) `(,minor-mode 1)
+                               (apply (cl-function (lambda (mode &key diminish)
+                                                     `(progn
+                                                        (,mode 1)
+                                                        ,(when diminish
+                                                           (if (eq diminish t) `(diminish ',mode)
+                                                             `(diminish ',diminish))))
+                                                     )) minor-mode)))
                            minor-modes))
                ,@setup
                ,@(when local-vars
@@ -130,49 +135,5 @@ Like Clojure's `time'."
   `(progn ,@(mapcar (lambda (form)
                       `(time ,form))
                     forms)))
-
-
-;;; ---------------------------------------- [[<Lazy Loading]] ----------------------------------------
-
-;;;###autoload
-(cl-defmacro cam/lazy-enable (minor-mode &key (delay 5) diminish global)
-  (let* ((will-enable (intern (format "cam/--will-lazy-enable-%s-p" (symbol-name minor-mode))))
-         (did-enable  (intern (format "cam/--did-lazy-enable-%s-p"  (symbol-name minor-mode))))
-         (hook        (intern (format "cam/--%s-lazy-enable-hook"   (symbol-name minor-mode))))
-         (buffer      (make-symbol (format "cam/--%s-buffer"        (symbol-name minor-mode))))
-         (activate    (if global `(,minor-mode 1)
-                        `(with-current-buffer ,buffer
-                           (,minor-mode 1)))))
-    `(let ,(unless global
-             `((,buffer (current-buffer))))
-       (defvar ,will-enable nil)
-       (defvar ,did-enable nil)
-       (cond
-        (,did-enable ,(unless global
-                        `(,minor-mode 1)))
-        (,will-enable ,(unless global
-                         `(add-hook ',hook (lambda ()
-                                             ,activate))))
-        (:else        (setq ,will-enable t)
-                      (run-with-idle-timer ,delay nil (lambda ()
-                                                        ,activate
-                                                        (setq ,did-enable t)
-                                                        ,(when diminish
-                                                           `(diminish ',(if (eq diminish t) minor-mode
-                                                                          diminish)))
-                                                        (run-hooks ',hook))))))))
-
-
-(defmacro cam/defdelay (name &rest body)
-  (declare (indent 1))
-  (let ((delay-loaded-p (make-symbol (format "@%s--derefed-p" (symbol-name name))))
-        (delay-value    (make-symbol (format "@%s--value"     (symbol-name name))))
-        (deref-fun      (intern (format "@%s"                 (symbol-name name)))))
-    `(let (,delay-loaded-p
-           ,delay-value)
-       (defun ,deref-fun ()
-         (if ,delay-loaded-p ,delay-value
-           (setq ,delay-loaded-p t
-                 ,delay-value    (progn ,@body)))))))
 
 (provide 'cam-macros)
