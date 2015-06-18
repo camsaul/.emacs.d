@@ -804,10 +804,7 @@ any buffers that were visiting files that were children of that directory."
                 elisp-slime-nav-mode
                 morlock-mode
                 wiki-nav-mode)
-  :setup ((cam/lisp-mode-setup)
-
-          (unless (member 'ac-source-variables 'ac-sources) ; not sure why but it seems we need to call this manually on the first Emacs Lisp file we visit
-            (ac-emacs-lisp-mode-setup)))
+  :setup ((cam/lisp-mode-setup))
   :local-hooks ((after-save-hook . (lambda ()
                                      (when cam/byte-compile
                                        (byte-compile-file (buffer-file-name) :load)))))
