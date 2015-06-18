@@ -10,7 +10,6 @@
 ;;;    [[Theme]]
 ;;;    [[Global Requires]]
 ;;;    [[Autoloads]]
-;;;    [[Global Minor Modes]]
 ;;;    [[Diminished Minor Modes]]
 ;;;    [[Global Settings]]
 ;;;    [[Global Functions]]
@@ -38,6 +37,7 @@
 ;;;    [[Sly]]
 ;;;    [[Web Mode]]
 ;;;    [[YASnippet]]
+;;; [[Global Minor Modes]]
 ;;; [[Final Setup]]
 ;;; [[Experimental]]
 
@@ -217,46 +217,6 @@
 ;;; [[<Autoloads]]
 
 (autoload #'describe-minor-mode "help")
-
-
-;;; [[<Global Minor Modes]]
-
-;; Modes to disable
-(blink-cursor-mode -1)                            ; disable annoying blinking cursor
-
-;; Modes to enable
-(delete-selection-mode 1)                         ; typing will delete selected text
-(global-anzu-mode 1)                              ; show number of matches in mode line while searching
-(global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
-(global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
-(global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
-(global-undo-tree-mode 1)
-(guide-key-mode 1)                                ; Show list of completions for keystrokes after a delay
-(ido-mode 1)
-(ido-everywhere 1)
-(ido-vertical-mode 1)
-(nyan-mode 1)                                     ; Nyan Cat in mode line
-(projectile-global-mode 1)
-(rainbow-mode 1)                                  ; Colorize strings like #FCE94F
-(save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
-(winner-mode 1)
-(yas-global-mode 1)
-
-;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
-(add-hook 'find-file-hook (lambda ()
-                            (rainbow-mode 1)))
-
-
-;;; [[<Diminished Minor Modes]]
-
-(dolist (mode '(anzu-mode
-                diff-hl-mode
-                global-auto-revert-mode
-                guide-key-mode
-                projectile-mode
-                rainbow-mode
-                undo-tree-mode))
-  (diminish mode))
 
 
 ;;; [[<Global Settings]]
@@ -535,6 +495,38 @@ if it is active; otherwise re-align comments on the current line."
           (cam/realign-eol-comment-current-line)
           (forward-line))))))
 
+(defun cam/-align-map-get-max-col (&optional max)
+  (save-excursion
+    (condition-case _
+        (progn
+          (backward-sexp 2)                          ; Move from end of val to beginning of key
+          (forward-sexp)                             ; Move to end of key
+          (let ((col (+ (current-column) 1)))        ; val should start one space after key
+            (backward-sexp)                          ; Move back to start of key
+            (cam/-align-map-get-max-col (max (or max 0) col)))) ; recurse until error is thrown when we reach the first key
+      (error (message "Max column is %d" max)
+             max))))
+
+(defun cam/-align-map-args-to-column ()
+  (save-excursion
+    (ignore-errors
+      (backward-sexp)                                ; move to start of val
+      (cam/insert-spaces-to-goal-column nil)         ; insert spaces
+      (backward-sexp)                                ; move to start of key
+      (cam/-align-map-args-to-column))))              ; recurse until error is thrown when we reach the first sexp
+
+(defun cam/align-map ()
+  "Align the values in a Clojure map."
+  (interactive)
+  (save-excursion
+    (when (paredit-in-string-p)                      ; If we're in a string jump out so we don't insert a } when calling (paredit-close-curly)
+      (paredit-forward-up))
+    (paredit-close-curly)                            ; jump to char after closing }
+    (backward-char)                                  ; move back onto } -- end of last sexp
+    (setq-local cam/insert-spaces-goal-col (cam/-align-map-get-max-col))
+    (cam/-align-map-args-to-column))
+  (paredit-reindent-defun))
+
 
 ;;; [[<Global Hooks]]
 
@@ -581,6 +573,7 @@ if it is active; otherwise re-align comments on the current line."
                             ("C-M-S-k"       . #'backward-kill-sexp)
                             ("C-S-k"         . #'cam/backward-kill-line)
                             ("C-c C-g"       . #'keyboard-quit)
+                            ("C-s-;"         . #'cam/align-map)
                             ("C-h M"         . #'describe-minor-mode)
                             ("C-x C-b"       . #'helm-buffers-list)
                             ("C-x C-f"       . #'helm-find-files)
@@ -1007,6 +1000,46 @@ Calls `magit-refresh' after the command finishes."
   :declare (aya-create aya-expand))
 
 
+;;; [[<Global Minor Modes]]
+
+;; Modes to disable
+(blink-cursor-mode -1)                            ; disable annoying blinking cursor
+
+;; Modes to enable
+(delete-selection-mode 1)                         ; typing will delete selected text
+(global-anzu-mode 1)                              ; show number of matches in mode line while searching
+(global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
+(global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
+(global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
+(global-undo-tree-mode 1)
+(guide-key-mode 1)                                ; Show list of completions for keystrokes after a delay
+(ido-mode 1)
+(ido-everywhere 1)
+(ido-vertical-mode 1)
+(nyan-mode 1)                                     ; Nyan Cat in mode line
+(projectile-global-mode 1)
+(rainbow-mode 1)                                  ; Colorize strings like #FCE94F
+(save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
+(winner-mode 1)
+(yas-global-mode 1)
+
+;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
+(add-hook 'find-file-hook (lambda ()
+                            (rainbow-mode 1)))
+
+
+;;; [[<Diminished Minor Modes]]
+
+(dolist (mode '(anzu-mode
+                diff-hl-mode
+                global-auto-revert-mode
+                guide-key-mode
+                projectile-mode
+                rainbow-mode
+                undo-tree-mode))
+  (diminish mode))
+
+
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
 ;; Byte-compile init.el if needed for next time around
@@ -1029,41 +1062,6 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;; ---------------------------------------- [[<Experimental]] ----------------------------------------
-
-;; ---------------------------------------- [[<cam/align-map]] ----------------------------------------
-(defun cam/get-max-col (&optional max)
-  (save-excursion
-    (condition-case _
-        (progn
-          (backward-sexp 2)                          ; Move from end of val to beginning of key
-          (forward-sexp)                             ; Move to end of key
-          (let ((col (+ (current-column) 1)))        ; val should start one space after key
-            (backward-sexp)                          ; Move back to start of key
-            (cam/get-max-col (max (or max 0) col)))) ; recurse until error is thrown when we reach the first key
-      (error (message "Max column is %d" max)
-             max))))
-
-(defun cam/align-map-args-to-column ()
-  (save-excursion
-    (ignore-errors
-      (backward-sexp)                                ; move to start of val
-      (cam/insert-spaces-to-goal-column nil)         ; insert spaces
-      (backward-sexp)                                ; move to start of key
-      (cam/align-map-args-to-column))))              ; recurse until error is thrown when we reach the first sexp
-
-(defun cam/align-map ()
-  (interactive)
-  (save-excursion
-    (when (paredit-in-string-p)                      ; If we're in a string jump out so we don't insert a } when calling (paredit-close-curly)
-      (paredit-forward-up))
-    (paredit-close-curly)                            ; jump to char after closing }
-    (backward-char)                                  ; move back onto } -- end of last sexp
-    (setq-local cam/insert-spaces-goal-col (cam/get-max-col))
-    (cam/align-map-args-to-column))
-  (paredit-reindent-defun))
-
-(global-set-key (kbd "C-s-;") #'cam/align-map)
-
 
 ;; ---------------------------------------- [[<cam/auto-update-packages]] ----------------------------------------
 
