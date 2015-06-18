@@ -1,12 +1,10 @@
-;;; -*- lexical-binding: t; cam/byte-compile: t; coding: utf-8; byte-compile-dynamic: nil; comment-column: 50; -*-
+;;; -*- lexical-binding: t; coding: utf-8; cam/byte-compile: t; comment-column: 50; -*-
 
 ;; (unless (>= emacs-major-version 25)
 ;;   (error "This setup requires Emacs version 25 or newer."))
 
 ;;; TOC:
 ;;; [[Initial Setup]]
-;;;    [[Bootstrapping]]
-;;     [[Auxilary Init File Setup]]
 ;;; [[Package Setup]]
 ;;; [[Global Setup]]
 ;;;    [[Theme]]
@@ -43,15 +41,10 @@
 ;;; [[Experimental]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
-
-;;; [[<Bootstrapping]]
 ;;; (Things that need to happen as soon as this file starts loading)
 
 (setq gc-cons-threshold (* 128 1024 1024)         ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
-
-(add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
-(add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
@@ -73,45 +66,7 @@
 (custom-set-variables
  '(inhibit-startup-echo-area-message (user-login-name)))
 
-
-;;; [[<Auxilary Init File Setup]]
-
-;; Check to make sure init file is up-to-date
-;; user-init-file is the .elc file when LOADING
-(when (string-suffix-p "elc" user-init-file)
-  (let ((init-file-source (concat user-emacs-directory "init.el")))
-    (when (file-newer-than-file-p init-file-source user-init-file)
-      ;; If not, trash .elc file and kill Emacs. We'll recompile on next launch
-      (delete-file user-init-file)
-      (kill-emacs))))
-
-;; ignore the warnings about having ~/.emacs.d in the load path
-(eval-after-load 'warnings
-  '(advice-add #'display-warning :around
-     (lambda (function type message &optional level buffer-name)
-       (unless (and (eq type 'initialization)
-                    (string-prefix-p "Your `load-path' seems to contain" message))
-         (funcall function type message level buffer-name)))))
-(add-to-list 'load-path (expand-file-name user-emacs-directory) :append)
-
-(defconst cam/autoloads-file (concat user-emacs-directory "autoloads.el"))
-
-;; byte recompile the other files in this dir if needed
-(defconst cam/auxilary-init-files
-  (eval-when-compile (let (files)
-                       (dolist (file (directory-files user-emacs-directory))
-                         (when (and (string-match "^[-[:alpha:]]+\\.el$" file)
-                                    (not (member file '("autoloads.el" "custom.el" "init.el"))))
-                           (push (concat user-emacs-directory file) files)))
-                       files)))
-
-(eval-when-compile
-  (dolist (file cam/auxilary-init-files)
-    (unless (file-exists-p (concat file "c"))
-      (byte-compile-file file :load)
-      (update-file-autoloads file :save-after cam/autoloads-file))))
-
-(load-file cam/autoloads-file)
+(add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
 
 (defvar cam/has-loaded-init-p nil
   "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
@@ -119,8 +74,8 @@
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
 
-(time
-  (package-initialize))
+(package-initialize)
+
 
 (setq package-archives '(("gnu"       . "http://elpa.gnu.org/packages/")
                          ("melpa"     . "http://melpa.milkbox.net/packages/")
@@ -195,8 +150,6 @@
     (condition-case err
         (package-install package)
       (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
-
-
 
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
@@ -337,7 +290,6 @@
       next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
-      ;;
       ns-right-option-modifier 'alt
       print-gensym t                              ; print uninterned symbols with prefixes to differentiate them from interned ones
       recentf-max-menu-items 50                   ; show more recent files in [Helm]recentf
@@ -356,8 +308,126 @@
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 
+;;; [[<Global Macros]]
+
+(defmacro cam/suppress-messages (&rest body)
+  (declare (indent 0))
+  `(cl-letf (((symbol-function 'message) (lambda (&rest _))))
+     ,@body))
+
+(defmacro time (&rest body)
+  "Evaluate BODY and echo the amount of time it took, and return its result.
+Like Clojure's `time'."
+  (declare (indent 0))
+  (let ((start-time (make-symbol "start-time"))
+        (result     (make-symbol "result"))
+        (elapsed    (make-symbol "elapsed-time"))
+        (body       (if (cdr body) `(progn ,@body)
+                      (car body))))
+    `(let* ((,start-time (cam/current-microseconds))
+            (,result     ,body)
+            (,elapsed   (- (cam/current-microseconds)
+                           ,start-time)))
+       (apply #'message ,(let* ((form-str (format "%s" body))
+                                (form-str (if (> (length form-str) 50) (concat (substring form-str 0 50) "...")
+                                            form-str)))
+                           (concat "\n" form-str " elapsed time: %.1f %s."))
+              (cond ((< ,elapsed 1000)    `(,,elapsed "µs"))
+                    ((< ,elapsed 1000000) `(,(/ ,elapsed 1000.0) "ms"))
+                    (:else                `(,(/ ,elapsed 1000000.0) "seconds"))))
+       ,result)))
+
+(defmacro time* (&rest forms)
+  (declare (indent 0))
+  `(progn ,@(mapcar (lambda (form)
+                      `(time ,form))
+                    forms)))
+
+(cl-defmacro cam/use-package (package &key
+                                      (mode-name (intern (format "%s-mode" (symbol-name package))))
+                                      (hook-name (intern (format "%s-hook" (symbol-name mode-name))))
+                                      declare
+                                      vars
+                                      require
+                                      advice
+                                      load
+                                      minor-modes
+                                      setup
+                                      local-vars
+                                      local-hooks
+                                      (keymap (intern (format "%s-map" (symbol-name mode-name))))
+                                      keys
+                                      auto-mode-alist)
+  (declare (indent 1))
+  `(progn
+     (eval-when-compile
+       ,(when (or vars advice load setup local-vars local-hooks keys)
+          `(require ',package))
+       ,@(when require
+           (mapcar (lambda (other-package)
+                     `(require ',other-package))
+                   require)))
+     ,@(when declare
+         (mapcar (lambda (f)
+                   `(declare-function ,f ,(symbol-name package)))
+                 declare))
+     ,@(when vars
+         (mapcar (lambda (var.value)
+                   `(setq ,(car var.value) ,(cdr var.value)))
+                 vars))
+     ,(when (or require advice load keys)
+        `(eval-after-load ',package
+           '(progn
+              ,@(when require
+                  (mapcar (lambda (other-package)
+                            `(require ',other-package))
+                          require))
+              ,@(when advice
+                  (mapcar (lambda (item)
+                            `(advice-add ,@item))
+                          advice))
+              ,@load
+              ,@(when keys
+                  (mapcar (lambda (binding.command)
+                            `(define-key ,keymap (kbd ,(car binding.command)) ,(cdr binding.command)))
+                          keys)))))
+     ,@(when (or minor-modes setup local-vars local-hooks)
+         (let ((setup-fn-name (intern (format "cam/%s-setup" (symbol-name mode-name)))))
+           `((defun ,setup-fn-name ()
+               ,@(when minor-modes
+                   (mapcar (lambda (minor-mode)
+                             (if (atom minor-mode) `(,minor-mode 1)
+                               (apply (cl-function (lambda (mode &key diminish)
+                                                     `(progn
+                                                        (,mode 1)
+                                                        ,(when diminish
+                                                           (if (eq diminish t) `(diminish ',mode)
+                                                             `(diminish ',diminish))))
+                                                     )) minor-mode)))
+                           minor-modes))
+               ,@setup
+               ,@(when local-vars
+                   (mapcar (lambda (var.value)
+                             `(setq-local ,(car var.value) ,(cdr var.value)))
+                           local-vars))
+               ,@(when local-hooks
+                   (mapcar (lambda (hook.fun)
+                             `(add-hook ',(car hook.fun) ,(cdr hook.fun) ,(not :append) :local))
+                           local-hooks)))
+             (add-hook ',hook-name (function ,setup-fn-name)))))
+     ,@(when auto-mode-alist
+         (mapcar (lambda (pattern)
+                   `(add-to-list 'auto-mode-alist '(,pattern . ,mode-name)))
+                 auto-mode-alist))))
+
 
 ;;; [[<Global Functions]]
+
+(defun cam/current-microseconds ()
+  "Return the current time in microseconds."
+  (let ((time (current-time)))
+    (+ (* (nth 1 time) 1000000)
+       (nth 2 time))))
 
 (defun cam/untabify-current-buffer ()
   (interactive)
@@ -742,9 +812,7 @@ any buffers that were visiting files that were children of that directory."
             (ac-emacs-lisp-mode-setup)))
   :local-hooks ((after-save-hook . (lambda ()
                                      (when cam/byte-compile
-                                       (byte-compile-file (buffer-file-name) :load))
-                                     (when cam/generate-autoloads
-                                       (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
+                                       (byte-compile-file (buffer-file-name) :load)))))
   :keys (("<C-M-s-return>" . #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
          ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("C-x C-e"        . #'pp-eval-last-sexp)))
