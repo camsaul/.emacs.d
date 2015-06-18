@@ -795,6 +795,7 @@ any buffers that were visiting files that were children of that directory."
 
 (cam/use-package ielm
   :mode-name inferior-emacs-lisp-mode
+  :hook-name ielm-mode-hook
   :minor-modes (aggressive-indent-mode
                 auto-complete-mode
                 elisp-slime-nav-mode
