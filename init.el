@@ -297,9 +297,8 @@ Like Clojure's `time'."
 (defmacro cam/time* (&rest forms)
   "Evalute each form in FORMS and echo a message about how long each took to execute."
   (declare (indent 0))
-  `(progn ,@(mapcar (lambda (form)
-                      `(cam/time ,form))
-                    forms)))
+  `(progn ,@(cl-loop for form in forms
+                     collect `(cam/time ,form))))
 
 (cl-defmacro cam/use-package (package &key
                                       (mode-name (intern (format "%s-mode" (symbol-name package))))
@@ -355,9 +354,8 @@ Like Clojure's `time'."
 
 (defun cam/current-microseconds ()
   "Return the current time in microseconds."
-  (let ((time (current-time)))
-    (+ (* (nth 1 time) 1000000)
-       (nth 2 time))))
+  (cl-destructuring-bind (_ seconds microseconds _) (current-time)
+    (+ (* seconds 1000000) microseconds)))
 
 (defun cam/untabify-current-buffer ()
   (interactive)
@@ -529,63 +527,63 @@ if it is active; otherwise re-align comments on the current line."
 
 ;;; [[<Global Keybindings]]
 
-(dolist (key-command-pair '(("<A-escape>"    . #'helm-mark-ring)
-                            ("<A-return>"    . #'wiki-nav-ido)
-                            ("<C-M-s-down>"  . #'windmove-down)
-                            ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
-                            ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)  ; Use <f11> <key> for toggling various minor modes
-                            ("<C-M-s-up>"    . #'windmove-up)
-                            ("<H-SPC>"       . #'mc/mark-all-like-this)
-                            ("<H-escape>"    . #'ace-jump-line-mode)
-                            ("<H-return>"    . #'mc/mark-next-lines)
-                            ("<escape>"      . #'ace-jump-mode)
-                            ("<f11>"         . nil)
-                            ("<f11> a"       . #'aggressive-indent-mode)
-                            ("<f11> p"       . #'paredit-mode)
-                            ("<f11> w"       . #'whitespace-mode)
-                            ("<f12> b"       . #'cam/bing-search)
-                            ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
-                            ("<f12> j"       . #'cam/javadocs-search)
-                            ("<f12> k"       . #'cam/browse-korma-dox)
-                            ("A-;"           . #'cam/loccur)
-                            ("A-r l"         . #'rotate-layout)
-                            ("A-r w"         . #'rotate-window)
-                            ("C-="           . #'magit-status)
-                            ("C-M-y"         . #'helm-show-kill-ring)
-                            ("C-M-S-k"       . #'backward-kill-sexp)
-                            ("C-S-k"         . #'cam/backward-kill-line)
-                            ("C-c C-g"       . #'keyboard-quit)
-                            ("C-s-;"         . #'cam/align-map)
-                            ("C-h M"         . #'describe-minor-mode)
-                            ("C-x C-b"       . #'helm-buffers-list)
-                            ("C-x C-f"       . #'helm-find-files)
-                            ("C-x C-g"       . #'keyboard-quit)
-                            ("C-x C-r"       . #'helm-recentf)
-                            ("C-x C-z"       . nil)                                  ; instead of suspend-frame
-                            ("C-x b"         . #'helm-buffers-list)
-                            ("C-x C-d"       . #'dired)                              ; instead of ido-list-directory
-                            ("C-x C-q"       . nil)                                  ; remove keybinding for read-only-mode since I almost never press it on purpose
-                            ("C-x f"         . #'helm-find-files)
-                            ("C-x k"         . #'kill-this-buffer)
-                            ("C-x r r"       . #'register-list)                      ; replaces copy-rectangle-to-register
-                            ("C-z"           . #'undo)
-                            ("ESC <up>"      . #'windmove-up)
-                            ("H-M-a"         . #'mc/skip-to-previous-like-this)
-                            ("H-M-e"         . #'mc/skip-to-next-like-this)
-                            ("H-;"           . #'cam/realign-eol-comments)
-                            ("H-a"           . #'mc/mark-previous-like-this)
-                            ("H-e"           . #'mc/mark-next-like-this)
-                            ("M-:"           . #'pp-eval-expression)                 ; Instead of regular eval-expression
-                            ("M-g"           . #'goto-line)                          ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
-                            ("M-j"           . #'cam/join-next-line)
-                            ("M-x"           . #'helm-M-x)
-                            ("M-z"           . #'ace-jump-zap-up-to-char)
-                            ("M-/"           . #'hippie-expand)                      ; Instead of dabbrev-expand
-                            ("s-;"           . #'cam/insert-spaces-to-goal-column)
-                            ("s-Z"           . #'undo-tree-redo)
-                            ("s-f"           . #'ftf-grepsource)
-                            ("s-o"           . #'ftf-find-file)))
-  (global-set-key (kbd (car key-command-pair)) (eval (cdr key-command-pair))))
+(cl-loop for (key . command) in '(("<A-escape>"    . #'helm-mark-ring)
+                                  ("<A-return>"    . #'wiki-nav-ido)
+                                  ("<C-M-s-down>"  . #'windmove-down)
+                                  ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
+                                  ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame) ; Use <f11> <key> for toggling various minor modes
+                                  ("<C-M-s-up>"    . #'windmove-up)
+                                  ("<H-SPC>"       . #'mc/mark-all-like-this)
+                                  ("<H-escape>"    . #'ace-jump-line-mode)
+                                  ("<H-return>"    . #'mc/mark-next-lines)
+                                  ("<escape>"      . #'ace-jump-mode)
+                                  ("<f11>"         . nil)
+                                  ("<f11> a"       . #'aggressive-indent-mode)
+                                  ("<f11> p"       . #'paredit-mode)
+                                  ("<f11> w"       . #'whitespace-mode)
+                                  ("<f12> b"       . #'cam/bing-search)
+                                  ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
+                                  ("<f12> j"       . #'cam/javadocs-search)
+                                  ("<f12> k"       . #'cam/browse-korma-dox)
+                                  ("A-;"           . #'cam/loccur)
+                                  ("A-r l"         . #'rotate-layout)
+                                  ("A-r w"         . #'rotate-window)
+                                  ("C-="           . #'magit-status)
+                                  ("C-M-y"         . #'helm-show-kill-ring)
+                                  ("C-M-S-k"       . #'backward-kill-sexp)
+                                  ("C-S-k"         . #'cam/backward-kill-line)
+                                  ("C-c C-g"       . #'keyboard-quit)
+                                  ("C-s-;"         . #'cam/align-map)
+                                  ("C-h M"         . #'describe-minor-mode)
+                                  ("C-x C-b"       . #'helm-buffers-list)
+                                  ("C-x C-f"       . #'helm-find-files)
+                                  ("C-x C-g"       . #'keyboard-quit)
+                                  ("C-x C-r"       . #'helm-recentf)
+                                  ("C-x C-z"       . nil) ; instead of suspend-frame
+                                  ("C-x b"         . #'helm-buffers-list)
+                                  ("C-x C-d"       . #'dired) ; instead of ido-list-directory
+                                  ("C-x C-q"       . nil) ; remove keybinding for read-only-mode since I almost never press it on purpose
+                                  ("C-x f"         . #'helm-find-files)
+                                  ("C-x k"         . #'kill-this-buffer)
+                                  ("C-x r r"       . #'register-list) ; replaces copy-rectangle-to-register
+                                  ("C-z"           . #'undo)
+                                  ("ESC <up>"      . #'windmove-up)
+                                  ("H-M-a"         . #'mc/skip-to-previous-like-this)
+                                  ("H-M-e"         . #'mc/skip-to-next-like-this)
+                                  ("H-;"           . #'cam/realign-eol-comments)
+                                  ("H-a"           . #'mc/mark-previous-like-this)
+                                  ("H-e"           . #'mc/mark-next-like-this)
+                                  ("M-:"           . #'pp-eval-expression) ; Instead of regular eval-expression
+                                  ("M-g"           . #'goto-line) ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
+                                  ("M-j"           . #'cam/join-next-line)
+                                  ("M-x"           . #'helm-M-x)
+                                  ("M-z"           . #'ace-jump-zap-up-to-char)
+                                  ("M-/"           . #'hippie-expand) ; Instead of dabbrev-expand
+                                  ("s-;"           . #'cam/insert-spaces-to-goal-column)
+                                  ("s-Z"           . #'undo-tree-redo)
+                                  ("s-f"           . #'ftf-grepsource)
+                                  ("s-o"           . #'ftf-find-file))
+         do (global-set-key (kbd key) (eval command)))
 
 
 ;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
