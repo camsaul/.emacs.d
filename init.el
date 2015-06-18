@@ -18,6 +18,7 @@
 ;;;    [[Emacs 24 Workarounds]]
 ;;;    [[Global Keybindings]]
 ;;; [[Mode/Package Specific Setup]]
+;;;    [[etc]]
 ;;;    [[Lisp Modes]]
 ;;;    [[auto-complete]]
 ;;;    [[Clojure]]
@@ -257,12 +258,6 @@
                 undo-tree-mode))
   (diminish mode))
 
-;; for minor modes that get selectively loaded add a hook to diminish them after they're enabled
-(dolist (hook.mode '((button-lock-mode-hook           . button-lock-mode)
-                     (highlight-parentheses-mode-hook . highlight-parentheses-mode)))
-  (add-hook (car hook.mode) (lambda ()
-                              (diminish (cdr hook.mode)))))
-
 
 ;;; [[<Global Settings]]
 
@@ -396,14 +391,7 @@ Like Clojure's `time'."
            `((defun ,setup-fn-name ()
                ,@(when minor-modes
                    (mapcar (lambda (minor-mode)
-                             (if (atom minor-mode) `(,minor-mode 1)
-                               (apply (cl-function (lambda (mode &key diminish)
-                                                     `(progn
-                                                        (,mode 1)
-                                                        ,(when diminish
-                                                           (if (eq diminish t) `(diminish ',mode)
-                                                             `(diminish ',diminish))))
-                                                     )) minor-mode)))
+                             `(,minor-mode 1))
                            minor-modes))
                ,@setup
                ,@(when local-vars
@@ -627,6 +615,16 @@ if it is active; otherwise re-align comments on the current line."
 
 ;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
 
+;;; [[<etc]]
+
+(cam/use-package button-lock
+  :load ((diminish 'button-lock-mode)))
+
+(cam/use-package wiki-nav
+  :load ((diminish 'wiki-nav-mode)))
+
+(cam/use-package highlight-parentheses
+  :load ((diminish 'highlight-parentheses-mode)))
 
 ;;; [[<Lisp Modes]]
 (defun cam/lisp-mode-setup ()
@@ -805,7 +803,7 @@ any buffers that were visiting files that were children of that directory."
                 auto-complete-mode
                 elisp-slime-nav-mode
                 morlock-mode
-                (wiki-nav-mode :diminish t))
+                wiki-nav-mode)
   :setup ((cam/lisp-mode-setup)
 
           (unless (member 'ac-source-variables 'ac-sources) ; not sure why but it seems we need to call this manually on the first Emacs Lisp file we visit
@@ -822,7 +820,8 @@ any buffers that were visiting files that were children of that directory."
   :load ((dash-enable-font-lock)))
 
 (cam/use-package elisp-slime-nav
-  :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
+  :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point))
+  :load ((diminish 'elisp-slime-nav-mode)))
 
 (cam/use-package ielm
   :mode-name inferior-emacs-lisp-mode
