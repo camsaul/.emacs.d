@@ -102,7 +102,7 @@
                        (dolist (file (directory-files user-emacs-directory))
                          (when (and (string-match "^[-[:alpha:]]+\\.el$" file)
                                     (not (member file '("autoloads.el" "custom.el" "init.el"))))
-                           (push file files)))
+                           (push (concat user-emacs-directory file) files)))
                        files)))
 
 (eval-when-compile
@@ -196,8 +196,7 @@
         (package-install package)
       (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
 
-(custom-set-variables
- `(package-selected-packages ',cam/packages))
+
 
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
