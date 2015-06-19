@@ -126,6 +126,7 @@
     nyan-mode                                     ; Nyan Cat shows position in mode-line
     org                                           ; Get latest version of org from Org package archive
     paredit
+    pcre2el                                       ; parse, convert, and font-lock PCRE, Emacs and rx regexps
     pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
@@ -318,9 +319,8 @@ Like Clojure's `time'."
   (declare (indent 1))
   `(progn
      (eval-when-compile
-       (ignore-errors
-         ,@(cl-loop for p in (cons package require)
-                    collect `(require ',p))))
+       ,@(cl-loop for p in (cons package require)
+                  collect `(require ',p)))
      ,@(cl-loop for f in declare
                 collect `(declare-function ,f ,(symbol-name package)))
      ,@(cl-loop for (var . value) in vars
@@ -531,7 +531,7 @@ if it is active; otherwise re-align comments on the current line."
                                   ("<A-return>"    . #'wiki-nav-ido)
                                   ("<C-M-s-down>"  . #'windmove-down)
                                   ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
-                                  ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame) ; Use <f11> <key> for toggling various minor modes
+                                  ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
                                   ("<C-M-s-up>"    . #'windmove-up)
                                   ("<H-SPC>"       . #'mc/mark-all-like-this)
                                   ("<H-escape>"    . #'ace-jump-line-mode)
@@ -559,13 +559,13 @@ if it is active; otherwise re-align comments on the current line."
                                   ("C-x C-f"       . #'helm-find-files)
                                   ("C-x C-g"       . #'keyboard-quit)
                                   ("C-x C-r"       . #'helm-recentf)
-                                  ("C-x C-z"       . nil) ; instead of suspend-frame
+                                  ("C-x C-z"       . nil)                                           ; instead of suspend-frame
                                   ("C-x b"         . #'helm-buffers-list)
-                                  ("C-x C-d"       . #'dired) ; instead of ido-list-directory
-                                  ("C-x C-q"       . nil) ; remove keybinding for read-only-mode since I almost never press it on purpose
+                                  ("C-x C-d"       . #'dired)                                       ; instead of ido-list-directory
+                                  ("C-x C-q"       . nil)                                           ; remove keybinding for read-only-mode since I almost never press it on purpose
                                   ("C-x f"         . #'helm-find-files)
                                   ("C-x k"         . #'kill-this-buffer)
-                                  ("C-x r r"       . #'register-list) ; replaces copy-rectangle-to-register
+                                  ("C-x r r"       . #'register-list)                               ; replaces copy-rectangle-to-register
                                   ("C-z"           . #'undo)
                                   ("ESC <up>"      . #'windmove-up)
                                   ("H-M-a"         . #'mc/skip-to-previous-like-this)
@@ -573,12 +573,12 @@ if it is active; otherwise re-align comments on the current line."
                                   ("H-;"           . #'cam/realign-eol-comments)
                                   ("H-a"           . #'mc/mark-previous-like-this)
                                   ("H-e"           . #'mc/mark-next-like-this)
-                                  ("M-:"           . #'pp-eval-expression) ; Instead of regular eval-expression
-                                  ("M-g"           . #'goto-line) ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
+                                  ("M-:"           . #'pp-eval-expression)                          ; Instead of regular eval-expression
+                                  ("M-g"           . #'goto-line)                                   ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
                                   ("M-j"           . #'cam/join-next-line)
                                   ("M-x"           . #'helm-M-x)
                                   ("M-z"           . #'ace-jump-zap-up-to-char)
-                                  ("M-/"           . #'hippie-expand) ; Instead of dabbrev-expand
+                                  ("M-/"           . #'hippie-expand)                               ; Instead of dabbrev-expand
                                   ("s-;"           . #'cam/insert-spaces-to-goal-column)
                                   ("s-Z"           . #'undo-tree-redo)
                                   ("s-f"           . #'ftf-grepsource)
@@ -914,7 +914,6 @@ Calls `magit-refresh' after the command finishes."
          ("V"   . #'cam/magit-visit-pull-request-url)
          ("s-u" . #'magit-refresh)))
 
-
 ;;; [[<Org]]
 (defun cam/org-insert-code-block ()
   "Insert a new Org code block and start editing it."
@@ -1001,6 +1000,7 @@ Calls `magit-refresh' after the command finishes."
 (nyan-mode 1)                                     ; Nyan Cat in mode line
 (projectile-global-mode 1)
 (rainbow-mode 1)                                  ; Colorize strings like #FCE94F
+(rxt-global-mode 1)                               ; Commands for converting and font-locking regular expressions
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
 (yas-global-mode 1)
@@ -1130,3 +1130,56 @@ Calls `magit-refresh' after the command finishes."
     (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
 
 (advice-add #'message :after #'cam/scroll-messages-async)
+
+
+;;; ---------------------------------------- [[Extra Font Locking]] ----------------------------------------
+
+user-emacs-directory
+;; special form - purple
+;; macro - blue
+;; function - green
+;; var - orange
+(add-hook 'emacs-lisp-mode-hook
+  (lambda ()
+    (font-lock-add-keywords nil '(("[^:]\\<\\([[:lower:]-]+[[:lower:]]\\)\\>"
+                                   0 (-when-let (symb (intern-soft (match-string 1)))
+                                       (unless (or (paredit-in-string-p)
+                                                   (paredit-in-comment-p))
+                                         (cond
+                                          ((special-form-p symb) 'font-lock-builtin-face)
+                                          ((macrop (symbol-function symb)) 'font-lock-constant-face)
+                                          ((fboundp symb) 'font-lock-keyword-face)
+                                          ((not (keywordp symb)) 'font-lock-variable-name-face))))
+                                   prepend)
+                                  ("\\(\\(?:#?'\\)?\\<cam/[[:lower:]-]+[[:lower:]]\\)\\>"
+                                   1 (unless (or (paredit-in-string-p)
+                                                 (paredit-in-comment-p))
+                                       'font-lock-type-face)
+                                   prepend)
+                                  ("\\<nil\\>" 0 'font-lock-builtin-face prepend)))))
+
+
+;; (progn
+;;   (ignore-errors
+;;     (font-lock-remove-keywords nil cam/font-lock-keywords))
+
+;;   (font-lock-add-keywords nil cam/font-lock-keywords :append)
+;;   (font-lock-flush)
+;;   (font-lock-fontify-buffer))
+:else
+
+
+(put 'add-hook 'lisp-indent-function 1)
+
+
+
+
+
+;; TODO
+;; (pcre-to-elisp "(TODO|HACK)")
+;; (regexp-opt '("TODO" "HACK") 'symbols)
+(font-lock-add-keywords 'emacs-lisp-mode
+                        '(("\\<\\(TODO\\|HACK\\)\\>" 1 'font-lock-warning-face prepend)))
+;; "\\<\\(cam/[^[:space:]]+\\)\\>"
+;; HACK
+;; TODO
