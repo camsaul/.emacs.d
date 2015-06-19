@@ -126,7 +126,6 @@
     nyan-mode                                     ; Nyan Cat shows position in mode-line
     org                                           ; Get latest version of org from Org package archive
     paredit
-    pcre2el                                       ; parse, convert, and font-lock PCRE, Emacs and rx regexps
     pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
