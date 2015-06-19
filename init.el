@@ -664,6 +664,9 @@ if it is active; otherwise re-align comments on the current line."
   :local-hooks nil
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)))
 
+(cam/use-package clj-refactor
+  :load ((diminish 'clj-refactor-mode)))
+
 (defun cam/cider-repl-messages-buffer ()
   (let ((messages-buffer nil))
     (dolist (buf (buffer-list))
@@ -752,8 +755,6 @@ any buffers that were visiting files that were children of that directory."
 (defvar-local cam/byte-compile nil
   "Make this a file-local variable and we'll byte compile it whenever it's saved.")
 
-(defvar-local cam/generate-autoloads nil)
-
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
   (interactive)
   (call-interactively #'pp-macroexpand-last-sexp)
@@ -772,6 +773,7 @@ any buffers that were visiting files that were children of that directory."
 ;; TODO - Emacs 25 only
 (cam/use-package elisp-mode
   :mode-name emacs-lisp-mode
+  :load ((put 'add-hook 'lisp-indent-function 1))
   :minor-modes (aggressive-indent-mode
                 auto-complete-mode
                 elisp-slime-nav-mode
@@ -790,8 +792,8 @@ any buffers that were visiting files that were children of that directory."
   :load ((dash-enable-font-lock)))
 
 (cam/use-package elisp-slime-nav
-  :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point))
-  :load ((diminish 'elisp-slime-nav-mode)))
+  :load ((diminish 'elisp-slime-nav-mode))
+  :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
 (cam/use-package ielm
   :mode-name inferior-emacs-lisp-mode
@@ -941,7 +943,8 @@ Calls `magit-refresh' after the command finishes."
 ;;; [[<Paredit]]
 (cam/use-package paredit
   :declare (paredit-backward-delete
-            paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline paredit-open-round paredit-open-square)
+            paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline
+            paredit-open-round paredit-open-square paredit-reindent-defun)
   ;; Tell paredit it's ok to delete selection in these contexts. Otherwise delete-selection-mode doesn't work with paredit
   :load ((put #'paredit-forward-delete  'delete-selection 'supersede)
          (put #'paredit-backward-delete 'delete-selection 'supersede)
@@ -1064,7 +1067,8 @@ Calls `magit-refresh' after the command finishes."
       (package-autoremove)
       ;; Kill all the package buffers in case there's more than one
       (ignore-errors
-        (while (kill-buffer "*Packages*"))))))
+        (while (kill-buffer "*Packages*")))
+      (message "Auto updated packages."))))
 (run-with-idle-timer (* 60 60) :repeat #'cam/auto-update-packages)
 
 
@@ -1134,56 +1138,92 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; ---------------------------------------- [[Extra Font Locking]] ----------------------------------------
 
-user-emacs-directory
 ;; special form - purple
 ;; macro - blue
 ;; function - green
 ;; var - orange
-(add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    (font-lock-add-keywords nil '(("[^:]\\<\\([[:lower:]-]+[[:lower:]]\\)\\>"
-                                   0 (-when-let (symb (intern-soft (match-string 1)))
-                                       (unless (or (paredit-in-string-p)
-                                                   (paredit-in-comment-p))
-                                         (cond
-                                          ((special-form-p symb) 'font-lock-builtin-face)
-                                          ((macrop (symbol-function symb)) 'font-lock-constant-face)
-                                          ((fboundp symb) 'font-lock-keyword-face)
-                                          ((and (boundp symb)
-                                                (not (keywordp symb))) 'font-lock-variable-name-face))))
-                                   prepend)
-                                  ("\\(\\(?:#?'\\)?\\<cam/[[:lower:]-]+[[:lower:]]\\)\\>"
-                                   1 (unless (or (paredit-in-string-p)
-                                                 (paredit-in-comment-p))
-                                       'font-lock-type-face)
-                                   prepend)
-                                  ("\\<nil\\>" 0 (unless (or (paredit-in-string-p)
-                                                             (paredit-in-comment-p))
-                                                   'font-lock-builtin-face)
-                                   prepend)))))
+(defconst cam/rainbow-elisp-mode-keywords
+  '(("\\<\\(nil\\|t\\)\\>" 1 (unless (or (paredit-in-string-p)
+                                         (paredit-in-comment-p))
+                               'font-lock-builtin-face)
+     keep)
+    ("[^:]\\<\\([[:lower:]-]+[[:lower:]]\\)\\>"
+     0 (-when-let (symb (intern-soft (match-string 1)))
+         (unless (or (paredit-in-string-p)
+                     (paredit-in-comment-p))
+           (cond
+            ((special-form-p symb) 'font-lock-builtin-face)
+            ((macrop (symbol-function symb)) 'font-lock-constant-face)
+            ((fboundp symb) 'font-lock-keyword-face)
+            ((and (boundp symb)
+                  (not (keywordp symb))) 'font-lock-variable-name-face)
+            ((featurep symb) 'italic))))
+     prepend)
+    ("\\(\\(?:#?'\\)?\\<cam/[[:lower:]-]+[[:lower:]]\\)\\>"
+     1 (unless (or (paredit-in-string-p)
+                   (paredit-in-comment-p))
+         'font-lock-type-face)
+     prepend)))
+
+(eval-after-load 'elisp-mode
+  '(font-lock-add-keywords 'emacs-lisp-mode cam/rainbow-elisp-mode-keywords))
 
 
-;; (progn
-;;   (ignore-errors
-;;     (font-lock-remove-keywords nil cam/font-lock-keywords))
+;;; ---------------------------------------- [[cam/todo-font-lock-mode]] ----------------------------------------
 
-;;   (font-lock-add-keywords nil cam/font-lock-keywords :append)
-;;   (font-lock-flush)
-;;   (font-lock-fontify-buffer))
-:else
+(defconst cam/todo-font-lock-mode-keywords
+  '(("\\<\\(TODO\\|HACK\\)\\>" 1 (when (paredit-in-comment-p)
+                                   'font-lock-warning-face)
+     prepend)))
+
+(defconst cam/todo-font-lock-mode-lighter
+  " cam/todo-fl")
+
+(defvar-local cam/todo-font-lock-mode nil)
+
+(defun cam/todo-font-lock-mode (&optional arg)
+  (interactive)
+  (if (null arg) (cam/todo-font-lock-mode (if cam/todo-font-lock-mode -1 1))
+    (let ((enable (> arg 0)))
+      (when enable
+        (add-to-list 'minor-mode-alist (list 'cam/todo-font-lock-mode cam/todo-font-lock-mode-lighter)))
+      (funcall (if enable #'font-lock-add-keywords #'font-lock-remove-keywords) nil cam/todo-font-lock-mode-keywords)
+      (setq-local cam/todo-font-lock-mode enable)
+      (when (called-interactively-p 'interactive)
+        (message "TODO Font-Lock %s in current buffer." (if enable "enabled" "disabled"))))
+    (font-lock-flush)
+    (font-lock-ensure)))
+
+(add-hook 'clojure-mode-hook #'cam/todo-font-lock-mode)
+(add-hook 'emacs-lisp-mode-hook #'cam/todo-font-lock-mode)
 
 
-(put 'add-hook 'lisp-indent-function 1)
+;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
 
+(defconst cam/clojure-docstr-font-lock-keywords
+  '(("`\\<\\([[:alnum:]./*]+\\)\\>`" 1 (when (paredit-in-string-p)
+                                         'font-lock-constant-face)
+     prepend)
+    ("\\<\\([[:upper:]-]+\\)\\>" 1 (when (paredit-in-string-p)
+                                    'font-lock-variable-name-face)
+     prepend)))
 
+(defconst cam/clojure-docstr-font-lock-mode-lighter
+  " cam/clj-doc-fl")
 
+(defvar-local cam/clojure-docstr-font-lock-mode nil)
 
+(defun cam/clojure-docstr-font-lock-mode (&optional arg)
+  (interactive)
+  (if (null arg) (cam/clojure-docstr-font-lock-mode (if cam/clojure-docstr-font-lock-mode -1 1))
+    (let ((enable (> arg 0)))
+      (when enable
+        (add-to-list 'minor-mode-alist (list 'cam/clojure-docstr-font-lock-mode cam/clojure-docstr-font-lock-mode-lighter)))
+      (funcall (if enable #'font-lock-add-keywords #'font-lock-remove-keywords) nil cam/clojure-docstr-font-lock-keywords)
+      (setq-local cam/clojure-docstr-font-lock-mode enable)
+      (when (called-interactively-p 'interactive)
+        (message "Docstr font-locking %s in current buffer." (if enable "enabled" "disabled"))))
+    (font-lock-flush)
+    (font-lock-ensure)))
 
-;; TODO
-;; (pcre-to-elisp "(TODO|HACK)")
-;; (regexp-opt '("TODO" "HACK") 'symbols)
-(font-lock-add-keywords 'emacs-lisp-mode
-                        '(("\\<\\(TODO\\|HACK\\)\\>" 1 'font-lock-warning-face prepend)))
-;; "\\<\\(cam/[^[:space:]]+\\)\\>"
-;; HACK
-;; TODO
+(add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
