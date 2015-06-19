@@ -1149,14 +1149,18 @@ user-emacs-directory
                                           ((special-form-p symb) 'font-lock-builtin-face)
                                           ((macrop (symbol-function symb)) 'font-lock-constant-face)
                                           ((fboundp symb) 'font-lock-keyword-face)
-                                          ((not (keywordp symb)) 'font-lock-variable-name-face))))
+                                          ((and (boundp symb)
+                                                (not (keywordp symb))) 'font-lock-variable-name-face))))
                                    prepend)
                                   ("\\(\\(?:#?'\\)?\\<cam/[[:lower:]-]+[[:lower:]]\\)\\>"
                                    1 (unless (or (paredit-in-string-p)
                                                  (paredit-in-comment-p))
                                        'font-lock-type-face)
                                    prepend)
-                                  ("\\<nil\\>" 0 'font-lock-builtin-face prepend)))))
+                                  ("\\<nil\\>" 0 (unless (or (paredit-in-string-p)
+                                                             (paredit-in-comment-p))
+                                                   'font-lock-builtin-face)
+                                   prepend)))))
 
 
 ;; (progn
