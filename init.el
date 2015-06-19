@@ -1183,14 +1183,14 @@ Calls `magit-refresh' after the command finishes."
 
 (defun cam/todo-font-lock-mode (&optional arg)
   (interactive)
-  (if (null arg) (cam/todo-font-lock-mode (if cam/todo-font-lock-mode -1 1))
+  (if (null arg) (progn (cam/todo-font-lock-mode (if cam/todo-font-lock-mode -1 1))
+                        (when (called-interactively-p 'interactive)
+                          (message "TODO Font-Lock %s in current buffer." (if cam/todo-font-lock-mode "enabled" "disabled"))))
     (let ((enable (> arg 0)))
       (when enable
         (add-to-list 'minor-mode-alist (list 'cam/todo-font-lock-mode cam/todo-font-lock-mode-lighter)))
       (funcall (if enable #'font-lock-add-keywords #'font-lock-remove-keywords) nil cam/todo-font-lock-mode-keywords)
-      (setq-local cam/todo-font-lock-mode enable)
-      (when (called-interactively-p 'interactive)
-        (message "TODO Font-Lock %s in current buffer." (if enable "enabled" "disabled"))))
+      (setq-local cam/todo-font-lock-mode enable))
     (font-lock-flush)
     (font-lock-ensure)))
 
@@ -1201,11 +1201,11 @@ Calls `magit-refresh' after the command finishes."
 ;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
 
 (defconst cam/clojure-docstr-font-lock-keywords
-  '(("`\\<\\([[:alnum:]./*]+\\)\\>`" 1 (when (paredit-in-string-p)
-                                         'font-lock-constant-face)
+  '(("\\<\\([[:upper:]-]+[[:punct:]]?\\)\\>" 1 (when (paredit-in-string-p)
+                                                 'font-lock-variable-name-face)
      prepend)
-    ("\\<\\([[:upper:]-]+\\)\\>" 1 (when (paredit-in-string-p)
-                                    'font-lock-variable-name-face)
+    ("`\\([[:alnum:][:space:]<>*-/3]+\\)`" 1 (when (paredit-in-string-p)
+                                               'font-lock-constant-face)
      prepend)))
 
 (defconst cam/clojure-docstr-font-lock-mode-lighter
@@ -1215,14 +1215,14 @@ Calls `magit-refresh' after the command finishes."
 
 (defun cam/clojure-docstr-font-lock-mode (&optional arg)
   (interactive)
-  (if (null arg) (cam/clojure-docstr-font-lock-mode (if cam/clojure-docstr-font-lock-mode -1 1))
+  (if (null arg) (progn (cam/clojure-docstr-font-lock-mode (if cam/clojure-docstr-font-lock-mode -1 1))
+                        (when (called-interactively-p 'interactive)
+                          (message "Docstr font-locking %s in current buffer." (if cam/clojure-docstr-font-lock-mode "enabled" "disabled"))))
     (let ((enable (> arg 0)))
       (when enable
         (add-to-list 'minor-mode-alist (list 'cam/clojure-docstr-font-lock-mode cam/clojure-docstr-font-lock-mode-lighter)))
       (funcall (if enable #'font-lock-add-keywords #'font-lock-remove-keywords) nil cam/clojure-docstr-font-lock-keywords)
-      (setq-local cam/clojure-docstr-font-lock-mode enable)
-      (when (called-interactively-p 'interactive)
-        (message "Docstr font-locking %s in current buffer." (if enable "enabled" "disabled"))))
+      (setq-local cam/clojure-docstr-font-lock-mode enable))
     (font-lock-flush)
     (font-lock-ensure)))
 
