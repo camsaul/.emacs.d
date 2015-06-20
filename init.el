@@ -775,6 +775,7 @@ any buffers that were visiting files that were children of that directory."
   :load ((put 'add-hook 'lisp-indent-function 1))
   :minor-modes (aggressive-indent-mode
                 auto-complete-mode
+                eldoc-mode
                 elisp-slime-nav-mode
                 morlock-mode
                 wiki-nav-mode)
@@ -1226,3 +1227,7 @@ Calls `magit-refresh' after the command finishes."
     (font-lock-ensure)))
 
 (add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
+
+;; (remove-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
+
+;; (add-hook 'clojure-mode-hook #'metabase-mode-maybe-enable)
