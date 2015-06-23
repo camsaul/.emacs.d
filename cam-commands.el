@@ -5,7 +5,8 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl-lib))
+  (require 'cl-lib)
+  (require 'dash))
 
 (cl-eval-when (load)
   (message "CAM COMMANDS AUTOLOADED!"))
