@@ -854,6 +854,7 @@ any buffers that were visiting files that were children of that directory."
                 auto-complete-mode
                 eldoc-mode
                 elisp-slime-nav-mode
+                emacs-lisp-color-code-mode
                 morlock-mode
                 todo-font-lock-mode
                 wiki-nav-mode)
@@ -1216,41 +1217,6 @@ Calls `magit-refresh' after the command finishes."
 
 (advice-add #'message :after #'cam/scroll-messages-async)
 
-
-;;; ---------------------------------------- [[Extra Font Locking]] ----------------------------------------
-
-;; special form - purple
-;; macro - blue
-;; function - green
-;; var - orange
-(defconst cam/rainbow-elisp-mode-keywords
-  '(("\\<\\(nil\\|t\\)\\>" 1 (unless (or (paredit-in-string-p)
-                                         (paredit-in-comment-p))
-                               'font-lock-builtin-face)
-     keep)
-    ("[^:]\\<\\([[:lower:]-]+[[:lower:]]\\)\\>"
-     0 (-when-let (symb (intern-soft (match-string 1)))
-         (unless (or (paredit-in-string-p)
-                     (paredit-in-comment-p))
-           (cond
-            ((special-form-p symb) 'font-lock-builtin-face)
-            ((macrop (symbol-function symb)) 'font-lock-constant-face)
-            ((fboundp symb) 'font-lock-keyword-face)
-            ((and (boundp symb)
-                  (not (keywordp symb))) 'font-lock-variable-name-face)
-            ((featurep symb) 'italic))))
-     prepend)
-    ("\\(\\(?:#?'\\)?\\<cam/[[:lower:]-]+[[:lower:]]\\)\\>"
-     1 (unless (or (paredit-in-string-p)
-                   (paredit-in-comment-p))
-         'font-lock-type-face)
-     prepend)))
-
-(eval-after-load 'elisp-mode
-  '(font-lock-add-keywords 'emacs-lisp-mode cam/rainbow-elisp-mode-keywords))
-
-
-
 ;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
 
 (defconst cam/clojure-docstr-font-lock-keywords
@@ -1258,7 +1224,7 @@ Calls `magit-refresh' after the command finishes."
                                                  'font-lock-variable-name-face)
      prepend)
     ("`\\([[:alnum:]_<>*-/:]+\\)`" 1 (when (paredit-in-string-p)
-                                               'font-lock-constant-face)
+                                       'font-lock-constant-face)
      prepend)))
 
 (defconst cam/clojure-docstr-font-lock-mode-lighter
