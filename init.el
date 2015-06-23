@@ -652,14 +652,27 @@ if it is active; otherwise re-align comments on the current line."
 
 
 ;;; [[<Clojure]]
+(cl-defun cam/cider-switch-to-relevant-repl-buffer ()
+  "Like `cider-switch-to-relvant-repl-buffer', but will switch to "
+  ;; Look for a cider REPL buffer visible in any window on any frame
+  ;; and switch to it if possible
+  (dolist (frame (frame-list))
+    (dolist (window (window-list frame))
+      (let ((buf (window-buffer window)))
+        (when (string-prefix-p "\*cider-repl" (buffer-name buf))
+          (select-frame-set-input-focus frame)
+          (select-window window)
+          (cl-return-from cam/cider-switch-to-relevant-repl-buffer)))))
+  ;; otherwise fall back to whatever cider-switch-to-relevant-repl-buffer does
+  (cider-switch-to-relevant-repl-buffer))
+
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
-
   (if (not (cider-connected-p)) (cider-jack-in)
     (cider-load-buffer)
     (cider-repl-set-ns (cider-current-ns))
-    (cider-switch-to-relevant-repl-buffer)
+    (cam/cider-switch-to-relevant-repl-buffer)
     (cider-repl-clear-buffer)))
 
 (cam/use-package clojure-mode
