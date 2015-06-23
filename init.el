@@ -375,11 +375,17 @@ Like Clojure's `time'."
   (interactive)
   (kill-line 0))
 
-(defun cam/hungry-delete ()
+(defun cam/hungry-delete-forward ()
   "Delete all but one spaces after `point'."
   (interactive)
   (while (= (char-after (1+ (point))) 32)
     (delete-char 1)))
+
+(defun cam/hungry-delete-backward ()
+  "Delete all but one spaces before `point'."
+  (interactive)
+  (while (= (char-before (1- (point))) 32)
+    (delete-char -1)))
 
 (defun cam/windmove-left-or-other-frame ()
   (interactive)
@@ -541,7 +547,8 @@ if it is active; otherwise re-align comments on the current line."
                                   ("<H-SPC>"       . #'mc/mark-all-like-this)
                                   ("<H-escape>"    . #'ace-jump-line-mode)
                                   ("<H-return>"    . #'mc/mark-next-lines)
-                                  ("<S-delete>"    . #'cam/hungry-delete)
+                                  ("<S-backspace>" . #'cam/hungry-delete-backward)
+                                  ("<S-delete>"    . #'cam/hungry-delete-forward)
                                   ("<escape>"      . #'ace-jump-mode)
                                   ("<f11>"         . nil)
                                   ("<f11> a"       . #'aggressive-indent-mode)
