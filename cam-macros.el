@@ -59,6 +59,7 @@ Like Clojure's `time'."
 
 ;;; [[cam/global-set-keys]] ----------------------------------------------------------------------
 
+;;;###autoload
 (defmacro cam/global-set-keys (&rest keys)
   (declare (indent 0))
   `(progn ,@(cl-loop for (key . command) in keys
