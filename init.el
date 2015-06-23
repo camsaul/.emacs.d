@@ -345,54 +345,6 @@ Like Clojure's `time'."
   `(progn ,@(cl-loop for form in forms
                      collect `(cam/time ,form))))
 
-(cl-defmacro cam/use-package (package &key
-                                      (mode-name (intern (format "%s-mode" (symbol-name package))))
-                                      (hook-name (intern (format "%s-hook" (symbol-name mode-name))))
-                                      declare
-                                      vars
-                                      require
-                                      advice
-                                      load
-                                      minor-modes
-                                      setup
-                                      local-vars
-                                      local-hooks
-                                      (keymap (intern (format "%s-map" (symbol-name mode-name))))
-                                      keys
-                                      auto-mode-alist)
-  (declare (indent 1))
-  `(progn
-     (eval-when-compile
-       ,@(cl-loop for p in (cons package require)
-                  collect `(require ',p)))
-     ,@(cl-loop for f in declare
-                collect `(declare-function ,f ,(symbol-name package)))
-     ,@(cl-loop for (var . value) in vars
-                collect `(setq ,var ,value))
-     ,(when (or require advice load keys)
-        `(eval-after-load ',package
-           '(progn
-              ,@(cl-loop for other-package in require
-                         collect `(require ',other-package))
-              ,@(cl-loop for item in advice
-                         collect `(advice-add ,@item))
-              ,@load
-              ,@(cl-loop for (binding . command) in keys
-                         collect `(define-key ,keymap (kbd ,binding) ,command)))))
-     ,@(when (or minor-modes setup local-vars local-hooks)
-         (let ((setup-fn-name (intern (format "cam/%s-setup" (symbol-name mode-name)))))
-           `((defun ,setup-fn-name ()
-               ,@(cl-loop for minor-mode in minor-modes
-                          collect `(,minor-mode 1))
-               ,@setup
-               ,@(cl-loop for (var . value) in local-vars
-                          collect `(setq-local ,var ,value))
-               ,@(cl-loop for (hook . fun) in local-hooks
-                          collect `(add-hook ',hook ,fun ,(not :append) :local)))
-             (add-hook ',hook-name (function ,setup-fn-name)))))
-     ,@(cl-loop for pattern in auto-mode-alist
-                collect `(add-to-list 'auto-mode-alist '(,pattern . ,mode-name)))))
-
 
 ;;; [[<Global Functions]]
 
@@ -648,13 +600,13 @@ if it is active; otherwise re-align comments on the current line."
 
 ;;; [[<etc]]
 
-(cam/use-package button-lock
+(tweak-package button-lock
   :load ((diminish 'button-lock-mode)))
 
-(cam/use-package wiki-nav
+(tweak-package wiki-nav
   :load ((diminish 'wiki-nav-mode)))
 
-(cam/use-package highlight-parentheses
+(tweak-package highlight-parentheses
   :load ((diminish 'highlight-parentheses-mode)))
 
 ;;; [[<Lisp Modes]]
@@ -671,7 +623,7 @@ if it is active; otherwise re-align comments on the current line."
 
 
 ;;; [[<auto-complete]]
-(cam/use-package auto-complete
+(tweak-package auto-complete
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
   :vars ((ac-delay . 0.05)
          (ac-auto-show-menu . 0.1)
@@ -692,7 +644,7 @@ if it is active; otherwise re-align comments on the current line."
          ("A-s" . #'ac-complete-symbols)
          ("A-v" . #'ac-complete-variables)))
 
-(cam/use-package auto-complete-config
+(tweak-package auto-complete-config
   :declare (ac-emacs-lisp-mode-setup))
 
 
@@ -720,7 +672,7 @@ if it is active; otherwise re-align comments on the current line."
     (cam/cider-switch-to-relevant-repl-buffer)
     (cider-repl-clear-buffer)))
 
-(cam/use-package clojure-mode
+(tweak-package clojure-mode
   :mode-name clojure-mode
   :require (clojure-mode-extra-font-locking)
   :load ((clojure-snippets-initialize))
@@ -736,7 +688,7 @@ if it is active; otherwise re-align comments on the current line."
   :local-hooks nil
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)))
 
-(cam/use-package clj-refactor
+(tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode)))
 
 (defun cam/cider-repl-messages-buffer ()
@@ -747,7 +699,7 @@ if it is active; otherwise re-align comments on the current line."
           (setq messages-buffer buf))))
     messages-buffer))
 
-(cam/use-package cider
+(tweak-package cider
   :mode-name cider-repl-mode
   :declare (cider-jack-in)
   :vars ((cider-auto-select-error-buffer . nil)
@@ -762,15 +714,15 @@ if it is active; otherwise re-align comments on the current line."
           (ac-cider-setup))
   :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)))
 
-(cam/use-package cider-interaction
+(tweak-package cider-interaction
   :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
 
-(cam/use-package cider-repl
+(tweak-package cider-repl
   :declare (cider-repl-clear-buffer cider-repl-return cider-repl-set-ns))
 
 
 ;;; [[<company]]
-(cam/use-package company
+(tweak-package company
   :vars ((company-idle-delay . 0.01)
          (company-minimum-prefix-length . 1)))
 
@@ -807,7 +759,7 @@ any buffers that were visiting files that were children of that directory."
               (kill-buffer-ask buf)))))
       result)))
 
-(cam/use-package dired
+(tweak-package dired
   :declare (dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
   :vars ((dired-recursive-copies  . 'always)
          (dired-recursive-deletes . 'always))
@@ -819,7 +771,7 @@ any buffers that were visiting files that were children of that directory."
   :load ((add-hook 'focus-in-hook #'cam/revert-dired-buffers))
   :minor-modes (dired-hide-details-mode))
 
-(cam/use-package dired-x
+(tweak-package dired-x
   :declare (dired-smart-shell-command))
 
 
@@ -847,7 +799,7 @@ any buffers that were visiting files that were children of that directory."
     (comint-kill-input)))
 
 ;; TODO - Emacs 25 only
-(cam/use-package elisp-mode
+(tweak-package elisp-mode
   :mode-name emacs-lisp-mode
   :load ((put 'add-hook 'lisp-indent-function 1))
   :minor-modes (aggressive-indent-mode
@@ -870,15 +822,15 @@ any buffers that were visiting files that were children of that directory."
          ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("C-x C-e"        . #'pp-eval-last-sexp)))
 
-(cam/use-package dash
+(tweak-package dash
   :declare (dash-enable-font-lock)
   :load ((dash-enable-font-lock)))
 
-(cam/use-package elisp-slime-nav
+(tweak-package elisp-slime-nav
   :load ((diminish 'elisp-slime-nav-mode))
   :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
-(cam/use-package ielm
+(tweak-package ielm
   :mode-name inferior-emacs-lisp-mode
   :hook-name ielm-mode-hook
   :minor-modes (aggressive-indent-mode
@@ -890,12 +842,12 @@ any buffers that were visiting files that were children of that directory."
   :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
   :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)))
 
-(cam/use-package nadvice
+(tweak-package nadvice
   :load ((put #'advice-add 'lisp-indent-function 2)))
 
 
 ;;; [[<Eval Expresssion (Minibuffer)]]
-(cam/use-package simple
+(tweak-package simple
   :hook-name eval-expression-minibuffer-setup-hook
   :minor-modes (company-mode
                 paredit-mode)
@@ -903,7 +855,7 @@ any buffers that were visiting files that were children of that directory."
 
 
 ;;; [[<Find Things Fast]]
-(cam/use-package find-things-fast
+(tweak-package find-things-fast
   :load ((nconc ftf-filetypes '("*.clj"
                                 "*.css"
                                 "*.el"
@@ -915,13 +867,13 @@ any buffers that were visiting files that were children of that directory."
 
 
 ;;; [[<Git Commit Mode]]
-(cam/use-package git-commit-mode
+(tweak-package git-commit-mode
   :mode-name git-commit-mode
   :minor-modes (flyspell-mode))
 
 
 ;;; [[<Guide Key]]
-(cam/use-package guide-key
+(tweak-package guide-key
   :vars ((guide-key/idle-delay . 1.0)
          (guide-key/recursive-key-sequence-flag . t)
          (guide-key/guide-key-sequence . '("<f12>" "<f1>"
@@ -937,14 +889,14 @@ any buffers that were visiting files that were children of that directory."
 
 
 ;;; [[<Helm]]
-(cam/use-package helm
+(tweak-package helm
   :vars ((helm-buffers-fuzzy-matching . t) ; enable fuzzy matching for helm
          (helm-recentf-fuzzy-match    . t)
          (helm-M-x-fuzzy-match        . t)))
 
 
 ;;; [[<js2-mode]]
-(cam/use-package js2-mode
+(tweak-package js2-mode
   :mode-name js2-mode
   :minor-modes (ac-js2-mode
                 electric-pair-local-mode
@@ -956,12 +908,12 @@ any buffers that were visiting files that were children of that directory."
          ("M-j" . nil))
   :auto-mode-alist ("\.js$"))
 
-(cam/use-package skewer-mode
+(tweak-package skewer-mode
   :declare (skewer-ping))
 
 
 ;;; [[<loccur]]
-(cam/use-package loccur
+(tweak-package loccur
   :declare (loccur))
 
 ;;; [[<Magit]]
@@ -989,7 +941,7 @@ Calls `magit-refresh' after the command finishes."
       (when (eq major-mode 'magit-status-mode)
         (magit-refresh)))))
 
-(cam/use-package magit
+(tweak-package magit
   :mode-name magit-status-mode
   :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
   :vars ((magit-auto-revert-mode-lighter     . "")
@@ -1012,19 +964,19 @@ Calls `magit-refresh' after the command finishes."
   (org-return-indent)
   (org-edit-src-code))
 
-(cam/use-package org
+(tweak-package org
   :declare (org-bookmark-jump-unhide org-end-of-line org-return-indent)
   :vars ((org-support-shift-select . nil))
   :minor-modes (flyspell-mode)
   :local-vars ((truncate-lines . nil))
   :keys (("C-c c" . #'cam/org-insert-code-block)))
 
-(cam/use-package org-src
+(tweak-package org-src
   :declare (org-edit-src-code))
 
 
 ;;; [[<Paredit]]
-(cam/use-package paredit
+(tweak-package paredit
   :declare (paredit-backward-delete
             paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline
             paredit-open-round paredit-open-square paredit-reindent-defun)
@@ -1038,7 +990,7 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[[<Sly]]
-(cam/use-package sly
+(tweak-package sly
   :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
   :require (ac-sly)
   :minor-modes (auto-complete-mode)
@@ -1047,7 +999,7 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<Web Mode]]
-(cam/use-package web-mode
+(tweak-package web-mode
   :mode-name web-mode
   :minor-modes (aggressive-indent-mode
                 electric-pair-local-mode
@@ -1057,13 +1009,13 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<YASnippet]]
-(cam/use-package yasnippet
+(tweak-package yasnippet
   :mode-name yas-minor-mode
   :vars ((yas-verbosity . 0))
   :keys (("H-w" . #'aya-create)
          ("H-y" . #'aya-expand)))
 
-(cam/use-package auto-yasnippet
+(tweak-package auto-yasnippet
   :declare (aya-create aya-expand))
 
 
