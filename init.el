@@ -309,219 +309,12 @@
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 
-;;; [[<Global Macros]]
-
-(defmacro cam/suppress-messages (&rest body)
-  "Evaluate BODY with the `message' function temporarily bound to `ignore'."
-  (declare (indent 0))
-  `(cl-letf (((symbol-function 'message) #'ignore))
-     ,@body))
-
-(defmacro cam/time (&rest body)
-  "Evaluate BODY and echo the amount of time it took, and return its result.
-Like Clojure's `time'."
-  (declare (indent 0))
-  (let ((start-time (make-symbol "start-time"))
-        (result     (make-symbol "result"))
-        (elapsed    (make-symbol "elapsed-time"))
-        (body       (if (cdr body) `(progn ,@body)
-                      (car body))))
-    `(let* ((,start-time (cam/current-microseconds))
-            (,result     ,body)
-            (,elapsed   (- (cam/current-microseconds)
-                           ,start-time)))
-       (apply #'message ,(let* ((form-str (prin1-to-string body))
-                                (form-str (if (> (length form-str) 50) (concat (substring form-str 0 50) "...")
-                                            form-str)))
-                           (concat form-str " elapsed time: %.1f %s."))
-              (cond ((< ,elapsed 1000)    `(,,elapsed "µs"))
-                    ((< ,elapsed 1000000) `(,(/ ,elapsed 1000.0) "ms"))
-                    (:else                `(,(/ ,elapsed 1000000.0) "seconds"))))
-       ,result)))
-
-(defmacro cam/time* (&rest forms)
-  "Evalute each form in FORMS and echo a message about how long each took to execute."
-  (declare (indent 0))
-  `(progn ,@(cl-loop for form in forms
-                     collect `(cam/time ,form))))
-
-
-;;; [[<Global Functions]]
-
-(defun cam/current-microseconds ()
-  "Return the current time in microseconds."
-  (cl-destructuring-bind (_ seconds microseconds _) (current-time)
-    (+ (* seconds 1000000) microseconds)))
-
-(defun cam/untabify-current-buffer ()
-  (interactive)
-  (untabify (point-min) (point-max)))
-
-(defun cam/join-next-line ()
-  (interactive)
-  (join-line -1))
-
-;; TODO - why not just make this an autoload???
-(defun cam/loccur ()
-  (interactive)
-  (require 'loccur)
-  (call-interactively #'loccur))
-
-(defun cam/backward-kill-line ()
-  "Kill line from current cursor position to beginning of line."
-  (interactive)
-  (kill-line 0))
-
-(defun cam/hungry-delete-forward ()
-  "Delete all but one spaces after `point'."
-  (interactive)
-  (while (= (char-after (1+ (point))) 32)
-    (delete-char 1)))
-
-(defun cam/hungry-delete-backward ()
-  "Delete all but one spaces before `point'."
-  (interactive)
-  (while (= (char-before (1- (point))) 32)
-    (delete-char -1)))
-
-(defun cam/windmove-left-or-other-frame ()
-  (interactive)
-  (condition-case _
-      (call-interactively #'windmove-left)
-    (error (call-interactively #'other-frame))))
-
-(defun cam/windmove-right-or-other-frame ()
-  (interactive)
-  (condition-case _
-      (call-interactively #'windmove-right)
-    (error (call-interactively #'other-frame))))
-
-(defvar cam/insert-spaces-goal-col nil)
-(defun cam/insert-spaces-to-goal-column (arg)
-  "Called without a prefix arg, insert spaces until we reach `cam/insert-spaces-goal-col'.
-Called with a prefix arg, set the value of `cam/insert-spaces-goal-col' to point."
-  (interactive "P")
-  (if arg (progn (setq-local cam/insert-spaces-goal-col (current-column))
-                 (message "Insert spaces to column %d." (current-column)))
-    (progn
-      (unless cam/insert-spaces-goal-col
-        (error "Don't know where to insert spaces to! Call this function with a prefix arg to set it."))
-      (let ((num-spaces (- cam/insert-spaces-goal-col (current-column))))
-        (if (< num-spaces 0) (delete-char num-spaces)
-          (insert-char ?  num-spaces))))))
-
-(defun cam/string-remove-text-properties (string)
-  "Return a copy of STRING with all of its text properties removed."
-  (let ((s (copy-sequence string)))
-    (set-text-properties 0 (length s) nil s)
-    s))
-
-(defun cam/instant-clojure-cheatsheet-search (search-term)
-  "Open a browser window and search Instant Clojure Cheatsheet for SEARCH-TERM."
-  (interactive (list (read-string "Search Instant Clojure Cheatsheet for: " (when (symbol-at-point)
-                                                                              (-> (symbol-at-point)
-                                                                                  symbol-name
-                                                                                  cam/string-remove-text-properties)))))
-  (browse-url (format "http://localhost:13370/#?q=%s" search-term)))
-
-(defun cam/bing-search (search-term)
-  "Open a browser window and search BING for SEARCH-TERM."
-  (interactive (list (read-string "Search Bing for: " (when (symbol-at-point)
-                                                        (-> (symbol-at-point)
-                                                            symbol-name
-                                                            cam/string-remove-text-properties)))))
-  (browse-url (format "http://bing.com/search?q=%s" search-term)))
-
-(defun cam/browse-korma-dox ()
-  "Open a browser window with the SQL Korma documentation."
-  (interactive)
-  (browse-url "http://www.sqlkorma.com/docs"))
-
-(defun cam/javadocs-search (search-term)
-  "Open a browser window and search javadocs.org for SEARCH-TERM."
-  (interactive (list (read-string "Search javadocs.org for: " (when (symbol-at-point)
-                                                                (->> (symbol-at-point)
-                                                                     symbol-name
-                                                                     cam/string-remove-text-properties
-                                                                     (string-remove-suffix "."))))))
-  (browse-url (format "http://javadocs.org/%s" search-term)))
-
-(cl-defun cam/realign-eol-comment-current-line ()
-  "Realign the end-of-line comment for the current line to `comment-column'."
-  (interactive)
-  (unless comment-column
-    (error "comment-column is not set!"))
-  (save-excursion
-    (beginning-of-line)
-    (let ((current-line (line-number-at-pos (point))))
-      (search-forward ";")
-      (backward-char)
-      ;; Check to make sure we're still on the same line
-      (unless (= (line-number-at-pos (point)) current-line)
-        (cl-return-from cam/realign-eol-comment-current-line)))
-    ;; Make sure this is just a single ";"
-    (when (= (char-after (1+ (point))) ?\;)
-      (cl-return-from cam/realign-eol-comment-current-line))
-    ;; calculate the number of spaces to add / remove and do so
-    (let ((cols-difference (- comment-column
-                              (current-column))))
-      ;; TODO - should we make sure we don't delete any chars that aren't spaces ?
-      (cond
-       ((> cols-difference 0) (insert-char ?  cols-difference))
-       ((< cols-difference 0) (delete-char cols-difference))))))
-
-(defun cam/realign-eol-comments ()
-  "Re-align end-of-line comments to `comment-column' in the current region
-if it is active; otherwise re-align comments on the current line."
-  (interactive)
-  (if (not (region-active-p)) (cam/realign-eol-comment-current-line)
-    (let ((last-line (line-number-at-pos (region-end)))
-          (line (line-number-at-pos (region-beginning))))
-      (save-excursion
-        (goto-char (region-beginning))
-        (while (<= (prog1 line (cl-incf line)) last-line)
-          (cam/realign-eol-comment-current-line)
-          (forward-line))))))
-
-(defun cam/-align-map-get-max-col (&optional max)
-  (save-excursion
-    (condition-case _
-        (progn
-          (backward-sexp 2)                          ; Move from end of val to beginning of key
-          (forward-sexp)                             ; Move to end of key
-          (let ((col (+ (current-column) 1)))        ; val should start one space after key
-            (backward-sexp)                          ; Move back to start of key
-            (cam/-align-map-get-max-col (max (or max 0) col)))) ; recurse until error is thrown when we reach the first key
-      (error (message "Max column is %d" max)
-             max))))
-
-(defun cam/-align-map-args-to-column ()
-  (save-excursion
-    (ignore-errors
-      (backward-sexp)                                ; move to start of val
-      (cam/insert-spaces-to-goal-column nil)         ; insert spaces
-      (backward-sexp)                                ; move to start of key
-      (cam/-align-map-args-to-column))))              ; recurse until error is thrown when we reach the first sexp
-
-(defun cam/align-map ()
-  "Align the values in a Clojure map."
-  (interactive)
-  (save-excursion
-    (when (paredit-in-string-p)                      ; If we're in a string jump out so we don't insert a } when calling (paredit-close-curly)
-      (paredit-forward-up))
-    (paredit-close-curly)                            ; jump to char after closing }
-    (backward-char)                                  ; move back onto } -- end of last sexp
-    (setq-local cam/insert-spaces-goal-col (cam/-align-map-get-max-col))
-    (cam/-align-map-args-to-column))
-  (paredit-reindent-defun))
-
-
 ;;; [[<Global Hooks]]
 
 (add-hook 'before-save-hook
-          (lambda ()
-            (delete-trailing-whitespace)
-            (set-buffer-file-coding-system 'utf-8-auto-unix)))
+  (lambda ()
+    (delete-trailing-whitespace)
+    (set-buffer-file-coding-system 'utf-8-auto-unix)))
 
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
 
@@ -535,65 +328,65 @@ if it is active; otherwise re-align comments on the current line."
 
 ;;; [[<Global Keybindings]]
 
-(cl-loop for (key . command) in '(("<A-escape>"    . #'helm-mark-ring)
-                                  ("<A-return>"    . #'wiki-nav-ido)
-                                  ("<C-M-s-down>"  . #'windmove-down)
-                                  ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
-                                  ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
-                                  ("<C-M-s-up>"    . #'windmove-up)
-                                  ("<H-SPC>"       . #'mc/mark-all-like-this)
-                                  ("<H-escape>"    . #'ace-jump-line-mode)
-                                  ("<H-return>"    . #'mc/mark-next-lines)
-                                  ("<S-backspace>" . #'cam/hungry-delete-backward)
-                                  ("<S-delete>"    . #'cam/hungry-delete-forward)
-                                  ("<escape>"      . #'ace-jump-mode)
-                                  ("<f11>"         . nil)
-                                  ("<f11> a"       . #'aggressive-indent-mode)
-                                  ("<f11> p"       . #'paredit-mode)
-                                  ("<f11> w"       . #'whitespace-mode)
-                                  ("<f12> b"       . #'cam/bing-search)
-                                  ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
-                                  ("<f12> j"       . #'cam/javadocs-search)
-                                  ("<f12> k"       . #'cam/browse-korma-dox)
-                                  ("A-;"           . #'cam/loccur)
-                                  ("A-r l"         . #'rotate-layout)
-                                  ("A-r w"         . #'rotate-window)
-                                  ("C-="           . #'magit-status)
-                                  ("C-M-y"         . #'helm-show-kill-ring)
-                                  ("C-M-S-k"       . #'backward-kill-sexp)
-                                  ("C-S-k"         . #'cam/backward-kill-line)
-                                  ("C-c C-g"       . #'keyboard-quit)
-                                  ("C-s-;"         . #'cam/align-map)
-                                  ("C-h M"         . #'describe-minor-mode)
-                                  ("C-x C-b"       . #'helm-buffers-list)
-                                  ("C-x C-f"       . #'helm-find-files)
-                                  ("C-x C-g"       . #'keyboard-quit)
-                                  ("C-x C-r"       . #'helm-recentf)
-                                  ("C-x C-z"       . nil)                                           ; instead of suspend-frame
-                                  ("C-x b"         . #'helm-buffers-list)
-                                  ("C-x C-d"       . #'dired)                                       ; instead of ido-list-directory
-                                  ("C-x C-q"       . nil)                                           ; remove keybinding for read-only-mode since I almost never press it on purpose
-                                  ("C-x f"         . #'helm-find-files)
-                                  ("C-x k"         . #'kill-this-buffer)
-                                  ("C-x r r"       . #'register-list)                               ; replaces copy-rectangle-to-register
-                                  ("C-z"           . #'undo)
-                                  ("ESC <up>"      . #'windmove-up)
-                                  ("H-M-a"         . #'mc/skip-to-previous-like-this)
-                                  ("H-M-e"         . #'mc/skip-to-next-like-this)
-                                  ("H-;"           . #'cam/realign-eol-comments)
-                                  ("H-a"           . #'mc/mark-previous-like-this)
-                                  ("H-e"           . #'mc/mark-next-like-this)
-                                  ("M-:"           . #'pp-eval-expression)                          ; Instead of regular eval-expression
-                                  ("M-g"           . #'goto-line)                                   ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
-                                  ("M-j"           . #'cam/join-next-line)
-                                  ("M-x"           . #'helm-M-x)
-                                  ("M-z"           . #'ace-jump-zap-up-to-char)
-                                  ("M-/"           . #'hippie-expand)                               ; Instead of dabbrev-expand
-                                  ("s-;"           . #'cam/insert-spaces-to-goal-column)
-                                  ("s-Z"           . #'undo-tree-redo)
-                                  ("s-f"           . #'ftf-grepsource)
-                                  ("s-o"           . #'ftf-find-file))
-         do (global-set-key (kbd key) (eval command)))
+(cam/global-set-keys
+  ("<A-escape>"    . #'helm-mark-ring)
+  ("<A-return>"    . #'wiki-nav-ido)
+  ("<C-M-s-down>"  . #'windmove-down)
+  ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
+  ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
+  ("<C-M-s-up>"    . #'windmove-up)
+  ("<H-SPC>"       . #'mc/mark-all-like-this)
+  ("<H-escape>"    . #'ace-jump-line-mode)
+  ("<H-return>"    . #'mc/mark-next-lines)
+  ("<S-backspace>" . #'cam/hungry-delete-backward)
+  ("<S-delete>"    . #'cam/hungry-delete-forward)
+  ("<escape>"      . #'ace-jump-mode)
+  ("<f11>"         . nil)
+  ("<f11> a"       . #'aggressive-indent-mode)
+  ("<f11> p"       . #'paredit-mode)
+  ("<f11> w"       . #'whitespace-mode)
+  ("<f12> b"       . #'cam/bing-search)
+  ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
+  ("<f12> j"       . #'cam/javadocs-search)
+  ("<f12> k"       . #'cam/browse-korma-dox)
+  ("A-;"           . #'cam/loccur)
+  ("A-r l"         . #'rotate-layout)
+  ("A-r w"         . #'rotate-window)
+  ("C-="           . #'magit-status)
+  ("C-M-y"         . #'helm-show-kill-ring)
+  ("C-M-S-k"       . #'backward-kill-sexp)
+  ("C-S-k"         . #'cam/backward-kill-line)
+  ("C-c C-g"       . #'keyboard-quit)
+  ("C-s-;"         . #'cam/align-map)
+  ("C-h M"         . #'describe-minor-mode)
+  ("C-x C-b"       . #'helm-buffers-list)
+  ("C-x C-f"       . #'helm-find-files)
+  ("C-x C-g"       . #'keyboard-quit)
+  ("C-x C-r"       . #'helm-recentf)
+  ("C-x C-z"       . nil)                                           ; instead of suspend-frame
+  ("C-x b"         . #'helm-buffers-list)
+  ("C-x C-d"       . #'dired)                                       ; instead of ido-list-directory
+  ("C-x C-q"       . nil)                                           ; remove keybinding for read-only-mode since I almost never press it on purpose
+  ("C-x f"         . #'helm-find-files)
+  ("C-x k"         . #'kill-this-buffer)
+  ("C-x r r"       . #'register-list)                               ; replaces copy-rectangle-to-register
+  ("C-z"           . #'undo)
+  ("ESC <up>"      . #'windmove-up)
+  ("H-M-a"         . #'mc/skip-to-previous-like-this)
+  ("H-M-e"         . #'mc/skip-to-next-like-this)
+  ("H-;"           . #'cam/realign-eol-comments)
+  ("H-a"           . #'mc/mark-previous-like-this)
+  ("H-e"           . #'mc/mark-next-like-this)
+  ("M-:"           . #'pp-eval-expression)                          ; Instead of regular eval-expression
+  ("M-g"           . #'goto-line)                                   ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
+  ("M-j"           . #'cam/join-next-line)
+  ("M-x"           . #'helm-M-x)
+  ("M-z"           . #'ace-jump-zap-up-to-char)
+  ("M-/"           . #'hippie-expand)                               ; Instead of dabbrev-expand
+  ("s-;"           . #'cam/insert-spaces-to-goal-column)
+  ("s-Z"           . #'undo-tree-redo)
+  ("s-f"           . #'ftf-grepsource)
+  ("s-o"           . #'ftf-find-file))
 
 
 ;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
@@ -617,9 +410,9 @@ if it is active; otherwise re-align comments on the current line."
   (show-paren-mode 1)
 
   (add-hook 'before-save-hook
-            #'cam/untabify-current-buffer
-            (not :append)
-            :local))
+    #'cam/untabify-current-buffer
+    (not :append)
+    :local))
 
 
 ;;; [[<auto-complete]]
@@ -1062,13 +855,6 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
-;; Byte-compile init.el if needed for next time around
-(let* ((init-file (expand-file-name (concat user-emacs-directory "init.el"))) ; don't use var user-init-file because it will be set to the .elc file while loading
-       (compiled-init-file (concat init-file "c")))
-  (when (or (not compiled-init-file)
-            (file-newer-than-file-p init-file compiled-init-file))
-    (byte-compile-file init-file)))
-
 (ignore-errors
   (load-file custom-file))
 
@@ -1170,6 +956,7 @@ Calls `magit-refresh' after the command finishes."
 (advice-add #'message :after #'cam/scroll-messages-async)
 
 ;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
+
 
 (defconst cam/clojure-docstr-font-lock-keywords
   '(("\\<\\([[:upper:]-]+[[:punct:]]?\\)\\>" 1 (when (paredit-in-string-p)
