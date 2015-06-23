@@ -1030,7 +1030,6 @@ Calls `magit-refresh' after the command finishes."
 (nyan-mode 1)                                     ; Nyan Cat in mode line
 (projectile-global-mode 1)
 (rainbow-mode 1)                                  ; Colorize strings like #FCE94F
-(rxt-global-mode 1)                               ; Commands for converting and font-locking regular expressions
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
 (yas-global-mode 1)
