@@ -375,6 +375,12 @@ Like Clojure's `time'."
   (interactive)
   (kill-line 0))
 
+(defun cam/hungry-delete ()
+  "Delete all but one spaces after `point'."
+  (interactive)
+  (while (= (char-after (1+ (point))) 32)
+    (delete-char 1)))
+
 (defun cam/windmove-left-or-other-frame ()
   (interactive)
   (condition-case _
@@ -535,6 +541,7 @@ if it is active; otherwise re-align comments on the current line."
                                   ("<H-SPC>"       . #'mc/mark-all-like-this)
                                   ("<H-escape>"    . #'ace-jump-line-mode)
                                   ("<H-return>"    . #'mc/mark-next-lines)
+                                  ("<S-delete>"    . #'cam/hungry-delete)
                                   ("<escape>"      . #'ace-jump-mode)
                                   ("<f11>"         . nil)
                                   ("<f11> a"       . #'aggressive-indent-mode)
@@ -1227,7 +1234,3 @@ Calls `magit-refresh' after the command finishes."
     (font-lock-ensure)))
 
 (add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
-
-;; (remove-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
-
-;; (add-hook 'clojure-mode-hook #'metabase-mode-maybe-enable)
