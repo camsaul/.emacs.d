@@ -69,9 +69,53 @@
  '(inhibit-startup-echo-area-message (user-login-name)))
 
 (add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
+(add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
 
 (defvar cam/has-loaded-init-p nil
   "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
+
+
+
+;;; [[<Auxilary Init File Setup]]
+
+;; Check to make sure init file is up-to-date
+;; user-init-file is the .elc file when LOADING
+(when (string-suffix-p "elc" user-init-file)
+  (let ((init-file-source (concat user-emacs-directory "init.el")))
+    (when (file-newer-than-file-p init-file-source user-init-file)
+      ;; If not, trash .elc file and kill Emacs. We'll recompile on next launch
+      (delete-file user-init-file)
+      (while (not (y-or-n-p "init.el is out of date. We need to restart Emacs. Ready? ")))
+      (kill-emacs))))
+
+;; ignore the warnings about having ~/.emacs.d in the load path
+(eval-after-load 'warnings
+  '(advice-add #'display-warning :around
+     (lambda (function type message &optional level buffer-name)
+       (unless (and (eq type 'initialization)
+                    (string-prefix-p "Your `load-path' seems to contain" message))
+         (funcall function type message level buffer-name)))))
+(add-to-list 'load-path (expand-file-name user-emacs-directory) :append)
+
+(defconst cam/autoloads-file (concat user-emacs-directory "autoloads.el"))
+
+;; byte recompile the other files in this dir if needed
+(defconst cam/auxilary-init-files
+  (eval-when-compile (let (files)
+                       (dolist (file (directory-files user-emacs-directory))
+                         (when (and (string-match "^[-[:alpha:]]+\\.el$" file)
+                                    (not (member file '("autoloads.el" "custom.el" "init.el"))))
+                           (push (concat user-emacs-directory file) files)))
+                       files)))
+
+(eval-when-compile
+  (dolist (file cam/auxilary-init-files)
+    (unless (file-exists-p (concat file "c"))
+      (byte-compile-file file :load)
+      (update-file-autoloads file :save-after cam/autoloads-file))))
+
+(ignore-errors
+  (load-file cam/autoloads-file))
 
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
@@ -107,6 +151,7 @@
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     ert                                           ; Emacs Lisp Regression Testing
     esup                                          ; Emacs Start-Up Profiler <3
+    flycheck                                      ; on-the-fly syntax checking
     find-things-fast
     git-timemachine                               ; Walk through git revisions of a file
     gitconfig-mode
@@ -680,7 +725,8 @@ if it is active; otherwise re-align comments on the current line."
   :require (clojure-mode-extra-font-locking)
   :load ((clojure-snippets-initialize))
   :minor-modes (auto-complete-mode
-                clj-refactor-mode)
+                clj-refactor-mode
+                todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup)
           (eval-after-load 'yasnippet
@@ -778,8 +824,12 @@ any buffers that were visiting files that were children of that directory."
 
 
 ;;; [[<Emacs Lisp]]
+
+
 (defvar-local cam/byte-compile nil
   "Make this a file-local variable and we'll byte compile it whenever it's saved.")
+(defvar-local cam/generate-autoloads nil
+  "Generate autoloads for this file whenever it's saved.")
 
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
   (interactive)
@@ -805,11 +855,16 @@ any buffers that were visiting files that were children of that directory."
                 eldoc-mode
                 elisp-slime-nav-mode
                 morlock-mode
+                todo-font-lock-mode
                 wiki-nav-mode)
-  :setup ((cam/lisp-mode-setup))
+  :setup ((cam/lisp-mode-setup)
+          (unless (string= user-init-file (buffer-file-name))
+            (flycheck-mode 1)))
   :local-hooks ((after-save-hook . (lambda ()
                                      (when cam/byte-compile
-                                       (byte-compile-file (buffer-file-name) :load)))))
+                                       (byte-compile-file (buffer-file-name) :load))
+                                     (when cam/generate-autoloads
+                                       (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
   :keys (("<C-M-s-return>" . #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
          ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("C-x C-e"        . #'pp-eval-last-sexp)))
@@ -1194,34 +1249,6 @@ Calls `magit-refresh' after the command finishes."
 (eval-after-load 'elisp-mode
   '(font-lock-add-keywords 'emacs-lisp-mode cam/rainbow-elisp-mode-keywords))
 
-
-;;; ---------------------------------------- [[cam/todo-font-lock-mode]] ----------------------------------------
-
-(defconst cam/todo-font-lock-mode-keywords
-  '(("\\<\\(TODO\\|HACK\\)\\>" 1 (when (paredit-in-comment-p)
-                                   'font-lock-warning-face)
-     prepend)))
-
-(defconst cam/todo-font-lock-mode-lighter
-  " cam/todo-fl")
-
-(defvar-local cam/todo-font-lock-mode nil)
-
-(defun cam/todo-font-lock-mode (&optional arg)
-  (interactive)
-  (if (null arg) (progn (cam/todo-font-lock-mode (if cam/todo-font-lock-mode -1 1))
-                        (when (called-interactively-p 'interactive)
-                          (message "TODO Font-Lock %s in current buffer." (if cam/todo-font-lock-mode "enabled" "disabled"))))
-    (let ((enable (> arg 0)))
-      (when enable
-        (add-to-list 'minor-mode-alist (list 'cam/todo-font-lock-mode cam/todo-font-lock-mode-lighter)))
-      (funcall (if enable #'font-lock-add-keywords #'font-lock-remove-keywords) nil cam/todo-font-lock-mode-keywords)
-      (setq-local cam/todo-font-lock-mode enable))
-    (font-lock-flush)
-    (font-lock-ensure)))
-
-(add-hook 'clojure-mode-hook #'cam/todo-font-lock-mode)
-(add-hook 'emacs-lisp-mode-hook #'cam/todo-font-lock-mode)
 
 
 ;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
