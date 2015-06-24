@@ -40,6 +40,7 @@
         ace-jump-done
         ace-jump-mode
         beginning-of-buffer
+        cam/align-map
         cam/clojure-save-load-switch-to-cider
         cam/windmove-left-or-other-frame
         cam/windmove-right-or-other-frame
@@ -51,4 +52,5 @@
         next-buffer
         paredit-mode
         previous-buffer
+        yas-expand
         ))

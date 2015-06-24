@@ -962,7 +962,7 @@ Calls `magit-refresh' after the command finishes."
   '(("\\<\\([[:upper:]-]+[[:punct:]]?\\)\\>" 1 (when (paredit-in-string-p)
                                                  'font-lock-variable-name-face)
      prepend)
-    ("`\\([[:alnum:]_<>*-/:]+\\)`" 1 (when (paredit-in-string-p)
+    ("`\\([[:alnum:]_<>*-/:\\?]+\\)`" 1 (when (paredit-in-string-p)
                                        'font-lock-constant-face)
      prepend)))
 
