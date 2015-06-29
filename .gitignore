@@ -1,14 +1,15 @@
 *.elc
-\#*\#
 .\#*
+\#*\#
 ac-comphist.dat
 auto-save-list/
+autoloads.el
 backups
 custom.el
 elpa/
 eshell/
 ido.last
+network-security.data
 places
 projectile-bookmarks.eld
 recentf
-autoloads.el

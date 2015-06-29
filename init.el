@@ -66,7 +66,14 @@
 
 ;; In an effort to be really annoying you can only suppress the startup echo area message if you set it through customize
 (custom-set-variables
- '(inhibit-startup-echo-area-message (user-login-name)))
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(inhibit-startup-echo-area-message (user-login-name))
+ '(package-selected-packages
+   (quote
+    (yaml-mode wiki-nav web-mode undo-tree rotate register-list rainbow-mode rainbow-delimiters projectile pos-tip nyan-mode moe-theme morlock markdown-mode magit macrostep loccur ido-vertical-mode highlight-parentheses helm guide-key gitignore-mode gitconfig-mode git-timemachine find-things-fast flycheck esup elisp-slime-nav editorconfig dockerfile-mode diminish diff-hl company clojure-snippets clojure-mode-extra-font-locking clj-refactor auto-yasnippet anzu aggressive-indent ace-jump-zap ace-jump-mode ac-sly ac-js2 ac-cider))))
 
 (add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
 (add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
@@ -962,8 +969,8 @@ Calls `magit-refresh' after the command finishes."
   '(("\\<\\([[:upper:]-]+[[:punct:]]?\\)\\>" 1 (when (paredit-in-string-p)
                                                  'font-lock-variable-name-face)
      prepend)
-    ("`\\([[:alnum:]_<>*-/:\\?]+\\)`" 1 (when (paredit-in-string-p)
-                                       'font-lock-constant-face)
+    ("`\\(\\*?:?[[:alnum:]_<>*-/:]+[\\?!]?\\*?\\)`" 1 (when (paredit-in-string-p)
+                                           'font-lock-constant-face)
      prepend)))
 
 (defconst cam/clojure-docstr-font-lock-mode-lighter
