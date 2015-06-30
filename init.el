@@ -137,7 +137,6 @@
 
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
-    ac-js2                                        ; auto-complete <-> skewer <-> js2-mode
     ac-sly                                        ; auto-complete <-> sly
     ace-jump-mode
     ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
@@ -184,8 +183,7 @@
     rainbow-mode
     register-list                                 ; dired-like editing of Emacs registers
     saveplace                                     ; save position of point when killing a buffer
-    sly                                           ; Common Lisp IDE
-    skewer-mode                                   ; live JS web dev for emacs
+    sly                                           ; Common Lisp
     rotate                                        ; rotate-window, rotate-layout, etc.
     undo-tree
     web-mode                                      ; major-mode for editing web templates
@@ -699,18 +697,12 @@ any buffers that were visiting files that were children of that directory."
 ;;; [[<js2-mode]]
 (tweak-package js2-mode
   :mode-name js2-mode
-  :minor-modes (ac-js2-mode
-                electric-pair-local-mode
-                rainbow-delimiters-mode
-                skewer-mode)
-  :setup ((unless (skewer-ping)
-            (run-skewer)))
+  :minor-modes (electric-pair-local-mode
+                rainbow-delimiters-mode)
   :keys (("C-j" . #'newline)
          ("M-j" . nil))
-  :auto-mode-alist ("\.js$"))
-
-(tweak-package skewer-mode
-  :declare (skewer-ping))
+  :auto-mode-alist ("\.js$"
+                    "\.json$"))
 
 
 ;;; [[<loccur]]
