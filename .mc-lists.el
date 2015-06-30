@@ -4,6 +4,7 @@
 (setq mc/cmds-to-run-for-all
       '(
         backward-sexp
+        cam/hungry-delete-backward
         cam/join-next-line
         cljr-slash
         clojure-toggle-keyword-string
