@@ -454,8 +454,8 @@
   (dolist (buffer (cam/visible-buffer-list))
     (when (string-prefix-p "*nrepl-server" (buffer-name buffer))
       (with-current-buffer buffer
-        (delete-region (point-min) (point-max))
-        (cl-return-from cam/cider-clear-output-buffer-when-visible)))))
+        (delete-region (point-min) (point-max)))
+      (cl-return-from cam/cider-clear-output-buffer-when-visible))))
 
 (cl-defun cam/cider-switch-to-relevant-repl-buffer ()
   "Like `cider-switch-to-relvant-repl-buffer', but will switch to any visible CIDER buffer on any frame."
@@ -463,7 +463,7 @@
   ;; and switch to it if possible
   (dolist (frame (frame-list))
     (dolist (window (window-list frame))
-      (let ((buf (window-buffer)))
+      (let ((buf (window-buffer window)))
         (when (string-prefix-p "*cider-repl" (buffer-name buf))
           (select-frame-set-input-focus frame)
           (select-window window)
@@ -503,17 +503,9 @@
 (defun cam/ansi-colorize-nrepl-output-buffer-if-needed (f process output)
   (let ((old-max (with-current-buffer (process-buffer process)
                    (point-max))))
-    ;; strip the logging prefix while we're at it
-    (funcall f process (replace-regexp-in-string "^.+ :: " "" output))
+    (funcall f process (replace-regexp-in-string "^.+ :: " "" output)) ; strip the logging prefix while we're at it
     (with-current-buffer (process-buffer process)
-      (message "Colorize %d <-> %d" old-max (point-max))
       (ansi-color-apply-on-region old-max (point-max)))))
-
-(eval-after-load 'cider
-  '(progn
-     (require 'ansi-color)
-     (advice-remove #'nrepl-server-filter #'cam/ansi-colorize-nrepl-output-buffer-if-needed)
-     (add-function :around (symbol-function 'nrepl-server-filter) #'cam/ansi-colorize-nrepl-output-buffer-if-needed)))
 
 (tweak-package cider
   :mode-name cider-repl-mode
@@ -525,7 +517,7 @@
                                           "Delete trailing whitespace that may have been introduced by `auto-complete'."
                                           (interactive)
                                           (call-interactively #'delete-trailing-whitespace)))
-           (#'cider-repl-return :after #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
+           (#'nrepl-server-filter :around #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
   :minor-modes (auto-complete-mode
                 aggressive-indent-mode)
   :setup ((cam/lisp-mode-setup)
