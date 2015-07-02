@@ -150,8 +150,8 @@
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     ert                                           ; Emacs Lisp Regression Testing
     esup                                          ; Emacs Start-Up Profiler <3
-    flycheck                                      ; on-the-fly syntax checking
     find-things-fast
+    flycheck                                      ; on-the-fly syntax checking
     git-timemachine                               ; Walk through git revisions of a file
     gitconfig-mode
     gitignore-mode                                ; Major mode for editing .gitignore files
@@ -440,26 +440,31 @@
 
 
 ;;; [[<Clojure]]
+
+(defun cam/visible-buffer-list ()
+  (let (ret)
+    (dolist (frame (frame-list))
+      (dolist (window (window-list frame))
+        (cl-pushnew (window-buffer window) ret)))
+    ret))
+
 (cl-defun cam/cider-clear-output-buffer-when-visible ()
   "If the `cider-mode' output buffer is visible, clear its contents."
   (interactive)
-  (dolist (frame (frame-list))
-    (dolist (window (window-list frame))
-      (let ((buffer (window-buffer window)))
-        (when (string-prefix-p "*nrepl-server" (buffer-name buffer))
-          (with-current-buffer buffer
-            (delete-region (point-min) (point-max))
-            (cl-return-from cam/cider-clear-output-buffer-when-visible)))))))
+  (dolist (buffer (cam/visible-buffer-list))
+    (when (string-prefix-p "*nrepl-server" (buffer-name buffer))
+      (with-current-buffer buffer
+        (delete-region (point-min) (point-max))
+        (cl-return-from cam/cider-clear-output-buffer-when-visible)))))
 
 (cl-defun cam/cider-switch-to-relevant-repl-buffer ()
-  "Like `cider-switch-to-relvant-repl-buffer', but will switch to "
+  "Like `cider-switch-to-relvant-repl-buffer', but will switch to any visible CIDER buffer on any frame."
   ;; Look for a cider REPL buffer visible in any window on any frame
   ;; and switch to it if possible
-  (cam/cider-clear-output-buffer-when-visible)
   (dolist (frame (frame-list))
     (dolist (window (window-list frame))
-      (let ((buf (window-buffer window)))
-        (when (string-prefix-p "\*cider-repl" (buffer-name buf))
+      (let ((buf (window-buffer)))
+        (when (string-prefix-p "*cider-repl" (buffer-name buf))
           (select-frame-set-input-focus frame)
           (select-window window)
           (cl-return-from cam/cider-switch-to-relevant-repl-buffer)))))
@@ -473,7 +478,8 @@
     (cider-load-buffer)
     (cider-repl-set-ns (cider-current-ns))
     (cam/cider-switch-to-relevant-repl-buffer)
-    (cider-repl-clear-buffer)))
+    (cider-repl-clear-buffer)
+    (cam/cider-clear-output-buffer-when-visible)))
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
@@ -494,13 +500,23 @@
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode)))
 
-(defun cam/cider-repl-messages-buffer ()
-  (let ((messages-buffer nil))
-    (dolist (buf (buffer-list))
-      (unless messages-buffer
-        (when (string-match-p "^\*nrepl-server .*\*$" (buffer-name buf))
-          (setq messages-buffer buf))))
-    messages-buffer))
+(autoload #'ansi-color-apply-on-region "ansi-color")
+
+
+(let (last-colorized-marker)
+  (cl-defun cam/ansi-colorize-cider-output-buffer ()
+    "ANSI-colorize any uncolorized portions of NREPL output buffer if visible."
+    (interactive)
+    (dolist (buffer (cam/visible-buffer-list))
+      (when (string-prefix-p "*nrepl-server" (buffer-name buffer))
+        (with-current-buffer buffer
+          (unless (markerp last-colorized-marker)
+            (setq last-colorized-marker (point-min-marker)))
+          (unless (= (marker-position last-colorized-marker) (point-max))
+            (message "Colorizing %d <-> %d" (marker-position last-colorized-marker) (point-max))
+            (ansi-color-apply-on-region (marker-position last-colorized-marker) (point-max))
+            (set-marker last-colorized-marker (point-max))))
+        (cl-return-from cam/ansi-colorize-cider-output-buffer)))))
 
 (tweak-package cider
   :mode-name cider-repl-mode
@@ -510,7 +526,9 @@
   :advice ((#'cider-repl-return :before (lambda ()
                                           "Delete trailing whitespace that may have been introduced by `auto-complete'."
                                           (interactive)
-                                          (call-interactively #'delete-trailing-whitespace))))
+                                          (call-interactively #'delete-trailing-whitespace)))
+           (#'cider-repl-return :after #'cam/ansi-colorize-cider-output-buffer))
+  :load ((run-with-timer 0 0.5 #'cam/ansi-colorize-cider-output-buffer))
   :minor-modes (auto-complete-mode
                 aggressive-indent-mode)
   :setup ((cam/lisp-mode-setup)
@@ -671,8 +689,8 @@ any buffers that were visiting files that were children of that directory."
 
 
 ;;; [[<Git Commit Mode]]
-(tweak-package git-commit-mode
-  :mode-name git-commit-mode
+(tweak-package git-commit
+  :mode-name git-commit
   :minor-modes (flyspell-mode))
 
 
