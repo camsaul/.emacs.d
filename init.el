@@ -500,24 +500,11 @@
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode)))
 
-;; (let (last-colorized-marker)
-;;   (defun cam/ansi-colorize-nrepl-output-buffer-if-needed (process _)
-;;     "ANSI-colorize uncolorized tail of `nrepl' output buffer if it is visible."
-;;     (with-current-buffer (process-buffer process)
-;;       (let ((pos (marker-position (or last-colorized-marker
-;;                                       (setq last-colorized-marker (point-min-marker))))))
-;;         (unless (= pos (point-max))
-;;           (message "Colorizing %d <-> %d" pos (point-max))
-;;           (ansi-color-apply-on-region pos (point-max))
-;;           (set-marker last-colorized-marker (point-max)))))))
-
 (defun cam/ansi-colorize-nrepl-output-buffer-if-needed (f process output)
   (let ((old-max (with-current-buffer (process-buffer process)
                    (point-max))))
     ;; strip the logging prefix while we're at it
-    (funcall f process (->> output
-                            (replace-regexp-in-string "^.+ :: " "")
-                            (replace-regexp-in-string "^DB CALL:.*\n" "")))
+    (funcall f process (replace-regexp-in-string "^.+ :: " "" output))
     (with-current-buffer (process-buffer process)
       (message "Colorize %d <-> %d" old-max (point-max))
       (ansi-color-apply-on-region old-max (point-max)))))
