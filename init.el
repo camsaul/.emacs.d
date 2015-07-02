@@ -500,35 +500,45 @@
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode)))
 
-(autoload #'ansi-color-apply-on-region "ansi-color")
+;; (let (last-colorized-marker)
+;;   (defun cam/ansi-colorize-nrepl-output-buffer-if-needed (process _)
+;;     "ANSI-colorize uncolorized tail of `nrepl' output buffer if it is visible."
+;;     (with-current-buffer (process-buffer process)
+;;       (let ((pos (marker-position (or last-colorized-marker
+;;                                       (setq last-colorized-marker (point-min-marker))))))
+;;         (unless (= pos (point-max))
+;;           (message "Colorizing %d <-> %d" pos (point-max))
+;;           (ansi-color-apply-on-region pos (point-max))
+;;           (set-marker last-colorized-marker (point-max)))))))
 
+(defun cam/ansi-colorize-nrepl-output-buffer-if-needed (f process output)
+  (let ((old-max (with-current-buffer (process-buffer process)
+                   (point-max))))
+    ;; strip the logging prefix while we're at it
+    (funcall f process (->> output
+                            (replace-regexp-in-string "^.+ :: " "")
+                            (replace-regexp-in-string "^DB CALL:.*\n" "")))
+    (with-current-buffer (process-buffer process)
+      (message "Colorize %d <-> %d" old-max (point-max))
+      (ansi-color-apply-on-region old-max (point-max)))))
 
-(let (last-colorized-marker)
-  (cl-defun cam/ansi-colorize-cider-output-buffer ()
-    "ANSI-colorize any uncolorized portions of NREPL output buffer if visible."
-    (interactive)
-    (dolist (buffer (cam/visible-buffer-list))
-      (when (string-prefix-p "*nrepl-server" (buffer-name buffer))
-        (with-current-buffer buffer
-          (unless (markerp last-colorized-marker)
-            (setq last-colorized-marker (point-min-marker)))
-          (unless (= (marker-position last-colorized-marker) (point-max))
-            (message "Colorizing %d <-> %d" (marker-position last-colorized-marker) (point-max))
-            (ansi-color-apply-on-region (marker-position last-colorized-marker) (point-max))
-            (set-marker last-colorized-marker (point-max))))
-        (cl-return-from cam/ansi-colorize-cider-output-buffer)))))
+(eval-after-load 'cider
+  '(progn
+     (require 'ansi-color)
+     (advice-remove #'nrepl-server-filter #'cam/ansi-colorize-nrepl-output-buffer-if-needed)
+     (add-function :around (symbol-function 'nrepl-server-filter) #'cam/ansi-colorize-nrepl-output-buffer-if-needed)))
 
 (tweak-package cider
   :mode-name cider-repl-mode
   :declare (cider-jack-in)
   :vars ((cider-auto-select-error-buffer . nil)
          (cider-repl-use-pretty-printing . t))
+  :require (ansi-color)
   :advice ((#'cider-repl-return :before (lambda ()
                                           "Delete trailing whitespace that may have been introduced by `auto-complete'."
                                           (interactive)
                                           (call-interactively #'delete-trailing-whitespace)))
-           (#'cider-repl-return :after #'cam/ansi-colorize-cider-output-buffer))
-  :load ((run-with-timer 0 0.5 #'cam/ansi-colorize-cider-output-buffer))
+           (#'cider-repl-return :after #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
   :minor-modes (auto-complete-mode
                 aggressive-indent-mode)
   :setup ((cam/lisp-mode-setup)
