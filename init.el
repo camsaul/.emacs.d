@@ -441,35 +441,39 @@
 
 ;;; [[<Clojure]]
 
-(defun cam/visible-buffer-list ()
-  (let (ret)
-    (dolist (frame (frame-list))
-      (dolist (window (window-list frame))
-        (cl-pushnew (window-buffer window) ret)))
-    ret))
-
-(cl-defun cam/cider-clear-output-buffer-when-visible ()
-  "If the `cider-mode' output buffer is visible, clear its contents."
-  (interactive)
-  (dolist (buffer (cam/visible-buffer-list))
-    (when (string-prefix-p "*nrepl-server" (buffer-name buffer))
-      (with-current-buffer buffer
-        (delete-region (point-min) (point-max)))
-      (cl-return-from cam/cider-clear-output-buffer-when-visible))))
-
-(cl-defun cam/cider-switch-to-relevant-repl-buffer ()
-  "Like `cider-switch-to-relvant-repl-buffer', but will switch to any visible CIDER buffer on any frame."
-  ;; Look for a cider REPL buffer visible in any window on any frame
-  ;; and switch to it if possible
+(cl-defun cam/visible-buffer-matching (pred &optional return-multiple-values?)
+  "Return the first buffer visible in any window on any frame that satisfies PRED."
   (dolist (frame (frame-list))
     (dolist (window (window-list frame))
-      (let ((buf (window-buffer window)))
-        (when (string-prefix-p "*cider-repl" (buffer-name buf))
-          (select-frame-set-input-focus frame)
-          (select-window window)
-          (cl-return-from cam/cider-switch-to-relevant-repl-buffer)))))
-  ;; otherwise fall back to whatever cider-switch-to-relevant-repl-buffer does
-  (cider-switch-to-relevant-repl-buffer))
+      (let ((buffer (window-buffer window)))
+        (when (funcall pred buffer)
+          (cl-return-from cam/visible-buffer-matching (if return-multiple-values?
+                                                          (list buffer window frame)
+                                                        buffer)))))))
+
+;; TODO - move these to appropriate places !
+(cl-defmacro cam/when-let-buffer (((binding &body pred-body) &rest more) &body body)
+  (declare (indent 1))
+  `(cl-multiple-value-bind (,binding this-window this-frame) (cam/visible-buffer-matching (lambda (,binding)
+                                                                                            ,@pred-body) :return-multiple-values)
+     (when ,binding
+       ,(if more `(cam/when-let-buffer ,more ,@body)
+          `(progn ,@body)))))
+
+(defun cam/cider-clear-output-buffer-when-visible ()
+  "If the `cider-mode' output buffer is visible, clear its contents."
+  (cam/when-let-buffer ((buffer (string-prefix-p "*nrepl-server" (buffer-name buffer))))
+    (with-current-buffer buffer
+      (delete-region (point-min) (point-max)))))
+
+(defun cam/cider-switch-to-relevant-repl-buffer ()
+  "Like `cider-switch-to-relvant-repl-buffer', but will switch to any visible CIDER buffer on any frame."
+  ;; Look for a cider REPL buffer visible in any window on any frame and switch to it if possible
+  (or (cam/when-let-buffer ((buffer (string-prefix-p "*cider-repl" (buffer-name buffer))))
+        (select-frame-set-input-focus this-frame)
+        (select-window this-window))
+      ;; otherwise fall back to whatever cider-switch-to-relevant-repl-buffer does
+      (cider-switch-to-relevant-repl-buffer)))
 
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
