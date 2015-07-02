@@ -447,10 +447,22 @@
 
 
 ;;; [[<Clojure]]
+(cl-defun cam/cider-clear-output-buffer-when-visible ()
+  "If the `cider-mode' output buffer is visible, clear its contents."
+  (interactive)
+  (dolist (frame (frame-list))
+    (dolist (window (window-list frame))
+      (let ((buffer (window-buffer window)))
+        (when (string-prefix-p "*nrepl-server" (buffer-name buffer))
+          (with-current-buffer buffer
+            (delete-region (point-min) (point-max))
+            (cl-return-from cam/cider-clear-output-buffer-when-visible)))))))
+
 (cl-defun cam/cider-switch-to-relevant-repl-buffer ()
   "Like `cider-switch-to-relvant-repl-buffer', but will switch to "
   ;; Look for a cider REPL buffer visible in any window on any frame
   ;; and switch to it if possible
+  (cam/cider-clear-output-buffer-when-visible)
   (dolist (frame (frame-list))
     (dolist (window (window-list frame))
       (let ((buf (window-buffer window)))
