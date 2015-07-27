@@ -3,7 +3,10 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        backward-kill-sexp
         backward-sexp
+        cam/align-map
+        cam/backward-kill-line
         cam/hungry-delete-backward
         cam/join-next-line
         cljr-slash
@@ -41,12 +44,12 @@
         ace-jump-done
         ace-jump-mode
         beginning-of-buffer
-        cam/align-map
         cam/clojure-save-load-switch-to-cider
         cam/windmove-left-or-other-frame
         cam/windmove-right-or-other-frame
         cider-refresh
         end-of-buffer
+        goto-line
         helm-M-x
         jump-to-register
         mc/mark-next-lines
