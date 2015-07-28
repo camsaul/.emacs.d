@@ -754,7 +754,8 @@ Calls `magit-refresh' after the command finishes."
   :mode-name magit-status-mode
   :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
   :vars ((magit-auto-revert-mode-lighter     . "")
-         (magit-last-seen-setup-instructions . "1.4.0"))
+         (magit-last-seen-setup-instructions . "1.4.0")
+         (magit-push-always-verify . nil))
   :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
   :keys (("M-!" . #'cam/magit-shell-command)
          ("V"   . #'cam/magit-visit-pull-request-url)
