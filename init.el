@@ -33,6 +33,7 @@
 ;;;    [[js2-mode]]
 ;;;    [[loccur]]
 ;;;    [[Magit]]
+;;;    [[Objective-C]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
 ;;;    [[Sly]]
@@ -66,7 +67,14 @@
 
 ;; In an effort to be really annoying you can only suppress the startup echo area message if you set it through customize
 (custom-set-variables
- '(inhibit-startup-echo-area-message (user-login-name)))
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(inhibit-startup-echo-area-message (user-login-name))
+ '(package-selected-packages
+   (quote
+    (yaml-mode wiki-nav web-mode undo-tree rotate register-list rainbow-mode rainbow-delimiters projectile pos-tip nyan-mode moe-theme morlock markdown-mode magit macrostep loccur js2-mode ido-vertical-mode highlight-parentheses helm guide-key gitignore-mode gitconfig-mode git-timemachine flycheck find-things-fast esup elisp-slime-nav editorconfig dockerfile-mode diminish diff-hl company clojure-snippets clojure-mode-extra-font-locking clj-refactor auto-yasnippet anzu aggressive-indent ace-jump-zap ace-jump-mode ac-sly ac-cider))))
 
 (add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
 (add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
@@ -490,6 +498,7 @@
   :require (clojure-mode-extra-font-locking)
   :load ((clojure-snippets-initialize))
   :minor-modes (auto-complete-mode
+                cider-mode
                 clj-refactor-mode
                 todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
@@ -761,6 +770,17 @@ Calls `magit-refresh' after the command finishes."
          ("V"   . #'cam/magit-visit-pull-request-url)
          ("s-u" . #'magit-refresh)))
 
+;;; [[<Objective-C]]
+(tweak-package cc-mode
+  :mode-name objc-mode
+  :load ( ;; Automatically open .h files with @interface declarations as obj-c rather than c
+         (add-to-list 'magic-mode-alist
+                      `(,(lambda ()
+                           (and (string= (file-name-extension buffer-file-name) "h")
+                                (re-search-forward "@\\<interface\\>"
+                                                   magic-mode-regexp-match-limit t)))
+                        . objc-mode))))
+
 ;;; [[<Org]]
 (defun cam/org-insert-code-block ()
   "Insert a new Org code block and start editing it."
@@ -1002,3 +1022,9 @@ Calls `magit-refresh' after the command finishes."
     (font-lock-ensure)))
 
 (add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
