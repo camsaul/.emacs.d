@@ -5,6 +5,7 @@
       '(
         backward-kill-sexp
         backward-sexp
+        c-electric-brace
         cam/align-map
         cam/backward-kill-line
         cam/hungry-delete-backward
