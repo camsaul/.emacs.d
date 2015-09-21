@@ -36,6 +36,7 @@
 ;;;    [[Objective-C]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
+;;;    [[Shell]]
 ;;;    [[Sly]]
 ;;;    [[Web Mode]]
 ;;;    [[YASnippet]]
@@ -779,7 +780,13 @@ Calls `magit-refresh' after the command finishes."
                            (and (string= (file-name-extension buffer-file-name) "h")
                                 (re-search-forward "@\\<interface\\>"
                                                    magic-mode-regexp-match-limit t)))
-                        . objc-mode))))
+                        . objc-mode)))
+  :minor-modes (auto-complete-mode
+                electric-pair-mode)
+  :local-vars ((tab-width . 4)
+               (c-basic-indent . 4)
+               (c-basic-offset . 4))
+  :keys (("C-j" . #'newline)))
 
 ;;; [[<Org]]
 (defun cam/org-insert-code-block ()
@@ -817,6 +824,11 @@ Calls `magit-refresh' after the command finishes."
          (put #'paredit-open-square     'delete-selection t)
          (put #'paredit-doublequote     'delete-selection t)
          (put #'paredit-newline         'delete-selection t)))
+
+
+;;; [[<Shell]]
+(tweak-package sh-script
+  :minor-modes (todo-font-lock-mode))
 
 
 ;;; [[[<Sly]]
