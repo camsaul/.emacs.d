@@ -36,6 +36,7 @@
 ;;;    [[Objective-C]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
+;;;    [[Perl]]
 ;;;    [[Shell]]
 ;;;    [[Sly]]
 ;;;    [[Web Mode]]
@@ -826,9 +827,17 @@ Calls `magit-refresh' after the command finishes."
          (put #'paredit-newline         'delete-selection t)))
 
 
+;;; [[<Perl]]
+(tweak-package perl-mode
+  :mode-name perl-mode
+  :minor-modes (electric-pair-local-mode))
+
+
 ;;; [[<Shell]]
 (tweak-package sh-script
-  :minor-modes (todo-font-lock-mode))
+  :mode-name sh-mode
+  :minor-modes (electric-pair-local-mode
+                todo-font-lock-mode))
 
 
 ;;; [[[<Sly]]
@@ -1034,9 +1043,3 @@ Calls `magit-refresh' after the command finishes."
     (font-lock-ensure)))
 
 (add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
