@@ -152,6 +152,7 @@
     clojure-mode-extra-font-locking
     clojure-snippets                              ; Clojure snippets!
     company                                       ; auto-completion
+    cperl-mode                                    ; Better than perl-mode
     dash
     diff-hl                                       ; mark uncommited changes in the fringe
     diminish                                      ; Replace or hide minor modes in mode-line
@@ -160,6 +161,7 @@
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     ert                                           ; Emacs Lisp Regression Testing
     esup                                          ; Emacs Start-Up Profiler <3
+    everything                                    ; Required by perl-completion-mode
     find-things-fast
     flycheck                                      ; on-the-fly syntax checking
     git-timemachine                               ; Walk through git revisions of a file
@@ -180,6 +182,7 @@
     nyan-mode                                     ; Nyan Cat shows position in mode-line
     org                                           ; Get latest version of org from Org package archive
     paredit
+    perl-completion                               ; Auto-complete for Perl
     pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
@@ -271,6 +274,7 @@
 ;;; [[<Autoloads]]
 
 (autoload #'describe-minor-mode "help")
+(autoload #'perl-completion-mode "perl-completion")
 
 
 ;;; [[<Global Settings]]
@@ -828,9 +832,23 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<Perl]]
-(tweak-package perl-mode
-  :mode-name perl-mode
-  :minor-modes (electric-pair-local-mode))
+(defun cam/cperl-eldoc-documentation-function ()
+  (car
+   (let (cperl-message-on-help-error)
+     (cperl-get-help))))
+
+(tweak-package cperl-mode
+  :mode-name cperl-mode
+  :minor-modes (eldoc-mode
+                electric-pair-local-mode
+                perl-completion-mode)
+  :vars ((cperl-electric-keywords . t))           ; keywords are electric in CPerl (WHAT DOES THIS MEAN?)
+  :keys (("C-c C-d" . #'cperl-perldoc))
+  :local-vars ((eldoc-documentation-function . #'cam/cperl-eldoc-documentation-function))
+  :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
+  :auto-mode-alist ("\.pl$"
+                    "\.pm$"))
+(add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
 
 
 ;;; [[<Shell]]
