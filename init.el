@@ -832,11 +832,6 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<Perl]]
-(defun cam/cperl-eldoc-documentation-function ()
-  (car
-   (let (cperl-message-on-help-error)
-     (cperl-get-help))))
-
 (tweak-package cperl-mode
   :mode-name cperl-mode
   :minor-modes (eldoc-mode
@@ -844,7 +839,10 @@ Calls `magit-refresh' after the command finishes."
                 perl-completion-mode)
   :vars ((cperl-electric-keywords . t))           ; keywords are electric in CPerl (WHAT DOES THIS MEAN?)
   :keys (("C-c C-d" . #'cperl-perldoc))
-  :local-vars ((eldoc-documentation-function . #'cam/cperl-eldoc-documentation-function))
+  :local-vars ((eldoc-documentation-function . (lambda ()
+                                                 (car
+                                                  (let (cperl-message-on-help-error)
+                                                    (cperl-get-help))))))
   :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
   :auto-mode-alist ("\.pl$"
                     "\.pm$"))
@@ -907,6 +905,7 @@ Calls `magit-refresh' after the command finishes."
 (nyan-mode 1)                                     ; Nyan Cat in mode line
 (projectile-global-mode 1)
 (rainbow-mode 1)                                  ; Colorize strings like #FCE94F
+(recentf-mode 1)                                  ; Track recently visited files
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
 (yas-global-mode 1)
