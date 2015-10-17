@@ -76,7 +76,7 @@
  '(inhibit-startup-echo-area-message (user-login-name))
  '(package-selected-packages
    (quote
-    (yaml-mode wiki-nav web-mode undo-tree rotate register-list rainbow-mode rainbow-delimiters projectile pos-tip nyan-mode moe-theme morlock markdown-mode magit macrostep loccur js2-mode ido-vertical-mode highlight-parentheses helm guide-key gitignore-mode gitconfig-mode git-timemachine flycheck find-things-fast esup elisp-slime-nav editorconfig dockerfile-mode diminish diff-hl company clojure-snippets clojure-mode-extra-font-locking clj-refactor auto-yasnippet anzu aggressive-indent ace-jump-zap ace-jump-mode ac-sly ac-cider))))
+    (perl-completion everything yaml-mode wiki-nav web-mode undo-tree rotate register-list rainbow-mode rainbow-delimiters projectile pos-tip nyan-mode moe-theme morlock markdown-mode magit macrostep loccur js2-mode ido-vertical-mode highlight-parentheses helm guide-key gitignore-mode gitconfig-mode git-timemachine flycheck find-things-fast esup elisp-slime-nav editorconfig dockerfile-mode diminish diff-hl company clojure-snippets clojure-mode-extra-font-locking clj-refactor auto-yasnippet anzu aggressive-indent ace-jump-zap ace-jump-mode ac-sly ac-cider))))
 
 (add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
 (add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
@@ -976,28 +976,28 @@ Calls `magit-refresh' after the command finishes."
       (when (eq (window-buffer w) buffer)
         (cl-return-from cam/buffer-window w)))))
 
-(defconst cam/buffer-auto-delete-exclusion-patterns
-  '("^\\*Messages\\*$"
-    "^\\*cider-repl"
-    "^\\*sly-mrepl for sbcl\\*$")
-  "Patterns of buffer names that should never be deleted by `cam/cleanup-extra-buffers'.")
+;; (defconst cam/buffer-auto-delete-exclusion-patterns
+;;   '("^\\*Messages\\*$"
+;;     "^\\*cider-repl"
+;;     "^\\*sly-mrepl for sbcl\\*$")
+;;   "Patterns of buffer names that should never be deleted by `cam/cleanup-extra-buffers'.")
 
-(defun cam/should-delete-buffer (buf)
-  (and (or (not (buffer-file-name buf))
-           (not (buffer-modified-p buf)))
-       (not (get-buffer-process buf))
-       (not (cam/buffer-window buf))
-       (cl-notany (lambda (pattern)
-                    (string-match pattern (buffer-name buf)))
-                  cam/buffer-auto-delete-exclusion-patterns)))
+;; (defun cam/should-delete-buffer (buf)
+;;   (and (or (not (buffer-file-name buf))
+;;            (not (buffer-modified-p buf)))
+;;        (not (get-buffer-process buf))
+;;        (not (cam/buffer-window buf))
+;;        (cl-notany (lambda (pattern)
+;;                     (string-match pattern (buffer-name buf)))
+;;                   cam/buffer-auto-delete-exclusion-patterns)))
 
-(defun cam/cleanup-extra-buffers ()
-  "Remove unused buffers whenever Emacs has been idle for 2 minutes."
-  (let ((case-fold-search :ignore-case))
-    (dolist (buf (buffer-list))
-      (when (cam/should-delete-buffer buf)
-        (kill-buffer buf)))))
-(run-with-idle-timer (* 30) :repeat #'cam/cleanup-extra-buffers)
+;; (defun cam/cleanup-extra-buffers ()
+;;   "Remove unused buffers whenever Emacs has been idle for 2 minutes."
+;;   (let ((case-fold-search :ignore-case))
+;;     (dolist (buf (buffer-list))
+;;       (when (cam/should-delete-buffer buf)
+;;         (kill-buffer buf)))))
+;; (run-with-idle-timer (* 30) :repeat #'cam/cleanup-extra-buffers)
 
 
 ;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
@@ -1060,3 +1060,4 @@ Calls `magit-refresh' after the command finishes."
     (font-lock-ensure)))
 
 (add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
+(moe-dark)
