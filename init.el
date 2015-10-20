@@ -145,6 +145,7 @@
     ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
     anzu                                          ; Show number of matches in mode-line while searching
+    anything                                      ; prereq for perl-completion
     auto-complete                                 ; auto-completion
     auto-yasnippet                                ; quickly create disposable yasnippets
     cider                                         ; Clojure Interactive Development Environment that Rocks
@@ -1038,7 +1039,7 @@ Calls `magit-refresh' after the command finishes."
                                                  'font-lock-variable-name-face)
      prepend)
     ("`\\(\\*?:?[[:alnum:]_<>*-/:]+[\\?!]?\\*?\\)`" 1 (when (paredit-in-string-p)
-                                           'font-lock-constant-face)
+                                                        'font-lock-constant-face)
      prepend)))
 
 (defconst cam/clojure-docstr-font-lock-mode-lighter
