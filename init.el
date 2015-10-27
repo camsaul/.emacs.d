@@ -542,7 +542,8 @@
                 aggressive-indent-mode)
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup))
-  :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)))
+  :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
+         ("{" . #'paredit-open-curly)))
 
 (tweak-package cider-interaction
   :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
