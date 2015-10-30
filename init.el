@@ -875,7 +875,8 @@ Calls `magit-refresh' after the command finishes."
                 electric-pair-local-mode
                 rainbow-delimiters-mode)
   :keys (("C-j" . #'newline))
-  :auto-mode-alist ("\.html$"))
+  :auto-mode-alist ("\.html$"
+                    "\.jsx$"))
 
 
 ;;; [[<YASnippet]]
