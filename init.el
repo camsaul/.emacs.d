@@ -693,6 +693,7 @@ any buffers that were visiting files that were children of that directory."
                                 "*.el"
                                 "*.html"
                                 "*.js"
+                                "*.jsx"
                                 "*.java"
                                 "*.md"
                                 "*.yml"))))
