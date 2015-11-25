@@ -37,6 +37,7 @@
         paredit-open-curly
         paredit-open-round
         paredit-open-square
+        paredit-reindent-defun
         paredit-semicolon
         yaml-electric-backspace
         ))

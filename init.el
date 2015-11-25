@@ -841,7 +841,8 @@ Calls `magit-refresh' after the command finishes."
   :minor-modes (eldoc-mode
                 electric-pair-local-mode
                 perl-completion-mode)
-  :vars ((cperl-electric-keywords . t))           ; keywords are electric in CPerl (WHAT DOES THIS MEAN?)
+  :vars ((cperl-electric-keywords . t)
+         (cperl-indent-level . 4))
   :keys (("C-c C-d" . #'cperl-perldoc))
   :local-vars ((eldoc-documentation-function . (lambda ()
                                                  (car
