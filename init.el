@@ -33,6 +33,7 @@
 ;;;    [[js2-mode]]
 ;;;    [[loccur]]
 ;;;    [[Magit]]
+;;;    [[markdown]]
 ;;;    [[Objective-C]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
@@ -165,6 +166,7 @@
     everything                                    ; Required by perl-completion-mode
     find-things-fast
     flycheck                                      ; on-the-fly syntax checking
+    flyspell                                      ; spell checking
     git-timemachine                               ; Walk through git revisions of a file
     gitconfig-mode
     gitignore-mode                                ; Major mode for editing .gitignore files
@@ -779,6 +781,12 @@ Calls `magit-refresh' after the command finishes."
   :keys (("M-!" . #'cam/magit-shell-command)
          ("V"   . #'cam/magit-visit-pull-request-url)
          ("s-u" . #'magit-refresh)))
+
+
+;;; [[<markdown]]
+(tweak-package markdown-mode
+  :mode-name markdown-mode
+  :minor-modes (flyspell-mode))
 
 ;;; [[<Objective-C]]
 (tweak-package cc-mode

@@ -10,6 +10,7 @@
         cam/backward-kill-line
         cam/hungry-delete-backward
         cam/hungry-delete-forward
+        cam/insert-spaces-to-goal-column
         cam/join-next-line
         cljr-slash
         clojure-toggle-keyword-string
@@ -22,6 +23,7 @@
         kill-region
         kill-sexp
         kmacro-end-or-call-macro
+        markdown-exdent-or-delete
         org-self-insert-command
         paredit-backslash
         paredit-backward
@@ -40,6 +42,7 @@
         paredit-reindent-defun
         paredit-semicolon
         yaml-electric-backspace
+        yaml-electric-bar-and-angle
         ))
 
 (setq mc/cmds-to-run-once
