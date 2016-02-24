@@ -6,7 +6,8 @@
 
 (eval-when-compile
   (require 'cl-lib)
-  (require 'dash))
+  (require 'dash)
+  (require 'loccur))
 
 (cl-eval-when (load)
   (message "CAM COMMANDS AUTOLOADED!"))
@@ -74,23 +75,26 @@
     (set-text-properties 0 (length s) nil s)
     s))
 
+(defun cam/symbol-at-point-name ()
+  "The `symbol-name' of the `symbol-at-point' with its text properties removed."
+  (when (symbol-at-point)
+    (cam/string-remove-text-properties (symbol-name (symbol-at-point)))))
+
+(eval-when-compile
+  '(require 'url-util)) ; for url-hexify-string
+
 ;;;###autoload
 (defun cam/instant-clojure-cheatsheet-search (search-term)
   "Open a browser window and search Instant Clojure Cheatsheet for SEARCH-TERM."
-  (interactive (list (read-string "Search Instant Clojure Cheatsheet for: " (when (symbol-at-point)
-                                                                              (-> (symbol-at-point)
-                                                                                  symbol-name
-                                                                                  cam/string-remove-text-properties)))))
-  (browse-url (format "http://localhost:13370/#?q=%s" search-term)))
+  (interactive (list (read-string "Search Instant Clojure Cheatsheet for: " (cam/symbol-at-point-name))))
+  (browse-url (format "http://localhost:13370/#?q=%s" (url-hexify-string search-term))))
 
 ;;;###autoload
+
 (defun cam/bing-search (search-term)
   "Open a browser window and search BING for SEARCH-TERM."
-  (interactive (list (read-string "Search Bing for: " (when (symbol-at-point)
-                                                        (-> (symbol-at-point)
-                                                            symbol-name
-                                                            cam/string-remove-text-properties)))))
-  (browse-url (format "http://bing.com/search?q=%s" search-term)))
+  (interactive (list (read-string "Search Bing for: " (cam/symbol-at-point-name))))
+  (browse-url (concat "http://bing.com/search?q=" search-term)))
 
 ;;;###autoload
 (defun cam/browse-korma-dox ()
@@ -102,10 +106,7 @@
 (defun cam/javadocs-search (search-term)
   "Open a browser window and search javadocs.org for SEARCH-TERM."
   (interactive (list (read-string "Search javadocs.org for: " (when (symbol-at-point)
-                                                                (->> (symbol-at-point)
-                                                                     symbol-name
-                                                                     cam/string-remove-text-properties
-                                                                     (string-remove-suffix "."))))))
+                                                                (string-remove-suffix "." (cam/symbol-at-point-name))))))
   (browse-url (format "http://javadocs.org/%s" search-term)))
 
 
