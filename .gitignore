@@ -5,6 +5,7 @@ ac-comphist.dat
 auto-save-list/
 autoloads.el
 backups
+bookmarks
 custom.el
 elpa/
 eshell/
@@ -13,3 +14,4 @@ network-security.data
 places
 projectile-bookmarks.eld
 recentf
+url/

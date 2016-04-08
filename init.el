@@ -74,10 +74,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(inhibit-startup-echo-area-message (user-login-name))
- '(package-selected-packages
-   (quote
-    (perl-completion everything yaml-mode wiki-nav web-mode undo-tree rotate register-list rainbow-mode rainbow-delimiters projectile pos-tip nyan-mode moe-theme morlock markdown-mode magit macrostep loccur js2-mode ido-vertical-mode highlight-parentheses helm guide-key gitignore-mode gitconfig-mode git-timemachine flycheck find-things-fast esup elisp-slime-nav editorconfig dockerfile-mode diminish diff-hl company clojure-snippets clojure-mode-extra-font-locking clj-refactor auto-yasnippet anzu aggressive-indent ace-jump-zap ace-jump-mode ac-sly ac-cider))))
+ '(inhibit-startup-echo-area-message (user-login-name)))
 
 (add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
 (add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
@@ -774,7 +771,7 @@ Calls `magit-refresh' after the command finishes."
 (tweak-package magit
   :mode-name magit-status-mode
   :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
-  :vars ((magit-auto-revert-mode-lighter     . "")
+  :vars ((magit-auto-revert-mode-lighter . "")
          (magit-last-seen-setup-instructions . "1.4.0")
          (magit-push-always-verify . nil))
   :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))

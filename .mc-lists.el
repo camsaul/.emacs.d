@@ -3,6 +3,7 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        asm-comment
         backward-kill-sexp
         backward-sexp
         c-electric-brace
@@ -12,8 +13,11 @@
         cam/hungry-delete-forward
         cam/insert-spaces-to-goal-column
         cam/join-next-line
+        cam/realign-eol-comments
         cljr-slash
         clojure-toggle-keyword-string
+        comment-dwim
+        downcase-region
         electric-newline-and-maybe-indent
         electric-pair-delete-pair
         forward-sexp
@@ -41,8 +45,10 @@
         paredit-open-square
         paredit-reindent-defun
         paredit-semicolon
+        sh-assignment
         yaml-electric-backspace
         yaml-electric-bar-and-angle
+        yaml-electric-dash-and-dot
         ))
 
 (setq mc/cmds-to-run-once
