@@ -7,8 +7,6 @@
 (eval-when-compile
   (require 'cl-lib))
 
-(message "TWEAK-PACKAGE.EL LOADED!")
-
 ;;;###autoload
 (cl-defmacro tweak-package (package &key
                                     (mode-name (intern (format "%s-mode" (symbol-name package))))
