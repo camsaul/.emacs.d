@@ -153,7 +153,7 @@ Align all the arguments in a map using `cam/insert-spaces-to-goal-column'."
       (backward-sexp)                                ; move to start of val
       (cam/insert-spaces-to-goal-column nil)         ; insert spaces
       (backward-sexp)                                ; move to start of key
-      (cam/-align-map-args-to-column))))              ; recurse until error is thrown when we reach the first sexp
+      (cam/-align-map-args-to-column))))             ; recurse until error is thrown when we reach the first sexp
 
 ;;;###autoload
 (defun cam/align-map ()

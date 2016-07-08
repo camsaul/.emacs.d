@@ -27,6 +27,7 @@
         kill-region
         kill-sexp
         kmacro-end-or-call-macro
+        kmacro-start-macro-or-insert-counter
         markdown-exdent-or-delete
         org-self-insert-command
         paredit-backslash
