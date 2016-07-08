@@ -41,7 +41,6 @@
 ;;;    [[Shell]]
 ;;;    [[Sly]]
 ;;;    [[Web Mode]]
-;;;    [[YASnippet]]
 ;;; [[Global Minor Modes]]
 ;;; [[Final Setup]]
 ;;; [[Experimental]]
@@ -145,11 +144,9 @@
     anzu                                          ; Show number of matches in mode-line while searching
     anything                                      ; prereq for perl-completion
     auto-complete                                 ; auto-completion
-    auto-yasnippet                                ; quickly create disposable yasnippets
     cider                                         ; Clojure Interactive Development Environment that Rocks
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
-    clojure-snippets                              ; Clojure snippets!
     company                                       ; auto-completion
     cperl-mode                                    ; Better than perl-mode
     dash
@@ -194,8 +191,7 @@
     undo-tree
     web-mode                                      ; major-mode for editing web templates
     wiki-nav                                      ; Navigate a file using [[WikiStrings]]
-    yaml-mode
-    yasnippet))                                   ; OK, we will use snippets
+    yaml-mode))
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents-p nil)
@@ -504,7 +500,6 @@
 (tweak-package clojure-mode
   :mode-name clojure-mode
   :require (clojure-mode-extra-font-locking)
-  :load ((clojure-snippets-initialize))
   :minor-modes (auto-complete-mode
                 cider-mode
                 clj-refactor-mode
@@ -512,8 +507,6 @@
                 todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup)
-          (eval-after-load 'yasnippet
-            '(add-to-list 'ac-sources 'ac-source-yasnippet))
           (cljr-add-keybindings-with-modifier "A-H-"))
   :local-vars nil
   :local-hooks nil
@@ -890,17 +883,6 @@ Calls `magit-refresh' after the command finishes."
   :keys (("C-j" . #'newline))
   :auto-mode-alist ("\.html$"
                     "\.jsx$"))
-
-
-;;; [[<YASnippet]]
-(tweak-package yasnippet
-  :mode-name yas-minor-mode
-  :vars ((yas-verbosity . 0))
-  :keys (("H-w" . #'aya-create)
-         ("H-y" . #'aya-expand)))
-
-(tweak-package auto-yasnippet
-  :declare (aya-create aya-expand))
 
 
 ;;; [[<Global Minor Modes]]
