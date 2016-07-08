@@ -183,7 +183,7 @@
     org                                           ; Get latest version of org from Org package archive
     paredit
     perl-completion                               ; Auto-complete for Perl
-    pos-tip                                       ; Native tooltips
+    ;; pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
     rainbow-mode
@@ -435,11 +435,11 @@
          (ac-auto-show-menu . 0.1)
          (ac-candidate-menu-height . 30)
          (ac-menu-height . 30)         ; show 20 results instead of 10
-         (ac-quick-help-prefer-pos-tip . t) ; use native tooltips provided by pos-tip
+         ;; (ac-quick-help-prefer-pos-tip . t) ; use native tooltips provided by pos-tip
          (ac-quick-help-delay . 0.2)
          (ac-use-menu-map . t))
   :load ((cam/suppress-messages
-           (require 'pos-tip)
+           ;; (require 'pos-tip)
 
            (ac-config-default)
 
