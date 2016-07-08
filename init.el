@@ -961,30 +961,7 @@ Calls `magit-refresh' after the command finishes."
 
 ;; ---------------------------------------- [[<Experimental]] ----------------------------------------
 
-;; ---------------------------------------- [[<cam/auto-update-packages]] ----------------------------------------
-
-(defun cam/auto-update-packages ()
-  (message "Emacs has been inactive for 60 minutes! Auto-updating packages...")
-  (package-refresh-contents)
-  (cl-letf (((symbol-function 'save-some-buffers) (lambda (&rest _)))
-            ((symbol-function 'y-or-n-p)          (lambda (_) t)))
-    (save-window-excursion
-      (package-list-packages-no-fetch)
-      (package-menu-mark-upgrades)
-      (ignore-errors
-        (package-menu-execute :noquery))
-      (package-menu-mark-obsolete-for-deletion)
-      (ignore-errors
-        (package-menu-execute :noquery))
-      (package-autoremove)
-      ;; Kill all the package buffers in case there's more than one
-      (ignore-errors
-        (while (kill-buffer "*Packages*")))
-      (message "Auto updated packages."))))
-(run-with-idle-timer (* 60 60) :repeat #'cam/auto-update-packages)
-
-
-;; ---------------------------------------- [[<cam/cleanup-extra-buffers]] ----------------------------------------
+;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
 
 (cl-defun cam/buffer-window (buffer)
   "Return the first window on any frame showing BUFFER, if any."
@@ -992,32 +969,6 @@ Calls `magit-refresh' after the command finishes."
     (dolist (w (window-list frame))
       (when (eq (window-buffer w) buffer)
         (cl-return-from cam/buffer-window w)))))
-
-;; (defconst cam/buffer-auto-delete-exclusion-patterns
-;;   '("^\\*Messages\\*$"
-;;     "^\\*cider-repl"
-;;     "^\\*sly-mrepl for sbcl\\*$")
-;;   "Patterns of buffer names that should never be deleted by `cam/cleanup-extra-buffers'.")
-
-;; (defun cam/should-delete-buffer (buf)
-;;   (and (or (not (buffer-file-name buf))
-;;            (not (buffer-modified-p buf)))
-;;        (not (get-buffer-process buf))
-;;        (not (cam/buffer-window buf))
-;;        (cl-notany (lambda (pattern)
-;;                     (string-match pattern (buffer-name buf)))
-;;                   cam/buffer-auto-delete-exclusion-patterns)))
-
-;; (defun cam/cleanup-extra-buffers ()
-;;   "Remove unused buffers whenever Emacs has been idle for 2 minutes."
-;;   (let ((case-fold-search :ignore-case))
-;;     (dolist (buf (buffer-list))
-;;       (when (cam/should-delete-buffer buf)
-;;         (kill-buffer buf)))))
-;; (run-with-idle-timer (* 30) :repeat #'cam/cleanup-extra-buffers)
-
-
-;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
 
 (defun cam/scroll-messages-to-end ()
   "Scroll to the end of the *Messages* buffer if needed if it is currently visible."
