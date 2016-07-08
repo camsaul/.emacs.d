@@ -183,7 +183,7 @@
     org                                           ; Get latest version of org from Org package archive
     paredit
     perl-completion                               ; Auto-complete for Perl
-    pos-tip                                       ; Native tooltips
+    ;; pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
     rainbow-mode
@@ -221,7 +221,8 @@
 ;; Load the theme just once, otherwise the screen will flicker all cray if we try to eval this buffer again
 (unless cam/has-loaded-init-p
   (moe-dark)
-  (set-frame-font "Source Code Pro-12" (not :keep-size) t)) ; t = apply font to all frames going forward & save setting to custom.el (supposedly)
+  (ignore-errors
+    (set-frame-font "Source Code Pro-12" (not :keep-size) t))) ; t = apply font to all frames going forward & save setting to custom.el (supposedly)
 
 (defun cam/setup-frame ()
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
@@ -356,6 +357,7 @@
   ("<f11>"         . nil)
   ("<f11> a"       . #'aggressive-indent-mode)
   ("<f11> p"       . #'paredit-mode)
+  ("<f11> r"       . #'read-only-mode)
   ("<f11> w"       . #'whitespace-mode)
   ("<f12> b"       . #'cam/bing-search)
   ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
@@ -434,11 +436,11 @@
          (ac-auto-show-menu . 0.1)
          (ac-candidate-menu-height . 30)
          (ac-menu-height . 30)         ; show 20 results instead of 10
-         (ac-quick-help-prefer-pos-tip . t) ; use native tooltips provided by pos-tip
+         ;; (ac-quick-help-prefer-pos-tip . t) ; use native tooltips provided by pos-tip
          (ac-quick-help-delay . 0.2)
          (ac-use-menu-map . t))
   :load ((cam/suppress-messages
-           (require 'pos-tip)
+           ;; (require 'pos-tip)
 
            (ac-config-default)
 
@@ -486,8 +488,8 @@
   (or (cam/when-let-buffer ((buffer (string-prefix-p "*cider-repl" (buffer-name buffer))))
         (select-frame-set-input-focus this-frame)
         (select-window this-window))
-      ;; otherwise fall back to whatever cider-switch-to-relevant-repl-buffer does
-      (cider-switch-to-relevant-repl-buffer)))
+      ;; otherwise fall back to whatever cider-switch-to-repl-buffer does
+      (cider-switch-to-repl-buffer)))
 
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
@@ -506,6 +508,7 @@
   :minor-modes (auto-complete-mode
                 cider-mode
                 clj-refactor-mode
+                eldoc-mode
                 todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup)
@@ -538,11 +541,15 @@
                                           (call-interactively #'delete-trailing-whitespace)))
            (#'nrepl-server-filter :around #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
   :minor-modes (auto-complete-mode
-                aggressive-indent-mode)
+                aggressive-indent-mode
+                eldoc-mode)
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup))
   :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
          ("{" . #'paredit-open-curly)))
+
+(tweak-package cider-macroexpansion
+  :setup ((read-only-mode -1)))
 
 (tweak-package cider-interaction
   :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
@@ -878,8 +885,7 @@ Calls `magit-refresh' after the command finishes."
 ;;; [[<Web Mode]]
 (tweak-package web-mode
   :mode-name web-mode
-  :minor-modes (aggressive-indent-mode
-                electric-pair-local-mode
+  :minor-modes (electric-pair-local-mode
                 rainbow-delimiters-mode)
   :keys (("C-j" . #'newline))
   :auto-mode-alist ("\.html$"
