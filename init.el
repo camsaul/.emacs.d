@@ -221,7 +221,8 @@
 ;; Load the theme just once, otherwise the screen will flicker all cray if we try to eval this buffer again
 (unless cam/has-loaded-init-p
   (moe-dark)
-  (set-frame-font "Source Code Pro-12" (not :keep-size) t)) ; t = apply font to all frames going forward & save setting to custom.el (supposedly)
+  (ignore-errors
+    (set-frame-font "Source Code Pro-12" (not :keep-size) t))) ; t = apply font to all frames going forward & save setting to custom.el (supposedly)
 
 (defun cam/setup-frame ()
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
