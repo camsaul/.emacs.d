@@ -41,6 +41,7 @@
 ;;;    [[Shell]]
 ;;;    [[Sly]]
 ;;;    [[Web Mode]]
+;;;    [[YAML Mode]]
 ;;; [[Global Minor Modes]]
 ;;; [[Final Setup]]
 ;;; [[Experimental]]
@@ -883,6 +884,12 @@ Calls `magit-refresh' after the command finishes."
   :keys (("C-j" . #'newline))
   :auto-mode-alist ("\.html$"
                     "\.jsx$"))
+
+
+;;; [[<YAML Mode]]
+(tweak-package yaml-mode
+  :mode-name yaml-mode
+  :keys (("C-j" . #'newline)))
 
 
 ;;; [[<Global Minor Modes]]
