@@ -514,7 +514,9 @@
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)))
 
 (tweak-package clj-refactor
-  :load ((diminish 'clj-refactor-mode)))
+  :load ((diminish 'clj-refactor-mode))
+  :vars ((cljr-auto-sort-ns . nil)
+         (cljr-expectations-test-declaration . "[expectations :refer :all]")))
 
 (defun cam/ansi-colorize-nrepl-output-buffer-if-needed (f process output)
   (let ((old-max (with-current-buffer (process-buffer process)
