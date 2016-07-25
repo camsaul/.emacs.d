@@ -479,23 +479,17 @@
     (with-current-buffer buffer
       (delete-region (point-min) (point-max)))))
 
-(defun cam/cider-switch-to-relevant-repl-buffer ()
-  "Like `cider-switch-to-relvant-repl-buffer', but will switch to any visible CIDER buffer on any frame."
-  ;; Look for a cider REPL buffer visible in any window on any frame and switch to it if possible
-  (or (cam/when-let-buffer ((buffer (string-prefix-p "*cider-repl" (buffer-name buffer))))
-        (select-frame-set-input-focus this-frame)
-        (select-window this-window))
-      ;; otherwise fall back to whatever cider-switch-to-repl-buffer does
-      (cider-switch-to-repl-buffer)))
-
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
   (if (not (cider-connected-p)) (cider-jack-in)
-    (cider-load-buffer)
-    (cider-repl-set-ns (cider-current-ns))
-    (cam/cider-switch-to-relevant-repl-buffer)
-    (cider-repl-clear-buffer)
+    (ignore-errors
+      (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
+      (cider-repl-clear-buffer))
+    ;; sometimes this doesn't work the first time around (not sure why) so try it twice just to be sure
+    (ignore-errors
+      (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
+      (cider-repl-clear-buffer))
     (cam/cider-clear-output-buffer-when-visible)))
 
 (tweak-package clojure-mode
