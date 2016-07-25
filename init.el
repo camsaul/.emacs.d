@@ -765,6 +765,24 @@ Calls `magit-refresh' after the command finishes."
       (when (eq major-mode 'magit-status-mode)
         (magit-refresh)))))
 
+(defun cam/magit-buffer-p (buffer)
+  (string-prefix-p "*magit" (buffer-name buffer)))
+
+(defun cam/kill-all-magit-buffers-and-windows ()
+  "Kill all magit-related buffers and windows."
+  (interactive)
+  ;; kill all the visible magit buffers & their windows
+  (dolist (frame (frame-list))
+    (dolist (window (window-list frame))
+      (let ((buffer (window-buffer window)))
+        (when (cam/magit-buffer-p buffer)
+          (with-current-buffer buffer
+            (kill-buffer-and-window))))))
+  ;; ok, now kill any magit buffers in the background
+  (dolist (buffer (buffer-list))
+    (when (cam/magit-buffer-p buffer)
+      (kill-buffer buffer))))
+
 (tweak-package magit
   :mode-name magit-status-mode
   :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
@@ -772,9 +790,10 @@ Calls `magit-refresh' after the command finishes."
          (magit-last-seen-setup-instructions . "1.4.0")
          (magit-push-always-verify . nil))
   :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
-  :keys (("M-!" . #'cam/magit-shell-command)
-         ("V"   . #'cam/magit-visit-pull-request-url)
-         ("s-u" . #'magit-refresh)))
+  :keys (("C-x 4 0" . #'cam/kill-all-magit-buffers-and-windows)
+         ("M-!"     . #'cam/magit-shell-command)
+         ("V"       . #'cam/magit-visit-pull-request-url)
+         ("s-u"     . #'magit-refresh)))
 
 
 ;;; [[<markdown]]
