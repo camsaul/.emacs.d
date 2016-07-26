@@ -433,8 +433,8 @@
          (ac-auto-show-menu . 0.1)
          (ac-candidate-menu-height . 30)
          (ac-menu-height . 30)         ; show 20 results instead of 10
-         ;; (ac-quick-help-prefer-pos-tip . t) ; use native tooltips provided by pos-tip
          (ac-quick-help-delay . 0.2)
+         (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
          (ac-use-menu-map . t))
   :load ((cam/suppress-messages
            ;; (require 'pos-tip)
