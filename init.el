@@ -965,7 +965,7 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; ---------------------------------------- [[<Experimental]] ----------------------------------------
 
-;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
+;;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
 
 (cl-defun cam/buffer-window (buffer)
   "Return the first window on any frame showing BUFFER, if any."
