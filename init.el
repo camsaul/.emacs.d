@@ -1002,8 +1002,8 @@ Calls `magit-refresh' after the command finishes."
 
 (advice-add #'message :after #'cam/scroll-messages-async)
 
-;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
 
+;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
 
 (defconst cam/clojure-docstr-font-lock-keywords
   '(("\\<\\([[:upper:]-]+[[:punct:]]?\\)\\>" 1 (when (paredit-in-string-p)
