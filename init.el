@@ -963,7 +963,7 @@ Calls `magit-refresh' after the command finishes."
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
 
 
-;; ---------------------------------------- [[<Experimental]] ----------------------------------------
+;;; ---------------------------------------- [[<Experimental]] ----------------------------------------
 
 ;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
 
