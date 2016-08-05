@@ -929,7 +929,6 @@ Calls `magit-refresh' after the command finishes."
 (recentf-mode 1)                                  ; Track recently visited files
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
 (winner-mode 1)
-(yas-global-mode 1)
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda ()
@@ -944,8 +943,7 @@ Calls `magit-refresh' after the command finishes."
                 guide-key-mode
                 projectile-mode
                 rainbow-mode
-                undo-tree-mode
-                yas-minor-mode))
+                undo-tree-mode))
   (diminish mode))
 
 
