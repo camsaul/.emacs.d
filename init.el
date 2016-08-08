@@ -788,7 +788,8 @@ Calls `magit-refresh' after the command finishes."
   :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
   :vars ((magit-auto-revert-mode-lighter . "")
          (magit-last-seen-setup-instructions . "1.4.0")
-         (magit-push-always-verify . nil))
+         (magit-push-always-verify . nil)
+         (magit-save-repository-buffers . 'dontask)) ; Don't prompt to save buffers in the current repo before performing Magit actions
   :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
   :keys (("C-x 4 0" . #'cam/kill-all-magit-buffers-and-windows)
          ("M-!"     . #'cam/magit-shell-command)
