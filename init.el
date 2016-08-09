@@ -1036,10 +1036,14 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; ------------------------------------------------------------ Insert logging statements ------------------------------------------------------------
 
-(defun cam/insert-console-dot-log (obj)
+(defun cam/insert-console-dot-log (text)
   (interactive "sconsole.log: ")
-  (insert "console.log(\"" obj ":\", " obj "); // NOCOMMIT")
-  ;; (newline-and-indent)
-  )
+  (insert "console.log(\"" text ":\", " text "); // NOCOMMIT"))
 
 (define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log)
+
+(defun cam/insert-clojure-println (text)
+  (interactive "sprintln: ")
+  (insert "(println \"" text ":\" " text ") ; NOCOMMIT"))
+
+(define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println)
