@@ -1032,3 +1032,14 @@ Calls `magit-refresh' after the command finishes."
 
 (add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
 (moe-dark)
+
+
+;;; ------------------------------------------------------------ Insert logging statements ------------------------------------------------------------
+
+(defun cam/insert-console-dot-log (obj)
+  (interactive "sconsole.log: ")
+  (insert "console.log(\"" obj ":\", " obj "); // NOCOMMIT")
+  ;; (newline-and-indent)
+  )
+
+(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log)
