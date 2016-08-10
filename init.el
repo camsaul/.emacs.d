@@ -479,6 +479,8 @@
     (with-current-buffer buffer
       (delete-region (point-min) (point-max)))))
 
+(declare-function cider-load-buffer-and-switch-to-repl-buffer "cider-mode")
+
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
@@ -1040,10 +1042,12 @@ Calls `magit-refresh' after the command finishes."
   (interactive "sconsole.log: ")
   (insert "console.log(\"" text ":\", " text "); // NOCOMMIT"))
 
-(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log)
+(eval-after-load 'web-mode
+  '(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
 
 (defun cam/insert-clojure-println (text)
   (interactive "sprintln: ")
   (insert "(println \"" text ":\" " text ") ; NOCOMMIT"))
 
-(define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println)
+(eval-after-load 'clojure-mode
+  '(define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println))
