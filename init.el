@@ -1040,7 +1040,9 @@ Calls `magit-refresh' after the command finishes."
 
 (defun cam/insert-console-dot-log (text)
   (interactive "sconsole.log: ")
-  (insert "console.log(\"" text ":\", " text "); // NOCOMMIT"))
+  (if current-prefix-arg
+      (insert "console.log(\"" text "\"); // NOCOMMIT")
+    (insert "console.log(\"" text ":\", " text "); // NOCOMMIT")))
 
 (eval-after-load 'web-mode
   '(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
