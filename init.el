@@ -1045,6 +1045,9 @@ Calls `magit-refresh' after the command finishes."
 (eval-after-load 'web-mode
   '(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
 
+(eval-after-load 'js2-mode
+  '(define-key js2-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
+
 (defun cam/insert-clojure-println (text)
   (interactive "sprintln: ")
   (insert "(println \"" text ":\" " text ") ; NOCOMMIT"))

@@ -62,6 +62,7 @@
         cam/windmove-right-or-other-frame
         cider-refresh
         end-of-buffer
+        ftf-grepsource
         goto-line
         helm-M-x
         jump-to-register
