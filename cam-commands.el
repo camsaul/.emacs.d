@@ -81,7 +81,7 @@
     (cam/string-remove-text-properties (symbol-name (symbol-at-point)))))
 
 (eval-when-compile
-  '(require 'url-util)) ; for url-hexify-string
+  (require 'url-util)) ; for url-hexify-string
 
 ;;;###autoload
 (defun cam/instant-clojure-cheatsheet-search (search-term)
@@ -119,14 +119,14 @@
   "Insert or remove spaces until we reach `cam/insert-spaces-goal-col'.
 Called with a prefix ARG, set the value of `cam/insert-spaces-goal-col' to point."
   (interactive "P")
-  (if arg (progn (setq-local cam/insert-spaces-goal-col (current-column))
-                 (message "Insert spaces to column %d." (current-column)))
-    (progn
-      (unless cam/insert-spaces-goal-col
-        (error "Don't know where to insert spaces to! Call this function with a prefix arg to set it"))
-      (let ((num-spaces (- cam/insert-spaces-goal-col (current-column))))
-        (if (< num-spaces 0) (delete-char num-spaces)
-          (insert-char ?  num-spaces))))))
+  (if arg
+      (progn (setq-local cam/insert-spaces-goal-col (current-column))
+             (message "Insert spaces to column %d." (current-column)))
+    (unless cam/insert-spaces-goal-col
+      (error "Don't know where to insert spaces to! Call this function with a prefix arg to set it"))
+    (let ((num-spaces (- cam/insert-spaces-goal-col (current-column))))
+      (if (< num-spaces 0) (delete-char num-spaces)
+        (insert-char ?  num-spaces)))))
 
 
 ;;; [[cam/align-map]] ------------------------------------------------------------
