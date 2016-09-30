@@ -356,6 +356,8 @@
   ("<S-backspace>" . #'cam/hungry-delete-backward)
   ("<S-delete>"    . #'cam/hungry-delete-forward)
   ("<escape>"      . #'ace-jump-mode)
+  ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
+  ("<f6>"          . #'ftf-grepsource)
   ("<f11>"         . nil)
   ("<f11> a"       . #'aggressive-indent-mode)
   ("<f11> p"       . #'paredit-mode)
