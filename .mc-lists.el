@@ -15,6 +15,7 @@
         cam/join-next-line
         cam/realign-eol-comments
         cljr-slash
+        clojure-convert-collection-to-vector
         clojure-toggle-keyword-string
         comment-dwim
         downcase-region
@@ -35,6 +36,7 @@
         paredit-close-curly
         paredit-close-round
         paredit-close-square
+        paredit-comment-dwim
         paredit-doublequote
         paredit-forward
         paredit-forward-delete
@@ -70,5 +72,6 @@
         next-buffer
         paredit-mode
         previous-buffer
+        projectile-replace
         yas-expand
         ))

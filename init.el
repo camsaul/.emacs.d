@@ -882,7 +882,8 @@ Calls `magit-refresh' after the command finishes."
 (tweak-package sh-script
   :mode-name sh-mode
   :minor-modes (electric-pair-local-mode
-                todo-font-lock-mode))
+                todo-font-lock-mode)
+  :keys (("C-j" . #'newline)))
 
 
 ;;; [[[<Sly]]
