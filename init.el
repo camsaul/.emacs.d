@@ -312,7 +312,12 @@
       select-enable-clipboard t                   ; Cutting and pasting uses the clipboard
       shift-select-mode nil                       ; real Emacs users don't use shift-selection
       vc-make-backup-files t                      ; Make backups of files even if they're under VC
-      visible-bell t)
+      visible-bell t
+      w32-pass-lwindow-to-system nil
+      w32-pass-rwindow-to-system nil
+      w32-apps-modifier 'alt
+      w32-lwindow-modifier 'super
+      w32-rwindow-modifier 'hyper)
 
 (setq-default indent-tabs-mode nil                ; disable insertion of tabs
               save-place t                        ; Automatically save place in each file
@@ -351,6 +356,8 @@
   ("<S-backspace>" . #'cam/hungry-delete-backward)
   ("<S-delete>"    . #'cam/hungry-delete-forward)
   ("<escape>"      . #'ace-jump-mode)
+  ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
+  ("<f6>"          . #'ftf-grepsource)
   ("<f11>"         . nil)
   ("<f11> a"       . #'aggressive-indent-mode)
   ("<f11> p"       . #'paredit-mode)
