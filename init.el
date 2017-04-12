@@ -15,7 +15,6 @@
 ;;;    [[Global Macros]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
-;;;    [[Emacs 24 Workarounds]]
 ;;;    [[Global Keybindings]]
 ;;; [[Mode/Package Specific Setup]]
 ;;;    [[etc]]
@@ -332,13 +331,6 @@
     (set-buffer-file-coding-system 'utf-8-auto-unix)))
 
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
-
-
-;;; [[<Emacs 24 Workarounds]]
-(unless (fboundp #'electric-pair-local-mode)
-  (fset #'electric-pair-local-mode #'electric-pair-mode))
-(unless (fboundp #'comint-clear-buffer)
-  (fset #'comint-clear-buffer (lambda ()))) ; no-op
 
 
 ;;; [[<Global Keybindings]]
