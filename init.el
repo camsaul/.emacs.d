@@ -367,6 +367,7 @@
   ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
   ("<f12> j"       . #'cam/javadocs-search)
   ("<f12> k"       . #'cam/browse-korma-dox)
+  ("<insert>"      . nil)
   ("A-;"           . #'cam/loccur)
   ("A-r l"         . #'rotate-layout)
   ("A-r w"         . #'rotate-window)
