@@ -29,7 +29,6 @@
 ;;;    [[Git Commit Mode]]
 ;;;    [[Guide Key]]
 ;;;    [[Helm]]
-;;;    [[js2-mode]]
 ;;;    [[loccur]]
 ;;;    [[Magit]]
 ;;;    [[markdown]]
@@ -168,7 +167,6 @@
     helm
     highlight-parentheses                         ; highlight matching parentheses
     ido-vertical-mode
-    js2-mode                                      ; Javascript
     loccur
     macrostep                                     ; Interactive macrostepper for Emacs Lisp
     magit
@@ -727,17 +725,6 @@ any buffers that were visiting files that were children of that directory."
          (helm-M-x-fuzzy-match        . t)))
 
 
-;;; [[<js2-mode]]
-(tweak-package js2-mode
-  :mode-name js2-mode
-  :minor-modes (electric-pair-local-mode
-                rainbow-delimiters-mode)
-  :keys (("C-j" . #'newline)
-         ("M-j" . nil))
-  :auto-mode-alist ("\.js$"
-                    "\.json$"))
-
-
 ;;; [[<loccur]]
 (tweak-package loccur
   :declare (loccur))
@@ -901,7 +888,9 @@ Calls `magit-refresh' after the command finishes."
   :minor-modes (electric-pair-local-mode
                 rainbow-delimiters-mode)
   :keys (("C-j" . #'newline))
-  :auto-mode-alist ("\.html$"
+  :auto-mode-alist ("\.js$"
+                    "\.json$"
+                    "\.html$"
                     "\.jsx$"))
 
 
@@ -1047,9 +1036,6 @@ Calls `magit-refresh' after the command finishes."
 
 (eval-after-load 'web-mode
   '(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
-
-(eval-after-load 'js2-mode
-  '(define-key js2-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
 
 (defun cam/insert-clojure-println (text)
   (interactive "sprintln: ")
