@@ -1039,7 +1039,9 @@ Calls `magit-refresh' after the command finishes."
 
 (defun cam/insert-clojure-println (text)
   (interactive "sprintln: ")
-  (insert "(println \"" text ":\" " text ") ; NOCOMMIT"))
+  (if current-prefix-arg
+      (insert "(println \"" text "\") ; NOCOMMIT")
+    (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
 
 (eval-after-load 'clojure-mode
   '(define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println))
