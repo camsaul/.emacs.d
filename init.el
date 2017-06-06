@@ -178,7 +178,6 @@
     org                                           ; Get latest version of org from Org package archive
     paredit
     perl-completion                               ; Auto-complete for Perl
-    ;; pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
     rainbow-mode
@@ -366,7 +365,6 @@
   ("C-M-S-k"       . #'backward-kill-sexp)
   ("C-S-k"         . #'cam/backward-kill-line)
   ("C-c C-g"       . #'keyboard-quit)
-  ("C-s-;"         . #'cam/align-map)
   ("C-h M"         . #'describe-minor-mode)
   ("C-x C-b"       . #'helm-buffers-list)
   ("C-x C-f"       . #'helm-find-files)
@@ -435,10 +433,7 @@
          (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
          (ac-use-menu-map . t))
   :load ((cam/suppress-messages
-           ;; (require 'pos-tip)
-
            (ac-config-default)
-
            (add-to-list 'ac-modes 'cider-repl-mode)
            (add-to-list 'ac-modes 'ielm-mode)))
   :keymap ac-menu-map
@@ -503,7 +498,7 @@
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-"))
-  :local-vars nil
+  :local-vars ((clojure-align-forms-automatically . t))
   :local-hooks nil
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)))
 
