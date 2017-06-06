@@ -1043,5 +1043,29 @@ Calls `magit-refresh' after the command finishes."
       (insert "(println \"" text "\") ; NOCOMMIT")
     (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
 
+(defun cam/insert-clojure-header (text)
+  (interactive "sheader text: ")
+  (insert ";;; +------------------------------------------------------------------------------------------------------------------------+")
+  (newline)
+  ;; calculate the number of spaces that should go on either side of the text
+  (let ((padding (/ (- 120 (length text)) 2)))
+    (insert ";;; |")
+    ;; insert left padding
+    (dotimes (_ padding)
+      (insert " "))
+    ;; text
+    (insert text)
+    ;; insert right padding
+    (dotimes (_ padding)
+      (insert " "))
+    ;; if TEXT has odd length insert one final extra space to get the right border to line up
+    (when (oddp (length text))
+      (insert " "))
+    (insert "|")
+    (newline))
+  (insert ";;; +------------------------------------------------------------------------------------------------------------------------+"))
+
 (eval-after-load 'clojure-mode
-  '(define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println))
+  '(progn
+     (define-key clojure-mode-map (kbd "<f9>") #'cam/insert-clojure-header)
+     (define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println)))
