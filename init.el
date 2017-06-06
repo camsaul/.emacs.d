@@ -1045,25 +1045,34 @@ Calls `magit-refresh' after the command finishes."
 
 (defun cam/insert-clojure-header (text)
   (interactive "sheader text: ")
-  (insert ";;; +------------------------------------------------------------------------------------------------------------------------+")
-  (newline)
   ;; calculate the number of spaces that should go on either side of the text
-  (let ((padding (/ (- 120 (length text)) 2)))
-    (insert ";;; |")
-    ;; insert left padding
-    (dotimes (_ padding)
-      (insert " "))
-    ;; text
-    (insert text)
-    ;; insert right padding
-    (dotimes (_ padding)
-      (insert " "))
-    ;; if TEXT has odd length insert one final extra space to get the right border to line up
-    (when (oddp (length text))
-      (insert " "))
-    (insert "|")
-    (newline))
-  (insert ";;; +------------------------------------------------------------------------------------------------------------------------+"))
+  (let* ((total-width (if current-prefix-arg
+                          (let ((input (read-from-minibuffer "total width [120]: ")))
+                            (if (zerop (length input))
+                                120
+                              (string-to-int input)))
+                        120))
+         (padding (/ (- total-width (length text)) 2))
+         (horizonal-border (concat ";;; +"
+                                   (make-string total-width ?-)
+                                   "+\n"))
+         (text-padding (make-string padding ? )))
+    (insert
+     (concat
+      ;; top row
+      horizonal-border
+      ;; middle row
+      ";;; |"
+      text-padding
+      text
+      text-padding
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so things line up
+      (unless (eq (oddp (length text))
+                  (oddp total-width))
+        " ")
+      "|\n"
+      ;; bottom row
+      horizonal-border))))
 
 (eval-after-load 'clojure-mode
   '(progn
