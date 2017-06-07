@@ -425,10 +425,10 @@
 ;;; [[<auto-complete]]
 (tweak-package auto-complete
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
-  :vars ((ac-delay . 0.05)
-         (ac-auto-show-menu . 0.1)
+  :vars ((ac-delay . 0.15)
+         (ac-auto-show-menu . 0.15)
          (ac-candidate-menu-height . 30)
-         (ac-menu-height . 30)         ; show 20 results instead of 10
+         (ac-menu-height . 20)         ; number of results to show
          (ac-quick-help-delay . 0.2)
          (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
          (ac-use-menu-map . t))
