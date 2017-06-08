@@ -94,13 +94,6 @@
       (while (not (y-or-n-p "init.el is out of date. We need to restart Emacs. Ready? ")))
       (kill-emacs))))
 
-;; ignore the warnings about having ~/.emacs.d in the load path
-(eval-after-load 'warnings
-  '(advice-add #'display-warning :around
-     (lambda (function type message &optional level buffer-name)
-       (unless (and (eq type 'initialization)
-                    (string-prefix-p "Your `load-path' seems to contain" message))
-         (funcall function type message level buffer-name)))))
 (add-to-list 'load-path (expand-file-name user-emacs-directory) :append)
 
 (defconst cam/autoloads-file (concat user-emacs-directory "autoloads.el"))
@@ -427,11 +420,11 @@
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
   :vars ((ac-delay . 0.15)
          (ac-auto-show-menu . 0.15)
-         (ac-candidate-menu-height . 30)
+         (ac-candidate-menu-height . 20)
+         ;; (ac-candidate-limit . 20)
          (ac-menu-height . 20)         ; number of results to show
-         (ac-quick-help-delay . 0.2)
          (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
-         (ac-use-menu-map . t))
+         (ac-use-menu-map . t))        ; use special completion keymap when showing completion menu
   :load ((cam/suppress-messages
            (ac-config-default)
            (add-to-list 'ac-modes 'cider-repl-mode)
@@ -498,9 +491,15 @@
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-"))
-  :local-vars ((clojure-align-forms-automatically . t))
+  :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
+               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
+               (ac-auto-show-menu . 1.0)
+               (ac-cider-show-ns . t)
+               (ac-quick-help-delay . 1.5))
   :local-hooks nil
-  :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)))
+  :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
+         ("<f1>" . #'ac-cider-popup-doc)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
@@ -531,7 +530,9 @@
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup))
   :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
-         ("{" . #'paredit-open-curly)))
+         ("{" . #'paredit-open-curly)
+         ("<f1>" . #'ac-cider-popup-doc)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package cider-macroexpansion
   :setup ((read-only-mode -1)))
@@ -953,40 +954,40 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
 
-(cl-defun cam/buffer-window (buffer)
-  "Return the first window on any frame showing BUFFER, if any."
-  (dolist (frame (frame-list))
-    (dolist (w (window-list frame))
-      (when (eq (window-buffer w) buffer)
-        (cl-return-from cam/buffer-window w)))))
+;; (cl-defun cam/buffer-window (buffer)
+;;   "Return the first window on any frame showing BUFFER, if any."
+;;   (dolist (frame (frame-list))
+;;     (dolist (w (window-list frame))
+;;       (when (eq (window-buffer w) buffer)
+;;         (cl-return-from cam/buffer-window w)))))
 
-(defun cam/scroll-messages-to-end ()
-  "Scroll to the end of the *Messages* buffer if needed if it is currently visible."
-  (when-let (messages-buffer (get-buffer "*Messages*"))
-    (when-let (w (cam/buffer-window messages-buffer))
-      (when (< (window-end w) (point-max))
-        (with-selected-window w
-          (set-window-start w (save-excursion
-                                (goto-char (point-max))
-                                (forward-line (- (- (window-height) 3)))
-                                (point))))))))
+;; (defun cam/scroll-messages-to-end ()
+;;   "Scroll to the end of the *Messages* buffer if needed if it is currently visible."
+;;   (when-let (messages-buffer (get-buffer "*Messages*"))
+;;     (when-let (w (cam/buffer-window messages-buffer))
+;;       (when (< (window-end w) (point-max))
+;;         (with-selected-window w
+;;           (set-window-start w (save-excursion
+;;                                 (goto-char (point-max))
+;;                                 (forward-line (- (- (window-height) 3)))
+;;                                 (point))))))))
 
-(defvar cam/scroll-messages-async-delay 2
-  "Number of seconds to wait before asynchronously scrolling the *Messages* buffer.")
+;; (defvar cam/scroll-messages-async-delay 2
+;;   "Number of seconds to wait before asynchronously scrolling the *Messages* buffer.")
 
-(defvar cam/scroll-messages-timer nil)
+;; (defvar cam/scroll-messages-timer nil)
 
-(defun cam/scroll-messages-and-reset-timer ()
-  (unwind-protect
-      (unless (eq (current-buffer) (get-buffer "*Messages*")) ; don't scroll if *Messages* is the current buffer
-        (cam/scroll-messages-to-end))
-    (setq cam/scroll-messages-timer nil)))
+;; (defun cam/scroll-messages-and-reset-timer ()
+;;   (unwind-protect
+;;       (unless (eq (current-buffer) (get-buffer "*Messages*")) ; don't scroll if *Messages* is the current buffer
+;;         (cam/scroll-messages-to-end))
+;;     (setq cam/scroll-messages-timer nil)))
 
-(defun cam/scroll-messages-async (&rest _)
-  (unless cam/scroll-messages-timer
-    (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
+;; (defun cam/scroll-messages-async (&rest _)
+;;   (unless cam/scroll-messages-timer
+;;     (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
 
-(advice-add #'message :after #'cam/scroll-messages-async)
+;; (advice-add #'message :after #'cam/scroll-messages-async)
 
 
 ;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
