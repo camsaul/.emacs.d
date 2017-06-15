@@ -15,7 +15,6 @@
 ;;;    [[Global Macros]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
-;;;    [[Emacs 24 Workarounds]]
 ;;;    [[Global Keybindings]]
 ;;; [[Mode/Package Specific Setup]]
 ;;;    [[etc]]
@@ -30,7 +29,6 @@
 ;;;    [[Git Commit Mode]]
 ;;;    [[Guide Key]]
 ;;;    [[Helm]]
-;;;    [[js2-mode]]
 ;;;    [[loccur]]
 ;;;    [[Magit]]
 ;;;    [[markdown]]
@@ -96,13 +94,6 @@
       (while (not (y-or-n-p "init.el is out of date. We need to restart Emacs. Ready? ")))
       (kill-emacs))))
 
-;; ignore the warnings about having ~/.emacs.d in the load path
-(eval-after-load 'warnings
-  '(advice-add #'display-warning :around
-     (lambda (function type message &optional level buffer-name)
-       (unless (and (eq type 'initialization)
-                    (string-prefix-p "Your `load-path' seems to contain" message))
-         (funcall function type message level buffer-name)))))
 (add-to-list 'load-path (expand-file-name user-emacs-directory) :append)
 
 (defconst cam/autoloads-file (concat user-emacs-directory "autoloads.el"))
@@ -169,7 +160,6 @@
     helm
     highlight-parentheses                         ; highlight matching parentheses
     ido-vertical-mode
-    js2-mode                                      ; Javascript
     loccur
     macrostep                                     ; Interactive macrostepper for Emacs Lisp
     magit
@@ -181,7 +171,6 @@
     org                                           ; Get latest version of org from Org package archive
     paredit
     perl-completion                               ; Auto-complete for Perl
-    ;; pos-tip                                       ; Native tooltips
     projectile
     rainbow-delimiters
     rainbow-mode
@@ -364,6 +353,7 @@
   ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
   ("<f12> j"       . #'cam/javadocs-search)
   ("<f12> k"       . #'cam/browse-korma-dox)
+  ("<insert>"      . nil)
   ("A-;"           . #'cam/loccur)
   ("A-r l"         . #'rotate-layout)
   ("A-r w"         . #'rotate-window)
@@ -372,7 +362,6 @@
   ("C-M-S-k"       . #'backward-kill-sexp)
   ("C-S-k"         . #'cam/backward-kill-line)
   ("C-c C-g"       . #'keyboard-quit)
-  ("C-s-;"         . #'cam/align-map)
   ("C-h M"         . #'describe-minor-mode)
   ("C-x C-b"       . #'helm-buffers-list)
   ("C-x C-f"       . #'helm-find-files)
@@ -433,18 +422,15 @@
 ;;; [[<auto-complete]]
 (tweak-package auto-complete
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
-  :vars ((ac-delay . 0.05)
-         (ac-auto-show-menu . 0.1)
-         (ac-candidate-menu-height . 30)
-         (ac-menu-height . 30)         ; show 20 results instead of 10
-         (ac-quick-help-delay . 0.2)
+  :vars ((ac-delay . 0.15)
+         (ac-auto-show-menu . 0.15)
+         (ac-candidate-menu-height . 20)
+         ;; (ac-candidate-limit . 20)
+         (ac-menu-height . 20)         ; number of results to show
          (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
-         (ac-use-menu-map . t))
+         (ac-use-menu-map . t))        ; use special completion keymap when showing completion menu
   :load ((cam/suppress-messages
-           ;; (require 'pos-tip)
-
            (ac-config-default)
-
            (add-to-list 'ac-modes 'cider-repl-mode)
            (add-to-list 'ac-modes 'ielm-mode)))
   :keymap ac-menu-map
@@ -509,9 +495,15 @@
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-"))
-  :local-vars nil
+  :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
+               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
+               (ac-auto-show-menu . 1.0)
+               (ac-cider-show-ns . t)
+               (ac-quick-help-delay . 1.5))
   :local-hooks nil
-  :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)))
+  :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
+         ("<f1>" . #'ac-cider-popup-doc)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
@@ -542,7 +534,9 @@
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup))
   :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
-         ("{" . #'paredit-open-curly)))
+         ("{" . #'paredit-open-curly)
+         ("<f1>" . #'ac-cider-popup-doc)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package cider-macroexpansion
   :setup ((read-only-mode -1)))
@@ -731,17 +725,6 @@ any buffers that were visiting files that were children of that directory."
          (helm-M-x-fuzzy-match        . t)))
 
 
-;;; [[<js2-mode]]
-(tweak-package js2-mode
-  :mode-name js2-mode
-  :minor-modes (electric-pair-local-mode
-                rainbow-delimiters-mode)
-  :keys (("C-j" . #'newline)
-         ("M-j" . nil))
-  :auto-mode-alist ("\.js$"
-                    "\.json$"))
-
-
 ;;; [[<loccur]]
 (tweak-package loccur
   :declare (loccur))
@@ -905,7 +888,9 @@ Calls `magit-refresh' after the command finishes."
   :minor-modes (electric-pair-local-mode
                 rainbow-delimiters-mode)
   :keys (("C-j" . #'newline))
-  :auto-mode-alist ("\.html$"
+  :auto-mode-alist ("\.js$"
+                    "\.json$"
+                    "\.html$"
                     "\.jsx$"))
 
 
@@ -973,40 +958,40 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
 
-(cl-defun cam/buffer-window (buffer)
-  "Return the first window on any frame showing BUFFER, if any."
-  (dolist (frame (frame-list))
-    (dolist (w (window-list frame))
-      (when (eq (window-buffer w) buffer)
-        (cl-return-from cam/buffer-window w)))))
+;; (cl-defun cam/buffer-window (buffer)
+;;   "Return the first window on any frame showing BUFFER, if any."
+;;   (dolist (frame (frame-list))
+;;     (dolist (w (window-list frame))
+;;       (when (eq (window-buffer w) buffer)
+;;         (cl-return-from cam/buffer-window w)))))
 
-(defun cam/scroll-messages-to-end ()
-  "Scroll to the end of the *Messages* buffer if needed if it is currently visible."
-  (when-let (messages-buffer (get-buffer "*Messages*"))
-    (when-let (w (cam/buffer-window messages-buffer))
-      (when (< (window-end w) (point-max))
-        (with-selected-window w
-          (set-window-start w (save-excursion
-                                (goto-char (point-max))
-                                (forward-line (- (- (window-height) 3)))
-                                (point))))))))
+;; (defun cam/scroll-messages-to-end ()
+;;   "Scroll to the end of the *Messages* buffer if needed if it is currently visible."
+;;   (when-let (messages-buffer (get-buffer "*Messages*"))
+;;     (when-let (w (cam/buffer-window messages-buffer))
+;;       (when (< (window-end w) (point-max))
+;;         (with-selected-window w
+;;           (set-window-start w (save-excursion
+;;                                 (goto-char (point-max))
+;;                                 (forward-line (- (- (window-height) 3)))
+;;                                 (point))))))))
 
-(defvar cam/scroll-messages-async-delay 2
-  "Number of seconds to wait before asynchronously scrolling the *Messages* buffer.")
+;; (defvar cam/scroll-messages-async-delay 2
+;;   "Number of seconds to wait before asynchronously scrolling the *Messages* buffer.")
 
-(defvar cam/scroll-messages-timer nil)
+;; (defvar cam/scroll-messages-timer nil)
 
-(defun cam/scroll-messages-and-reset-timer ()
-  (unwind-protect
-      (unless (eq (current-buffer) (get-buffer "*Messages*")) ; don't scroll if *Messages* is the current buffer
-        (cam/scroll-messages-to-end))
-    (setq cam/scroll-messages-timer nil)))
+;; (defun cam/scroll-messages-and-reset-timer ()
+;;   (unwind-protect
+;;       (unless (eq (current-buffer) (get-buffer "*Messages*")) ; don't scroll if *Messages* is the current buffer
+;;         (cam/scroll-messages-to-end))
+;;     (setq cam/scroll-messages-timer nil)))
 
-(defun cam/scroll-messages-async (&rest _)
-  (unless cam/scroll-messages-timer
-    (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
+;; (defun cam/scroll-messages-async (&rest _)
+;;   (unless cam/scroll-messages-timer
+;;     (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
 
-(advice-add #'message :after #'cam/scroll-messages-async)
+;; (advice-add #'message :after #'cam/scroll-messages-async)
 
 
 ;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
@@ -1052,12 +1037,44 @@ Calls `magit-refresh' after the command finishes."
 (eval-after-load 'web-mode
   '(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
 
-(eval-after-load 'js2-mode
-  '(define-key js2-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
-
 (defun cam/insert-clojure-println (text)
   (interactive "sprintln: ")
-  (insert "(println \"" text ":\" " text ") ; NOCOMMIT"))
+  (if current-prefix-arg
+      (insert "(println \"" text "\") ; NOCOMMIT")
+    (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
+
+(defun cam/insert-clojure-header (text)
+  (interactive "sheader text: ")
+  ;; calculate the number of spaces that should go on either side of the text
+  (let* ((total-width (if current-prefix-arg
+                          (let ((input (read-from-minibuffer "total width [120]: ")))
+                            (if (zerop (length input))
+                                120
+                              (string-to-int input)))
+                        120))
+         (padding (/ (- total-width (length text)) 2))
+         (horizonal-border (concat ";;; +"
+                                   (make-string total-width ?-)
+                                   "+\n"))
+         (text-padding (make-string padding ? )))
+    (insert
+     (concat
+      ;; top row
+      horizonal-border
+      ;; middle row
+      ";;; |"
+      text-padding
+      text
+      text-padding
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so things line up
+      (unless (eq (oddp (length text))
+                  (oddp total-width))
+        " ")
+      "|\n"
+      ;; bottom row
+      horizonal-border))))
 
 (eval-after-load 'clojure-mode
-  '(define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println))
+  '(progn
+     (define-key clojure-mode-map (kbd "<f9>") #'cam/insert-clojure-header)
+     (define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println)))

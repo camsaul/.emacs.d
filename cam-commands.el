@@ -129,46 +129,6 @@ Called with a prefix ARG, set the value of `cam/insert-spaces-goal-col' to point
         (insert-char ?  num-spaces)))))
 
 
-;;; [[cam/align-map]] ------------------------------------------------------------
-
-(defun cam/-align-map-get-max-col (&optional max)
-  "Used internally by `cam/align-map'.
-Get the maximum column for the start of all the value forms in the current map."
-  (save-excursion
-    (condition-case _
-        (progn
-          (backward-sexp 2)                          ; Move from end of val to beginning of key
-          (forward-sexp)                             ; Move to end of key
-          (let ((col (+ (current-column) 1)))        ; val should start one space after key
-            (backward-sexp)                          ; Move back to start of key
-            (cam/-align-map-get-max-col (max (or max 0) col)))) ; recurse until error is thrown when we reach the first key
-      (error (message "Max column is %d" max)
-             max))))
-
-(defun cam/-align-map-args-to-column ()
-  "Used internally by `cam/align-map'.
-Align all the arguments in a map using `cam/insert-spaces-to-goal-column'."
-  (save-excursion
-    (ignore-errors
-      (backward-sexp)                                ; move to start of val
-      (cam/insert-spaces-to-goal-column nil)         ; insert spaces
-      (backward-sexp)                                ; move to start of key
-      (cam/-align-map-args-to-column))))             ; recurse until error is thrown when we reach the first sexp
-
-;;;###autoload
-(defun cam/align-map ()
-  "Align the values in a Clojure map or similar data structure."
-  (interactive)
-  (save-excursion
-    (when (paredit-in-string-p)                      ; If we're in a string jump out so we don't insert a } when calling (paredit-close-curly)
-      (paredit-forward-up))
-    (paredit-close-curly)                            ; jump to char after closing }
-    (backward-char)                                  ; move back onto } -- end of last sexp
-    (setq-local cam/insert-spaces-goal-col (cam/-align-map-get-max-col))
-    (cam/-align-map-args-to-column))
-  (paredit-reindent-defun))
-
-
 ;;; [[cam/realign-eol-comment-current-line]] ------------------------------------------------------------
 
 (cl-defun cam/realign-eol-comment-current-line ()
