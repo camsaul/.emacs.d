@@ -22,6 +22,7 @@
         electric-newline-and-maybe-indent
         electric-pair-delete-pair
         forward-sexp
+        helm-show-kill-ring
         indent-for-tab-command
         insert-register
         join-next-line
@@ -64,6 +65,7 @@
         cam/windmove-right-or-other-frame
         cider-refresh
         end-of-buffer
+        ftf-find-file
         ftf-grepsource
         goto-line
         helm-M-x
