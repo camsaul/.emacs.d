@@ -251,6 +251,7 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
+(require 'projectile)
 
 (eval-when-compile
   (require 'cl-lib)
@@ -311,6 +312,9 @@
 (setq-default indent-tabs-mode nil                ; disable insertion of tabs
               save-place t                        ; Automatically save place in each file
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
+
+(add-to-list 'projectile-globally-ignored-files   ; Tell projectile to always ignore uberdoc.html
+             "uberdoc.html")
 
 
 ;;; [[<Global Hooks]]
