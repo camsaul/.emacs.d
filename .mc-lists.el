@@ -4,9 +4,11 @@
 (setq mc/cmds-to-run-for-all
       '(
         asm-comment
+        auto-complete
         backward-kill-sexp
         backward-sexp
         c-electric-brace
+        c-electric-paren
         cam/align-map
         cam/backward-kill-line
         cam/hungry-delete-backward
@@ -15,6 +17,7 @@
         cam/join-next-line
         cam/realign-eol-comments
         cljr-slash
+        clojure-align
         clojure-convert-collection-to-vector
         clojure-toggle-keyword-string
         comment-dwim
@@ -42,6 +45,7 @@
         paredit-forward-delete
         paredit-forward-slurp-sexp
         paredit-kill
+        paredit-meta-doublequote
         paredit-newline
         paredit-open-curly
         paredit-open-round

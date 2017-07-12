@@ -1005,6 +1005,7 @@ Calls `magit-refresh' after the command finishes."
 
 (defvar-local cam/clojure-docstr-font-lock-mode nil)
 
+;; TODO - why not just write this like a normal minor mode?
 (defun cam/clojure-docstr-font-lock-mode (&optional arg)
   (interactive)
   (if (null arg) (progn (cam/clojure-docstr-font-lock-mode (if cam/clojure-docstr-font-lock-mode -1 1))
