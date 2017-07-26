@@ -507,8 +507,8 @@
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
-  :vars ((cljr-auto-sort-ns . nil)
-         (cljr-expectations-test-declaration . "[expectations :refer :all]")))
+  :vars ((cljr-expectations-test-declaration . "[expectations :refer :all]")
+         (cljr-favor-prefix-notation . t)))
 
 (defun cam/ansi-colorize-nrepl-output-buffer-if-needed (f process output)
   (let ((old-max (with-current-buffer (process-buffer process)
