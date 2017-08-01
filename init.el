@@ -474,15 +474,10 @@
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
-  (if (not (cider-connected-p)) (cider-jack-in)
-    (ignore-errors
-      (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
-      (cider-repl-clear-buffer))
-    ;; sometimes this doesn't work the first time around (not sure why) so try it twice just to be sure
-    (ignore-errors
-      (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
-      (cider-repl-clear-buffer))
-    (cam/cider-clear-output-buffer-when-visible)))
+  (cider-load-buffer)
+  (cider-set-buffer-ns (cider-current-ns))
+  (cider-switch-to-repl-buffer)
+  (cider-repl-clear-buffer))
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
