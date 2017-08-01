@@ -474,9 +474,7 @@
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
-  (cider-load-buffer)
-  (cider-set-buffer-ns (cider-current-ns))
-  (cider-switch-to-repl-buffer)
+  (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
   (cider-repl-clear-buffer))
 
 (tweak-package clojure-mode
