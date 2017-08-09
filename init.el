@@ -547,7 +547,7 @@
 ;;; [[<column-enforce-mode]]
 (tweak-package column-enforce-mode
   :mode-name column-enforce-mode
-  :vars ((column-enforce-column . 120)))
+  :vars ((column-enforce-column . 118)))
 
 
 ;;; [[<company]]
@@ -1050,11 +1050,11 @@ Calls `magit-refresh' after the command finishes."
   (interactive "sheader text: ")
   ;; calculate the number of spaces that should go on either side of the text
   (let* ((total-width (if current-prefix-arg
-                          (let ((input (read-from-minibuffer "total width [114]: ")))
+                          (let ((input (read-from-minibuffer "total width [112]: ")))
                             (if (zerop (length input))
-                                114
+                                112
                               (string-to-int input)))
-                        114))
+                        112))
          (padding (/ (- total-width (length text)) 2))
          (horizonal-border (concat ";;; +"
                                    (make-string total-width ?-)
