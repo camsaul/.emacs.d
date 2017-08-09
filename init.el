@@ -1050,11 +1050,11 @@ Calls `magit-refresh' after the command finishes."
   (interactive "sheader text: ")
   ;; calculate the number of spaces that should go on either side of the text
   (let* ((total-width (if current-prefix-arg
-                          (let ((input (read-from-minibuffer "total width [120]: ")))
+                          (let ((input (read-from-minibuffer "total width [114]: ")))
                             (if (zerop (length input))
-                                120
+                                114
                               (string-to-int input)))
-                        120))
+                        114))
          (padding (/ (- total-width (length text)) 2))
          (horizonal-border (concat ";;; +"
                                    (make-string total-width ?-)
