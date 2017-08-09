@@ -23,6 +23,7 @@
 ;;;    [[Clojure]]
 ;;;    [[dired]]
 ;;;    [[company]]
+;;;    [[column-enforce-mode]]
 ;;;    [[Emacs Lisp]]
 ;;;    [[Eval Expresssion (Minibuffer)]]
 ;;;    [[Find Things Fast]]
@@ -137,6 +138,7 @@
     anything                                      ; prereq for perl-completion
     auto-complete                                 ; auto-completion
     cider                                         ; Clojure Interactive Development Environment that Rocks
+    column-enforce-mode                           ; Highlight text that goes past a certain column limit
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
     company                                       ; auto-completion
@@ -483,6 +485,7 @@
   :minor-modes (auto-complete-mode
                 cider-mode
                 clj-refactor-mode
+                column-enforce-mode
                 eldoc-mode
                 todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
@@ -539,6 +542,12 @@
 
 (tweak-package cider-repl
   :declare (cider-repl-clear-buffer cider-repl-return cider-repl-set-ns))
+
+
+;;; [[<column-enforce-mode]]
+(tweak-package column-enforce-mode
+  :mode-name column-enforce-mode
+  :vars ((column-enforce-column . 120)))
 
 
 ;;; [[<company]]
