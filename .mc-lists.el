@@ -4,9 +4,11 @@
 (setq mc/cmds-to-run-for-all
       '(
         asm-comment
+        auto-complete
         backward-kill-sexp
         backward-sexp
         c-electric-brace
+        c-electric-paren
         cam/align-map
         cam/backward-kill-line
         cam/hungry-delete-backward
@@ -15,6 +17,7 @@
         cam/join-next-line
         cam/realign-eol-comments
         cljr-slash
+        clojure-align
         clojure-convert-collection-to-vector
         clojure-toggle-keyword-string
         comment-dwim
@@ -22,6 +25,7 @@
         electric-newline-and-maybe-indent
         electric-pair-delete-pair
         forward-sexp
+        helm-show-kill-ring
         indent-for-tab-command
         insert-register
         join-next-line
@@ -42,6 +46,7 @@
         paredit-forward-delete
         paredit-forward-slurp-sexp
         paredit-kill
+        paredit-meta-doublequote
         paredit-newline
         paredit-open-curly
         paredit-open-round
@@ -64,6 +69,7 @@
         cam/windmove-right-or-other-frame
         cider-refresh
         end-of-buffer
+        ftf-find-file
         ftf-grepsource
         goto-line
         helm-M-x

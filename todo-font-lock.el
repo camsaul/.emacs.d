@@ -4,8 +4,8 @@
 ;;; Code:
 
 (defconst todo-font-lock--keywords
-  '(("\\<\\(TODO\\|HACK\\|DEPRECATED\\)\\>" 1 (when (paredit-in-comment-p)
-                                                'font-lock-warning-face)
+  '(("\\<\\(TODO\\|HACK\\|DEPRECATED\\|NOCOMMIT\\)\\>" 1 (when (paredit-in-comment-p)
+                                                           'font-lock-warning-face)
      prepend)))
 
 ;;;###autoload

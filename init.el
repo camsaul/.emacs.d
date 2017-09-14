@@ -23,6 +23,7 @@
 ;;;    [[Clojure]]
 ;;;    [[dired]]
 ;;;    [[company]]
+;;;    [[column-enforce-mode]]
 ;;;    [[Emacs Lisp]]
 ;;;    [[Eval Expresssion (Minibuffer)]]
 ;;;    [[Find Things Fast]]
@@ -137,6 +138,7 @@
     anything                                      ; prereq for perl-completion
     auto-complete                                 ; auto-completion
     cider                                         ; Clojure Interactive Development Environment that Rocks
+    column-enforce-mode                           ; Highlight text that goes past a certain column limit
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
     company                                       ; auto-completion
@@ -251,6 +253,7 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
+(require 'projectile)
 
 (eval-when-compile
   (require 'cl-lib)
@@ -311,6 +314,9 @@
 (setq-default indent-tabs-mode nil                ; disable insertion of tabs
               save-place t                        ; Automatically save place in each file
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
+
+(add-to-list 'projectile-globally-ignored-files   ; Tell projectile to always ignore uberdoc.html
+             "uberdoc.html")
 
 
 ;;; [[<Global Hooks]]
@@ -395,13 +401,13 @@
 ;;; [[<etc]]
 
 (tweak-package button-lock
-               :load ((diminish 'button-lock-mode)))
+  :load ((diminish 'button-lock-mode)))
 
 (tweak-package wiki-nav
-               :load ((diminish 'wiki-nav-mode)))
+  :load ((diminish 'wiki-nav-mode)))
 
 (tweak-package highlight-parentheses
-               :load ((diminish 'highlight-parentheses-mode)))
+  :load ((diminish 'highlight-parentheses-mode)))
 
 ;;; [[<Lisp Modes]]
 (defun cam/lisp-mode-setup ()
@@ -418,25 +424,25 @@
 
 ;;; [[<auto-complete]]
 (tweak-package auto-complete
-               :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
-               :vars ((ac-delay . 0.15)
-                      (ac-auto-show-menu . 0.15)
-                      (ac-candidate-menu-height . 20)
-                      ;; (ac-candidate-limit . 20)
-                      (ac-menu-height . 20)         ; number of results to show
-                      (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
-                      (ac-use-menu-map . t))        ; use special completion keymap when showing completion menu
-               :load ((cam/suppress-messages
-                        (ac-config-default)
-                        (add-to-list 'ac-modes 'cider-repl-mode)
-                        (add-to-list 'ac-modes 'ielm-mode)))
-               :keymap ac-menu-map
-               :keys (("A-f" . #'ac-complete-functions)
-                      ("A-s" . #'ac-complete-symbols)
-                      ("A-v" . #'ac-complete-variables)))
+  :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
+  :vars ((ac-delay . 0.15)
+         (ac-auto-show-menu . 0.15)
+         (ac-candidate-menu-height . 20)
+         ;; (ac-candidate-limit . 20)
+         (ac-menu-height . 20)         ; number of results to show
+         (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
+         (ac-use-menu-map . t))        ; use special completion keymap when showing completion menu
+  :load ((cam/suppress-messages
+           (ac-config-default)
+           (add-to-list 'ac-modes 'cider-repl-mode)
+           (add-to-list 'ac-modes 'ielm-mode)))
+  :keymap ac-menu-map
+  :keys (("A-f" . #'ac-complete-functions)
+         ("A-s" . #'ac-complete-symbols)
+         ("A-v" . #'ac-complete-variables)))
 
 (tweak-package auto-complete-config
-               :declare (ac-emacs-lisp-mode-setup))
+  :declare (ac-emacs-lisp-mode-setup))
 
 
 ;;; [[<Clojure]]
@@ -471,41 +477,35 @@
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
-  (if (not (cider-connected-p)) (cider-jack-in)
-    (ignore-errors
-      (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
-      (cider-repl-clear-buffer))
-    ;; sometimes this doesn't work the first time around (not sure why) so try it twice just to be sure
-    (ignore-errors
-      (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
-      (cider-repl-clear-buffer))
-    (cam/cider-clear-output-buffer-when-visible)))
+  (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
+  (cider-repl-clear-buffer))
 
 (tweak-package clojure-mode
-               :mode-name clojure-mode
-               :require (clojure-mode-extra-font-locking)
-               :minor-modes (auto-complete-mode
-                             cider-mode
-                             clj-refactor-mode
-                             eldoc-mode
-                             todo-font-lock-mode)
-               :setup ((cam/lisp-mode-setup)
-                       (ac-cider-setup)
-                       (cljr-add-keybindings-with-modifier "A-H-"))
-               :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
-                            (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
-                            (ac-auto-show-menu . 1.0)
-                            (ac-cider-show-ns . t)
-                            (ac-quick-help-delay . 1.5))
-               :local-hooks nil
-               :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
-                      ("<f1>" . #'ac-cider-popup-doc)
-                      ("<S-tab>" . #'auto-complete)))
+  :mode-name clojure-mode
+  :require (clojure-mode-extra-font-locking)
+  :minor-modes (auto-complete-mode
+                cider-mode
+                clj-refactor-mode
+                column-enforce-mode
+                eldoc-mode
+                todo-font-lock-mode)
+  :setup ((cam/lisp-mode-setup)
+          (ac-cider-setup)
+          (cljr-add-keybindings-with-modifier "A-H-"))
+  :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
+               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
+               (ac-auto-show-menu . 1.0)
+               (ac-cider-show-ns . t)
+               (ac-quick-help-delay . 1.5))
+  :local-hooks nil
+  :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
+         ("<f1>" . #'ac-cider-popup-doc)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package clj-refactor
-               :load ((diminish 'clj-refactor-mode))
-               :vars ((cljr-auto-sort-ns . nil)
-                      (cljr-expectations-test-declaration . "[expectations :refer :all]")))
+  :load ((diminish 'clj-refactor-mode))
+  :vars ((cljr-expectations-test-declaration . "[expectations :refer :all]")
+         (cljr-favor-prefix-notation . t)))
 
 (defun cam/ansi-colorize-nrepl-output-buffer-if-needed (f process output)
   (let ((old-max (with-current-buffer (process-buffer process)
@@ -515,40 +515,46 @@
       (ansi-color-apply-on-region old-max (point-max)))))
 
 (tweak-package cider
-               :mode-name cider-repl-mode
-               :declare (cider-jack-in)
-               :vars ((cider-auto-select-error-buffer . nil)
-                      (cider-repl-use-pretty-printing . t))
-               :require (ansi-color)
-               :advice ((#'cider-repl-return :before (lambda ()
-                                                       "Delete trailing whitespace that may have been introduced by `auto-complete'."
-                                                       (interactive)
-                                                       (call-interactively #'delete-trailing-whitespace)))
-                        (#'nrepl-server-filter :around #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
-               :minor-modes (auto-complete-mode
-                             aggressive-indent-mode
-                             eldoc-mode)
-               :setup ((cam/lisp-mode-setup)
-                       (ac-cider-setup))
-               :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
-                      ("{" . #'paredit-open-curly)
-                      ("<f1>" . #'ac-cider-popup-doc)
-                      ("<S-tab>" . #'auto-complete)))
+  :mode-name cider-repl-mode
+  :declare (cider-jack-in)
+  :vars ((cider-auto-select-error-buffer . nil)
+         (cider-repl-use-pretty-printing . t))
+  :require (ansi-color)
+  :advice ((#'cider-repl-return :before (lambda ()
+                                          "Delete trailing whitespace that may have been introduced by `auto-complete'."
+                                          (interactive)
+                                          (call-interactively #'delete-trailing-whitespace)))
+           (#'nrepl-server-filter :around #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
+  :minor-modes (auto-complete-mode
+                aggressive-indent-mode
+                eldoc-mode)
+  :setup ((cam/lisp-mode-setup)
+          (ac-cider-setup))
+  :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
+         ("{" . #'paredit-open-curly)
+         ("<f1>" . #'ac-cider-popup-doc)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package cider-macroexpansion
-               :setup ((read-only-mode -1)))
+  :setup ((read-only-mode -1)))
 
 (tweak-package cider-interaction
-               :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
+  :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
 
 (tweak-package cider-repl
-               :declare (cider-repl-clear-buffer cider-repl-return cider-repl-set-ns))
+  :declare (cider-repl-clear-buffer cider-repl-return cider-repl-set-ns))
+
+
+;;; [[<column-enforce-mode]]
+(tweak-package column-enforce-mode
+  :mode-name column-enforce-mode
+  :vars ((column-enforce-column . 118)))
 
 
 ;;; [[<company]]
 (tweak-package company
-               :vars ((company-idle-delay . 0.01)
-                      (company-minimum-prefix-length . 1)))
+  :vars ((company-idle-delay . 0.01)
+         (company-minimum-prefix-length . 1)))
 
 
 ;;; [[<dired]]
@@ -584,19 +590,19 @@ any buffers that were visiting files that were children of that directory."
       result)))
 
 (tweak-package dired
-               :declare (dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
-               :vars ((dired-recursive-copies  . 'always)
-                      (dired-recursive-deletes . 'always))
-               :require (dired-x)                              ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
-               :advice ((#'dired-do-delete :around #'cam/around-dired-do-delete)
-                        (#'dired-find-file :after  #'cam/after-dired-find-file)
-                        (#'dired-smart-shell-command :after (lambda (&rest _)
-                                                              (revert-buffer))))
-               :load ((add-hook 'focus-in-hook #'cam/revert-dired-buffers))
-               :minor-modes (dired-hide-details-mode))
+  :declare (dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
+  :vars ((dired-recursive-copies  . 'always)
+         (dired-recursive-deletes . 'always))
+  :require (dired-x)                              ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
+  :advice ((#'dired-do-delete :around #'cam/around-dired-do-delete)
+           (#'dired-find-file :after  #'cam/after-dired-find-file)
+           (#'dired-smart-shell-command :after (lambda (&rest _)
+                                                 (revert-buffer))))
+  :load ((add-hook 'focus-in-hook #'cam/revert-dired-buffers))
+  :minor-modes (dired-hide-details-mode))
 
 (tweak-package dired-x
-               :declare (dired-smart-shell-command))
+  :declare (dired-smart-shell-command))
 
 
 ;;; [[<Emacs Lisp]]
@@ -624,107 +630,107 @@ any buffers that were visiting files that were children of that directory."
 
 ;; TODO - Emacs 25 only
 (tweak-package elisp-mode
-               :mode-name emacs-lisp-mode
-               :load ((put 'add-hook 'lisp-indent-function 1))
-               :minor-modes (aggressive-indent-mode
-                             auto-complete-mode
-                             eldoc-mode
-                             elisp-slime-nav-mode
-                             emacs-lisp-color-code-mode
-                             morlock-mode
-                             todo-font-lock-mode
-                             wiki-nav-mode)
-               :setup ((cam/lisp-mode-setup)
-                       (unless (string= user-init-file (buffer-file-name))
-                         (flycheck-mode 1)))
-               :local-hooks ((after-save-hook . (lambda ()
-                                                  (when cam/byte-compile
-                                                    (byte-compile-file (buffer-file-name) :load))
-                                                  (when cam/generate-autoloads
-                                                    (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
-               :keys (("<C-M-s-return>" . #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
-                      ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
-                      ("C-x C-e"        . #'pp-eval-last-sexp)))
+  :mode-name emacs-lisp-mode
+  :load ((put 'add-hook 'lisp-indent-function 1))
+  :minor-modes (aggressive-indent-mode
+                auto-complete-mode
+                eldoc-mode
+                elisp-slime-nav-mode
+                emacs-lisp-color-code-mode
+                morlock-mode
+                todo-font-lock-mode
+                wiki-nav-mode)
+  :setup ((cam/lisp-mode-setup)
+          (unless (string= user-init-file (buffer-file-name))
+            (flycheck-mode 1)))
+  :local-hooks ((after-save-hook . (lambda ()
+                                     (when cam/byte-compile
+                                       (byte-compile-file (buffer-file-name) :load))
+                                     (when cam/generate-autoloads
+                                       (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
+  :keys (("<C-M-s-return>" . #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
+         ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
+         ("C-x C-e"        . #'pp-eval-last-sexp)))
 
 (tweak-package dash
-               :declare (dash-enable-font-lock)
-               :load ((dash-enable-font-lock)))
+  :declare (dash-enable-font-lock)
+  :load ((dash-enable-font-lock)))
 
 (tweak-package elisp-slime-nav
-               :load ((diminish 'elisp-slime-nav-mode))
-               :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
+  :load ((diminish 'elisp-slime-nav-mode))
+  :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
 (tweak-package ielm
-               :mode-name inferior-emacs-lisp-mode
-               :hook-name ielm-mode-hook
-               :minor-modes (aggressive-indent-mode
-                             auto-complete-mode
-                             elisp-slime-nav-mode
-                             morlock-mode)
-               :setup ((cam/lisp-mode-setup)
-                       (ac-emacs-lisp-mode-setup))
-               :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
-               :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)))
+  :mode-name inferior-emacs-lisp-mode
+  :hook-name ielm-mode-hook
+  :minor-modes (aggressive-indent-mode
+                auto-complete-mode
+                elisp-slime-nav-mode
+                morlock-mode)
+  :setup ((cam/lisp-mode-setup)
+          (ac-emacs-lisp-mode-setup))
+  :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
+  :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)))
 
 (tweak-package nadvice
-               :load ((put #'advice-add 'lisp-indent-function 2)))
+  :load ((put #'advice-add 'lisp-indent-function 2)))
 
 
 ;;; [[<Eval Expresssion (Minibuffer)]]
 (tweak-package simple
-               :hook-name eval-expression-minibuffer-setup-hook
-               :minor-modes (company-mode
-                             paredit-mode)
-               :local-vars ((company-echo-delay . 10)))
+  :hook-name eval-expression-minibuffer-setup-hook
+  :minor-modes (company-mode
+                paredit-mode)
+  :local-vars ((company-echo-delay . 10)))
 
 
 ;;; [[<Find Things Fast]]
 (tweak-package find-things-fast
-               :load ((nconc ftf-filetypes '("*.clj"
-                                             "*.css"
-                                             "*.edn"
-                                             "*.el"
-                                             "*.html"
-                                             "*.js"
-                                             "*.jsx"
-                                             "*.java"
-                                             "*.md"
-                                             "*.yaml"
-                                             "*.yml"))))
+  :load ((nconc ftf-filetypes '("*.clj"
+                                "*.css"
+                                "*.edn"
+                                "*.el"
+                                "*.html"
+                                "*.js"
+                                "*.jsx"
+                                "*.java"
+                                "*.md"
+                                "*.yaml"
+                                "*.yml"))))
 
 
 ;;; [[<Git Commit Mode]]
 (tweak-package git-commit
-               :mode-name git-commit
-               :minor-modes (flyspell-mode))
+  :mode-name git-commit
+  :minor-modes (flyspell-mode))
 
 
 ;;; [[<Guide Key]]
 (tweak-package guide-key
-               :vars ((guide-key/idle-delay . 1.0)
-                      (guide-key/recursive-key-sequence-flag . t)
-                      (guide-key/guide-key-sequence . '("<f12>" "<f1>"
-                                                        "<help>" "A-'"
-                                                        "A-*"    "A-,"
-                                                        "A-/"    "A-1"
-                                                        "A-3"    "A-\""
-                                                        "A-^"    "A-_"
-                                                        "A-`"    "A-r"
-                                                        "A-~"    "C-c"
-                                                        "C-h"    "C-x"
-                                                        "M-o"))))
+  :vars ((guide-key/idle-delay . 1.0)
+         (guide-key/recursive-key-sequence-flag . t)
+         (guide-key/guide-key-sequence . '("<f12>" "<f1>"
+                                           "<help>" "A-'"
+                                           "A-*"    "A-,"
+                                           "A-/"    "A-1"
+                                           "A-3"    "A-\""
+                                           "A-^"    "A-_"
+                                           "A-`"    "A-r"
+                                           "A-~"    "C-c"
+                                           "C-h"    "C-x"
+                                           "M-o"))))
 
 
 ;;; [[<Helm]]
 (tweak-package helm
-               :vars ((helm-buffers-fuzzy-matching . t) ; enable fuzzy matching for helm
-                      (helm-recentf-fuzzy-match    . t)
-                      (helm-M-x-fuzzy-match        . t)))
+  :vars ((helm-buffers-fuzzy-matching . t) ; enable fuzzy matching for helm
+         (helm-recentf-fuzzy-match    . t)
+         (helm-M-x-fuzzy-match        . t)))
 
 
 ;;; [[<loccur]]
 (tweak-package loccur
-               :declare (loccur))
+  :declare (loccur))
 
 ;;; [[<Magit]]
 (defun cam/magit-visit-pull-request-url ()
@@ -770,40 +776,40 @@ Calls `magit-refresh' after the command finishes."
       (kill-buffer buffer))))
 
 (tweak-package magit
-               :mode-name magit-status-mode
-               :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
-               :vars ((magit-auto-revert-mode-lighter . "")
-                      (magit-last-seen-setup-instructions . "1.4.0")
-                      (magit-push-always-verify . nil)
-                      (magit-save-repository-buffers . 'dontask)) ; Don't prompt to save buffers in the current repo before performing Magit actions
-               :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
-               :keys (("C-x 4 0" . #'cam/kill-all-magit-buffers-and-windows)
-                      ("M-!"     . #'cam/magit-shell-command)
-                      ("V"       . #'cam/magit-visit-pull-request-url)
-                      ("s-u"     . #'magit-refresh)))
+  :mode-name magit-status-mode
+  :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
+  :vars ((magit-auto-revert-mode-lighter . "")
+         (magit-last-seen-setup-instructions . "1.4.0")
+         (magit-push-always-verify . nil)
+         (magit-save-repository-buffers . 'dontask)) ; Don't prompt to save buffers in the current repo before performing Magit actions
+  :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
+  :keys (("C-x 4 0" . #'cam/kill-all-magit-buffers-and-windows)
+         ("M-!"     . #'cam/magit-shell-command)
+         ("V"       . #'cam/magit-visit-pull-request-url)
+         ("s-u"     . #'magit-refresh)))
 
 
 ;;; [[<markdown]]
 (tweak-package markdown-mode
-               :mode-name markdown-mode
-               :minor-modes (flyspell-mode))
+  :mode-name markdown-mode
+  :minor-modes (flyspell-mode))
 
 ;;; [[<Objective-C]]
 (tweak-package cc-mode
-               :mode-name objc-mode
-               :load ( ;; Automatically open .h files with @interface declarations as obj-c rather than c
-                      (add-to-list 'magic-mode-alist
-                                   `(,(lambda ()
-                                        (and (string= (file-name-extension buffer-file-name) "h")
-                                             (re-search-forward "@\\<interface\\>"
-                                                                magic-mode-regexp-match-limit t)))
-                                     . objc-mode)))
-               :minor-modes (auto-complete-mode
-                             electric-pair-mode)
-               :local-vars ((tab-width . 4)
-                            (c-basic-indent . 4)
-                            (c-basic-offset . 4))
-               :keys (("C-j" . #'newline)))
+  :mode-name objc-mode
+  :load ( ;; Automatically open .h files with @interface declarations as obj-c rather than c
+         (add-to-list 'magic-mode-alist
+                      `(,(lambda ()
+                           (and (string= (file-name-extension buffer-file-name) "h")
+                                (re-search-forward "@\\<interface\\>"
+                                                   magic-mode-regexp-match-limit t)))
+                        . objc-mode)))
+  :minor-modes (auto-complete-mode
+                electric-pair-mode)
+  :local-vars ((tab-width . 4)
+               (c-basic-indent . 4)
+               (c-basic-offset . 4))
+  :keys (("C-j" . #'newline)))
 
 ;;; [[<Org]]
 (defun cam/org-insert-code-block ()
@@ -819,82 +825,82 @@ Calls `magit-refresh' after the command finishes."
   (org-edit-src-code))
 
 (tweak-package org
-               :declare (org-bookmark-jump-unhide org-end-of-line org-return-indent)
-               :vars ((org-support-shift-select . nil))
-               :minor-modes (flyspell-mode)
-               :local-vars ((truncate-lines . nil))
-               :keys (("C-c c" . #'cam/org-insert-code-block)))
+  :declare (org-bookmark-jump-unhide org-end-of-line org-return-indent)
+  :vars ((org-support-shift-select . nil))
+  :minor-modes (flyspell-mode)
+  :local-vars ((truncate-lines . nil))
+  :keys (("C-c c" . #'cam/org-insert-code-block)))
 
 (tweak-package org-src
-               :declare (org-edit-src-code))
+  :declare (org-edit-src-code))
 
 
 ;;; [[<Paredit]]
 (tweak-package paredit
-               :declare (paredit-backward-delete
-                         paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline
-                         paredit-open-round paredit-open-square paredit-reindent-defun)
-               ;; Tell paredit it's ok to delete selection in these contexts. Otherwise delete-selection-mode doesn't work with paredit
-               :load ((put #'paredit-forward-delete  'delete-selection 'supersede)
-                      (put #'paredit-backward-delete 'delete-selection 'supersede)
-                      (put #'paredit-open-round      'delete-selection t)
-                      (put #'paredit-open-square     'delete-selection t)
-                      (put #'paredit-doublequote     'delete-selection t)
-                      (put #'paredit-newline         'delete-selection t)))
+  :declare (paredit-backward-delete
+            paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline
+            paredit-open-round paredit-open-square paredit-reindent-defun)
+  ;; Tell paredit it's ok to delete selection in these contexts. Otherwise delete-selection-mode doesn't work with paredit
+  :load ((put #'paredit-forward-delete  'delete-selection 'supersede)
+         (put #'paredit-backward-delete 'delete-selection 'supersede)
+         (put #'paredit-open-round      'delete-selection t)
+         (put #'paredit-open-square     'delete-selection t)
+         (put #'paredit-doublequote     'delete-selection t)
+         (put #'paredit-newline         'delete-selection t)))
 
 
 ;;; [[<Perl]]
 (tweak-package cperl-mode
-               :mode-name cperl-mode
-               :minor-modes (eldoc-mode
-                             electric-pair-local-mode
-                             perl-completion-mode)
-               :vars ((cperl-electric-keywords . t)
-                      (cperl-indent-level . 4))
-               :keys (("C-c C-d" . #'cperl-perldoc))
-               :local-vars ((eldoc-documentation-function . (lambda ()
-                                                              (car
-                                                               (let (cperl-message-on-help-error)
-                                                                 (cperl-get-help))))))
-               :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
-               :auto-mode-alist ("\.pl$"
-                                 "\.pm$"))
+  :mode-name cperl-mode
+  :minor-modes (eldoc-mode
+                electric-pair-local-mode
+                perl-completion-mode)
+  :vars ((cperl-electric-keywords . t)
+         (cperl-indent-level . 4))
+  :keys (("C-c C-d" . #'cperl-perldoc))
+  :local-vars ((eldoc-documentation-function . (lambda ()
+                                                 (car
+                                                  (let (cperl-message-on-help-error)
+                                                    (cperl-get-help))))))
+  :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
+  :auto-mode-alist ("\.pl$"
+                    "\.pm$"))
 (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
 
 
 ;;; [[<Shell]]
 (tweak-package sh-script
-               :mode-name sh-mode
-               :minor-modes (electric-pair-local-mode
-                             todo-font-lock-mode)
-               :keys (("C-j" . #'newline)))
+  :mode-name sh-mode
+  :minor-modes (electric-pair-local-mode
+                todo-font-lock-mode)
+  :keys (("C-j" . #'newline)))
 
 
 ;;; [[[<Sly]]
 (tweak-package sly
-               :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
-               :require (ac-sly)
-               :minor-modes (auto-complete-mode)
-               :setup ((cam/lisp-mode-setup)
-                       (set-up-sly-ac :fuzzy)))
+  :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
+  :require (ac-sly)
+  :minor-modes (auto-complete-mode)
+  :setup ((cam/lisp-mode-setup)
+          (set-up-sly-ac :fuzzy)))
 
 
 ;;; [[<Web Mode]]
 (tweak-package web-mode
-               :mode-name web-mode
-               :minor-modes (electric-pair-local-mode
-                             rainbow-delimiters-mode)
-               :keys (("C-j" . #'newline))
-               :auto-mode-alist ("\.js$"
-                                 "\.json$"
-                                 "\.html$"
-                                 "\.jsx$"))
+  :mode-name web-mode
+  :minor-modes (electric-pair-local-mode
+                rainbow-delimiters-mode)
+  :keys (("C-j" . #'newline))
+  :auto-mode-alist ("\.js$"
+                    "\.json$"
+                    "\.html$"
+                    "\.jsx$"))
 
 
 ;;; [[<YAML Mode]]
 (tweak-package yaml-mode
-               :mode-name yaml-mode
-               :keys (("C-j" . #'newline)))
+  :mode-name yaml-mode
+  :keys (("C-j" . #'newline)))
 
 
 ;;; [[<Global Minor Modes]]
@@ -1006,6 +1012,7 @@ Calls `magit-refresh' after the command finishes."
 
 (defvar-local cam/clojure-docstr-font-lock-mode nil)
 
+;; TODO - why not just write this like a normal minor mode?
 (defun cam/clojure-docstr-font-lock-mode (&optional arg)
   (interactive)
   (if (null arg) (progn (cam/clojure-docstr-font-lock-mode (if cam/clojure-docstr-font-lock-mode -1 1))
@@ -1044,11 +1051,11 @@ Calls `magit-refresh' after the command finishes."
   (interactive "sheader text: ")
   ;; calculate the number of spaces that should go on either side of the text
   (let* ((total-width (if current-prefix-arg
-                          (let ((input (read-from-minibuffer "total width [120]: ")))
+                          (let ((input (read-from-minibuffer "total width [112]: ")))
                             (if (zerop (length input))
-                                120
+                                112
                               (string-to-int input)))
-                        120))
+                        112))
          (padding (/ (- total-width (length text)) 2))
          (horizonal-border (concat ";;; +"
                                    (make-string total-width ?-)
