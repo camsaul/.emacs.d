@@ -27,6 +27,7 @@
         forward-sexp
         helm-show-kill-ring
         indent-for-tab-command
+        indent-new-comment-line
         insert-register
         join-next-line
         kill-region
@@ -34,6 +35,7 @@
         kmacro-end-or-call-macro
         kmacro-start-macro-or-insert-counter
         markdown-exdent-or-delete
+        markdown-outdent-or-delete
         org-self-insert-command
         paredit-backslash
         paredit-backward
