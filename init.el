@@ -24,6 +24,7 @@
 ;;;    [[dired]]
 ;;;    [[company]]
 ;;;    [[column-enforce-mode]]
+;;;    [[css-mode]]
 ;;;    [[Emacs Lisp]]
 ;;;    [[Eval Expresssion (Minibuffer)]]
 ;;;    [[Find Things Fast]]
@@ -549,6 +550,12 @@
 (tweak-package column-enforce-mode
   :mode-name column-enforce-mode
   :vars ((column-enforce-column . 118)))
+
+
+;;; [[<css-mode]]
+(tweak-package css-mode
+  :mode-name css-mode
+  :minor-modes (electric-pair-mode))
 
 
 ;;; [[<company]]
