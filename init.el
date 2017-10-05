@@ -1,8 +1,5 @@
 ;;; -*- lexical-binding: t; coding: utf-8; cam/byte-compile: t; comment-column: 50; -*-
 
-;; (unless (>= emacs-major-version 25)
-;;   (error "This setup requires Emacs version 25 or newer."))
-
 ;;; TOC:
 ;;; [[Initial Setup]]
 ;;; [[Package Setup]]
@@ -38,6 +35,7 @@
 ;;;    [[Org]]
 ;;;    [[Paredit]]
 ;;;    [[Perl]]
+;;;    [[Python]]
 ;;;    [[Shell]]
 ;;;    [[Sly]]
 ;;;    [[Web Mode]]
@@ -173,7 +171,7 @@
     nyan-mode                                     ; Nyan Cat shows position in mode-line
     org                                           ; Get latest version of org from Org package archive
     paredit
-    perl-completion                               ; Auto-complete for Perl
+    ;; perl-completion                               ; Auto-complete for Perl
     projectile
     rainbow-delimiters
     rainbow-mode
@@ -555,7 +553,7 @@
 ;;; [[<css-mode]]
 (tweak-package css-mode
   :mode-name css-mode
-  :minor-modes (electric-pair-mode))
+  :minor-modes (electric-pair-local-mode))
 
 
 ;;; [[<company]]
@@ -812,7 +810,7 @@ Calls `magit-refresh' after the command finishes."
                                                    magic-mode-regexp-match-limit t)))
                         . objc-mode)))
   :minor-modes (auto-complete-mode
-                electric-pair-mode)
+                electric-pair-local-mode)
   :local-vars ((tab-width . 4)
                (c-basic-indent . 4)
                (c-basic-offset . 4))
@@ -873,6 +871,11 @@ Calls `magit-refresh' after the command finishes."
   :auto-mode-alist ("\.pl$"
                     "\.pm$"))
 (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
+
+
+;;; [[<Python]]
+(tweak-package python
+  :minor-modes (electric-pair-local-mode))
 
 
 ;;; [[<Shell]]
