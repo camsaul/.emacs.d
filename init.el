@@ -17,6 +17,7 @@
 ;;;    [[etc]]
 ;;;    [[Lisp Modes]]
 ;;;    [[auto-complete]]
+;;;    [[C]]
 ;;;    [[Clojure]]
 ;;;    [[dired]]
 ;;;    [[company]]
@@ -442,6 +443,9 @@
 
 (tweak-package auto-complete-config
   :declare (ac-emacs-lisp-mode-setup))
+
+;;; [[<C]]
+(add-hook 'c-mode-hook #'electric-pair-local-mode)
 
 
 ;;; [[<Clojure]]
