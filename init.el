@@ -445,6 +445,12 @@
   :declare (ac-emacs-lisp-mode-setup))
 
 ;;; [[<C]]
+
+(defun cam/c-mode-setup ()
+  (setq-local tab-width 4)
+  (setq-local c-basic-indent 4)
+  (setq-local c-basic-offset 4))
+(add-hook 'c-mode-hook #'cam/c-mode-setup)
 (add-hook 'c-mode-hook #'electric-pair-local-mode)
 
 
