@@ -67,6 +67,7 @@
         ace-jump-mode
         beginning-of-buffer
         cam/clojure-save-load-switch-to-cider
+        cam/loccur
         cam/windmove-left-or-other-frame
         cam/windmove-right-or-other-frame
         cider-refresh
