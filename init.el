@@ -908,7 +908,8 @@ Calls `magit-refresh' after the command finishes."
 ;;; [[<Web Mode]]
 (tweak-package web-mode
   :mode-name web-mode
-  :minor-modes (electric-pair-local-mode
+  :minor-modes (column-enforce-mode
+                electric-pair-local-mode
                 rainbow-delimiters-mode)
   :keys (("C-j" . #'newline))
   :auto-mode-alist ("\.js$"
