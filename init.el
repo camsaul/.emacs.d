@@ -1070,15 +1070,27 @@ Calls `magit-refresh' after the command finishes."
       (insert "(println \"" text "\") ; NOCOMMIT")
     (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
 
-(defun cam/insert-clojure-header (text)
-  (interactive "sheader text: ")
-  ;; calculate the number of spaces that should go on either side of the text
-  (let* ((total-width (if current-prefix-arg
-                          (let ((input (read-from-minibuffer "total width [112]: ")))
-                            (if (zerop (length input))
-                                112
-                              (string-to-int input)))
-                        112))
+(defun cam/insert-small-clojure-header (text)
+  "Insert a small header like: ;;; --- TEXT ---"
+  (let* ((total-width 112)
+         (padding (/ (- total-width (length text)) 2))
+         (dashes (make-string padding ?-)))
+    (insert
+     (concat
+      ";;; "
+      dashes
+      " "
+      text
+      " "
+      dashes
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so things line up
+      (unless (eq (oddp (length text))
+                  (oddp total-width))
+        "-")))))
+
+(defun cam/insert-large-clojure-header (text)
+  "Insert a large box-style header."
+  (let* ((total-width 112)
          (padding (/ (- total-width (length text)) 2))
          (horizonal-border (concat ";;; +"
                                    (make-string total-width ?-)
@@ -1100,6 +1112,12 @@ Calls `magit-refresh' after the command finishes."
       "|\n"
       ;; bottom row
       horizonal-border))))
+
+(defun cam/insert-clojure-header (text)
+  (interactive "sheader text: ")
+  (if current-prefix-arg
+      (cam/insert-small-clojure-header text)
+    (cam/insert-large-clojure-header text)))
 
 (eval-after-load 'clojure-mode
   '(progn
