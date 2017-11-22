@@ -506,7 +506,8 @@
                (ac-auto-show-menu . 1.0)
                (ac-cider-show-ns . t)
                (ac-quick-help-delay . 1.5)
-               (clojure-docstring-fill-column . 118))  ; docstring column width of 118, which fits nicely on GH
+               (fill-column . 118)                     ; non-docstring column width of 118, which fits nicely on GH
+               (clojure-docstring-fill-column . 118))  ; docstring column width of 118
   :local-hooks nil
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
          ("<f1>" . #'ac-cider-popup-doc)
