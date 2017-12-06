@@ -302,9 +302,10 @@
       save-interprogram-paste-before-kill t       ; Save clipboard strings (from other applications) into kill-ring before replacing them
       savehist-mode t                             ; Periodically save minibuffer history
       select-enable-clipboard t                   ; Cutting and pasting uses the clipboard
+      sentence-end-double-space nil               ; A single space should be considered finished even if there's only one space after the period for filling purposes.
       shift-select-mode nil                       ; real Emacs users don't use shift-selection
       vc-make-backup-files t                      ; Make backups of files even if they're under VC
-      visible-bell t
+      visible-bell t                              ; Show a visual overlay instead of beeping when doing something like trying to scroll up at top of file
       w32-pass-lwindow-to-system nil
       w32-pass-rwindow-to-system nil
       w32-apps-modifier 'alt
