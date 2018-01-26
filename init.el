@@ -560,7 +560,7 @@
 ;;; [[<column-enforce-mode]]
 (tweak-package column-enforce-mode
   :mode-name column-enforce-mode
-  :vars ((column-enforce-column . 118)))
+  :vars ((column-enforce-column . 120)))
 
 
 ;;; [[<css-mode]]
@@ -918,7 +918,8 @@ Calls `magit-refresh' after the command finishes."
   :auto-mode-alist ("\.js$"
                     "\.json$"
                     "\.html$"
-                    "\.jsx$"))
+                    "\.jsx$"
+                    "\.mustache$"))
 
 
 ;;; [[<YAML Mode]]
