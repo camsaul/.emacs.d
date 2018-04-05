@@ -930,6 +930,7 @@ Calls `magit-refresh' after the command finishes."
 
 ;; Modes to enable
 (delete-selection-mode 1)                         ; typing will delete selected text
+(editorconfig-mode 1)                             ; parse .editorconfig files and apply settings for things like indentation
 (global-anzu-mode 1)                              ; show number of matches in mode line while searching
 (global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
 (global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
