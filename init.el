@@ -302,9 +302,10 @@
       save-interprogram-paste-before-kill t       ; Save clipboard strings (from other applications) into kill-ring before replacing them
       savehist-mode t                             ; Periodically save minibuffer history
       select-enable-clipboard t                   ; Cutting and pasting uses the clipboard
+      sentence-end-double-space nil               ; A single space should be considered finished even if there's only one space after the period for filling purposes.
       shift-select-mode nil                       ; real Emacs users don't use shift-selection
       vc-make-backup-files t                      ; Make backups of files even if they're under VC
-      visible-bell t
+      visible-bell t                              ; Show a visual overlay instead of beeping when doing something like trying to scroll up at top of file
       w32-pass-lwindow-to-system nil
       w32-pass-rwindow-to-system nil
       w32-apps-modifier 'alt
@@ -505,7 +506,9 @@
                (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
                (ac-auto-show-menu . 1.0)
                (ac-cider-show-ns . t)
-               (ac-quick-help-delay . 1.5))
+               (ac-quick-help-delay . 1.5)
+               (fill-column . 118)                     ; non-docstring column width of 118, which fits nicely on GH
+               (clojure-docstring-fill-column . 118))  ; docstring column width of 118
   :local-hooks nil
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
          ("<f1>" . #'ac-cider-popup-doc)
@@ -557,7 +560,7 @@
 ;;; [[<column-enforce-mode]]
 (tweak-package column-enforce-mode
   :mode-name column-enforce-mode
-  :vars ((column-enforce-column . 118)))
+  :vars ((column-enforce-column . 120)))
 
 
 ;;; [[<css-mode]]
@@ -908,13 +911,15 @@ Calls `magit-refresh' after the command finishes."
 ;;; [[<Web Mode]]
 (tweak-package web-mode
   :mode-name web-mode
-  :minor-modes (electric-pair-local-mode
+  :minor-modes (column-enforce-mode
+                electric-pair-local-mode
                 rainbow-delimiters-mode)
   :keys (("C-j" . #'newline))
   :auto-mode-alist ("\.js$"
                     "\.json$"
                     "\.html$"
-                    "\.jsx$"))
+                    "\.jsx$"
+                    "\.mustache$"))
 
 
 ;;; [[<YAML Mode]]
@@ -1068,15 +1073,27 @@ Calls `magit-refresh' after the command finishes."
       (insert "(println \"" text "\") ; NOCOMMIT")
     (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
 
-(defun cam/insert-clojure-header (text)
-  (interactive "sheader text: ")
-  ;; calculate the number of spaces that should go on either side of the text
-  (let* ((total-width (if current-prefix-arg
-                          (let ((input (read-from-minibuffer "total width [112]: ")))
-                            (if (zerop (length input))
-                                112
-                              (string-to-int input)))
-                        112))
+(defun cam/insert-small-clojure-header (text)
+  "Insert a small header like: ;;; --- TEXT ---"
+  (let* ((total-width 112)
+         (padding (/ (- total-width (length text)) 2))
+         (dashes (make-string padding ?-)))
+    (insert
+     (concat
+      ";;; "
+      dashes
+      " "
+      text
+      " "
+      dashes
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so things line up
+      (unless (eq (oddp (length text))
+                  (oddp total-width))
+        "-")))))
+
+(defun cam/insert-large-clojure-header (text)
+  "Insert a large box-style header."
+  (let* ((total-width 112)
          (padding (/ (- total-width (length text)) 2))
          (horizonal-border (concat ";;; +"
                                    (make-string total-width ?-)
@@ -1098,6 +1115,12 @@ Calls `magit-refresh' after the command finishes."
       "|\n"
       ;; bottom row
       horizonal-border))))
+
+(defun cam/insert-clojure-header (text)
+  (interactive "sheader text: ")
+  (if current-prefix-arg
+      (cam/insert-small-clojure-header text)
+    (cam/insert-large-clojure-header text)))
 
 (eval-after-load 'clojure-mode
   '(progn
