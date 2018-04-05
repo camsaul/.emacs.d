@@ -961,6 +961,7 @@ Calls `magit-refresh' after the command finishes."
 
 (dolist (mode '(anzu-mode
                 diff-hl-mode
+                editorconfig-mode
                 global-auto-revert-mode
                 guide-key-mode
                 projectile-mode
