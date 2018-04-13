@@ -925,7 +925,8 @@ Calls `magit-refresh' after the command finishes."
 ;;; [[<YAML Mode]]
 (tweak-package yaml-mode
   :mode-name yaml-mode
-  :keys (("C-j" . #'newline)))
+  :keys (("C-j" . #'newline-and-indent)
+         ("C-m" . #'newline-and-indent)))
 
 
 ;;; [[<Global Minor Modes]]
