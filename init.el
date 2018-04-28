@@ -548,7 +548,8 @@
          ("<S-tab>" . #'auto-complete)))
 
 (tweak-package cider-macroexpansion
-  :setup ((read-only-mode -1)))
+  :setup ((read-only-mode -1))
+  :keys  (("C-c RET" . #'cider-macroexpand-1)))
 
 (tweak-package cider-interaction
   :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
