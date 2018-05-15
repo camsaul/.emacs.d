@@ -482,6 +482,19 @@
     (with-current-buffer buffer
       (delete-region (point-min) (point-max)))))
 
+(defun cam/switch-to-test-buffer ()
+  "Switch to the test namespace for the current buffer; or if this is a test namespace, switch back to the code namespace."
+  (interactive)
+  (if (string-match-p "/src/" buffer-file-name)
+      (->> buffer-file-name
+           (replace-regexp-in-string "/src/" "/test/")
+           (replace-regexp-in-string "\.clj" "_test.clj")
+           find-file)
+    (->> buffer-file-name
+         (replace-regexp-in-string "/test/" "/src/")
+         (replace-regexp-in-string "_test\.clj" ".clj")
+         find-file)))
+
 (declare-function cider-load-buffer-and-switch-to-repl-buffer "cider-mode")
 
 (defun cam/clojure-save-load-switch-to-cider ()
@@ -507,11 +520,12 @@
                (ac-auto-show-menu . 1.0)
                (ac-cider-show-ns . t)
                (ac-quick-help-delay . 1.5)
-               (fill-column . 118)                     ; non-docstring column width of 118, which fits nicely on GH
-               (clojure-docstring-fill-column . 118))  ; docstring column width of 118
+               (fill-column . 118)                     ; non-docstring column width of 117, which fits nicely on GH
+               (clojure-docstring-fill-column . 118))  ; docstring column width of 117
   :local-hooks nil
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
          ("<f1>" . #'ac-cider-popup-doc)
+         ("<f7>" . #'cam/switch-to-test-buffer)
          ("<S-tab>" . #'auto-complete)))
 
 (tweak-package clj-refactor

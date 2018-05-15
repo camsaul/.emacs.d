@@ -13,9 +13,11 @@
         cam/backward-kill-line
         cam/hungry-delete-backward
         cam/hungry-delete-forward
+        cam/insert-clojure-header
         cam/insert-spaces-to-goal-column
         cam/join-next-line
         cam/realign-eol-comments
+        cider-repl-handle-shortcut
         cljr-slash
         clojure-align
         clojure-convert-collection-to-vector
@@ -31,9 +33,12 @@
         insert-register
         join-next-line
         kill-region
+        kill-sentence
         kill-sexp
         kmacro-end-or-call-macro
         kmacro-start-macro-or-insert-counter
+        markdown-cycle
+        markdown-enter-key
         markdown-exdent-or-delete
         markdown-outdent-or-delete
         org-self-insert-command
@@ -56,6 +61,7 @@
         paredit-reindent-defun
         paredit-semicolon
         sh-assignment
+        tab-to-tab-stop
         yaml-electric-backspace
         yaml-electric-bar-and-angle
         yaml-electric-dash-and-dot
@@ -77,6 +83,7 @@
         goto-line
         helm-M-x
         jump-to-register
+        magit-status
         mc/mark-next-lines
         next-buffer
         paredit-mode
