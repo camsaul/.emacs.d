@@ -482,18 +482,25 @@
     (with-current-buffer buffer
       (delete-region (point-min) (point-max)))))
 
-(defun cam/switch-to-test-buffer ()
+(defun cam/switch-to-test-namespace ()
   "Switch to the test namespace for the current buffer; or if this is a test namespace, switch back to the code namespace."
   (interactive)
-  (if (string-match-p "/src/" buffer-file-name)
-      (->> buffer-file-name
-           (replace-regexp-in-string "/src/" "/test/")
-           (replace-regexp-in-string "\.clj" "_test.clj")
-           find-file)
-    (->> buffer-file-name
-         (replace-regexp-in-string "/test/" "/src/")
-         (replace-regexp-in-string "_test\.clj" ".clj")
-         find-file)))
+  (find-file
+   (if (string-match-p "/src/" buffer-file-name)
+       (->> buffer-file-name
+            (replace-regexp-in-string "/src/" "/test/")
+            (replace-regexp-in-string "\.clj" "_test.clj"))
+     (->> buffer-file-name
+          (replace-regexp-in-string "/test/" "/src/")
+          (replace-regexp-in-string "_test\.clj" ".clj")))))
+
+(defun cam/switch-between-model-and-api-namespaces ()
+  "(For Metabase development) if the current buffer is a /model/ namespace, switch to the corresponding /api/ namespace, and vice versa."
+  (interactive)
+  (find-file
+   (if (string-match-p "/models/" buffer-file-name)
+       (replace-regexp-in-string "/models/" "/api/" buffer-file-name)
+     (replace-regexp-in-string "/api/" "/models/" buffer-file-name))))
 
 (declare-function cider-load-buffer-and-switch-to-repl-buffer "cider-mode")
 
@@ -525,7 +532,8 @@
   :local-hooks nil
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
          ("<f1>" . #'ac-cider-popup-doc)
-         ("<f7>" . #'cam/switch-to-test-buffer)
+         ("<f7>" . #'cam/switch-to-test-namespace)
+         ("<f8>" . #'cam/switch-between-model-and-api-namespaces)
          ("<S-tab>" . #'auto-complete)))
 
 (tweak-package clj-refactor
