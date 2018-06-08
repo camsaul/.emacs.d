@@ -1048,39 +1048,6 @@ Calls `magit-refresh' after the command finishes."
 ;; (advice-add #'message :after #'cam/scroll-messages-async)
 
 
-;;; ---------------------------------------- [[cam/clojure-docstr-extra-font-lock-mode]] ----------------------------------------
-
-(defconst cam/clojure-docstr-font-lock-keywords
-  '(("\\<\\([[:upper:]-]+[[:punct:]]?\\)\\>" 1 (when (paredit-in-string-p)
-                                                 'font-lock-variable-name-face)
-     prepend)
-    ("`\\(\\*?:?[[:alnum:]_<>*-/:]+[\\?!]?\\*?\\)`" 1 (when (paredit-in-string-p)
-                                                        'font-lock-constant-face)
-     prepend)))
-
-(defconst cam/clojure-docstr-font-lock-mode-lighter
-  " cam/clj-doc-fl")
-
-(defvar-local cam/clojure-docstr-font-lock-mode nil)
-
-;; TODO - why not just write this like a normal minor mode?
-(defun cam/clojure-docstr-font-lock-mode (&optional arg)
-  (interactive)
-  (if (null arg) (progn (cam/clojure-docstr-font-lock-mode (if cam/clojure-docstr-font-lock-mode -1 1))
-                        (when (called-interactively-p 'interactive)
-                          (message "Docstr font-locking %s in current buffer." (if cam/clojure-docstr-font-lock-mode "enabled" "disabled"))))
-    (let ((enable (> arg 0)))
-      (when enable
-        (add-to-list 'minor-mode-alist (list 'cam/clojure-docstr-font-lock-mode cam/clojure-docstr-font-lock-mode-lighter)))
-      (funcall (if enable #'font-lock-add-keywords #'font-lock-remove-keywords) nil cam/clojure-docstr-font-lock-keywords)
-      (setq-local cam/clojure-docstr-font-lock-mode enable))
-    (font-lock-flush)
-    (font-lock-ensure)))
-
-(add-hook 'clojure-mode-hook #'cam/clojure-docstr-font-lock-mode)
-(moe-dark)
-
-
 ;;; ------------------------------------------------------------ Insert logging statements ------------------------------------------------------------
 
 (defun cam/insert-console-dot-log (text)
