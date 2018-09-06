@@ -123,10 +123,9 @@
 (package-initialize)
 
 
-(setq package-archives '(("gnu"       . "http://elpa.gnu.org/packages/")
-                         ("melpa"     . "http://melpa.milkbox.net/packages/")
-                         ("marmalade" . "http://marmalade-repo.org/packages/")
-                         ("org"       . "http://orgmode.org/elpa/")))
+(setq package-archives '(("gnu"          . "http://elpa.gnu.org/packages/")
+                         ("melpa-stable" . "https://stable.melpa.org/packages/")
+                         ("org"          . "http://orgmode.org/elpa/")))
 
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
@@ -135,7 +134,7 @@
     ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
     anzu                                          ; Show number of matches in mode-line while searching
-    anything                                      ; prereq for perl-completion
+    ;; anything                                      ; prereq for perl-completion
     auto-complete                                 ; auto-completion
     cider                                         ; Clojure Interactive Development Environment that Rocks
     column-enforce-mode                           ; Highlight text that goes past a certain column limit
@@ -573,7 +572,7 @@
   :setup ((read-only-mode -1))
   :keys  (("C-c RET" . #'cider-macroexpand-1)))
 
-(tweak-package cider-interaction
+(tweak-package cider-eval
   :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
 
 (tweak-package cider-repl
