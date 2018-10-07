@@ -125,13 +125,16 @@
 
 (setq package-archives '(("gnu"          . "http://elpa.gnu.org/packages/")
                          ("melpa-stable" . "https://stable.melpa.org/packages/")
+                         ("melpa"        . "https://melpa.org/packages/")
                          ("org"          . "http://orgmode.org/elpa/")))
 
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
     ac-sly                                        ; auto-complete <-> sly
+
     ace-jump-mode
-    ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
+    ace-window                                    ; Ace jump to other windows
+    ;; ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
     anzu                                          ; Show number of matches in mode-line while searching
     ;; anything                                      ; prereq for perl-completion
@@ -150,7 +153,7 @@
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     ert                                           ; Emacs Lisp Regression Testing
     esup                                          ; Emacs Start-Up Profiler <3
-    everything                                    ; Required by perl-completion-mode
+    ;; everything                                    ; Required by perl-completion-mode
     find-things-fast
     flycheck                                      ; on-the-fly syntax checking
     flyspell                                      ; spell checking
@@ -263,7 +266,7 @@
 ;;; [[<Autoloads]]
 
 (autoload #'describe-minor-mode "help")
-(autoload #'perl-completion-mode "perl-completion")
+;; (autoload #'perl-completion-mode "perl-completion")
 
 
 ;;; [[<Global Settings]]
@@ -334,18 +337,18 @@
 (cam/global-set-keys
   ("<A-escape>"    . #'helm-mark-ring)
   ("<A-return>"    . #'wiki-nav-ido)
-  ("<C-M-s-down>"  . #'windmove-down)
-  ("<C-M-s-left>"  . #'cam/windmove-left-or-other-frame)
-  ("<C-M-s-right>" . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
-  ("<C-M-s-up>"    . #'windmove-up)
+  ("<C-M-return>"  . #'ace-jump-line-mode)
+  ("<C-return>"    . #'ace-jump-mode)
   ("<H-SPC>"       . #'mc/mark-all-like-this)
-  ("<H-escape>"    . #'ace-jump-line-mode)
   ("<H-return>"    . #'mc/mark-next-lines)
+  ("<M-return>"    . #'ace-window)
   ("<S-backspace>" . #'cam/hungry-delete-backward)
   ("<S-delete>"    . #'cam/hungry-delete-forward)
+  ("<S-down>"      . #'windmove-down)
+  ("<S-left>"      . #'cam/windmove-left-or-other-frame)
+  ("<S-right>"     . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
+  ("<S-up>"        . #'windmove-up)
   ("<escape>"      . #'ace-jump-mode)
-  ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
-  ("<f6>"          . #'ftf-grepsource)
   ("<f11>"         . nil)
   ("<f11> a"       . #'aggressive-indent-mode)
   ("<f11> p"       . #'paredit-mode)
@@ -355,41 +358,43 @@
   ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
   ("<f12> j"       . #'cam/javadocs-search)
   ("<f12> k"       . #'cam/browse-korma-dox)
+  ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
+  ("<f6>"          . #'ftf-grepsource)
   ("<insert>"      . nil)
   ("<scroll>"      . #'ftf-find-file)                               ; for windows use scroll to open file since s-o doesn't work
   ("A-;"           . #'cam/loccur)
   ("A-r l"         . #'rotate-layout)
   ("A-r w"         . #'rotate-window)
   ("C-="           . #'magit-status)
-  ("C-M-y"         . #'helm-show-kill-ring)
   ("C-M-S-k"       . #'backward-kill-sexp)
+  ("C-M-y"         . #'helm-show-kill-ring)
   ("C-S-k"         . #'cam/backward-kill-line)
   ("C-c C-g"       . #'keyboard-quit)
   ("C-h M"         . #'describe-minor-mode)
   ("C-x C-b"       . #'helm-buffers-list)
+  ("C-x C-d"       . #'dired)                                       ; instead of ido-list-directory
   ("C-x C-f"       . #'helm-find-files)
   ("C-x C-g"       . #'keyboard-quit)
+  ("C-x C-q"       . nil)                                           ; remove keybinding for read-only-mode since I almost never press it on purpose
   ("C-x C-r"       . #'helm-recentf)
   ("C-x C-z"       . nil)                                           ; instead of suspend-frame
   ("C-x b"         . #'helm-buffers-list)
-  ("C-x C-d"       . #'dired)                                       ; instead of ido-list-directory
-  ("C-x C-q"       . nil)                                           ; remove keybinding for read-only-mode since I almost never press it on purpose
   ("C-x f"         . #'helm-find-files)
   ("C-x k"         . #'kill-this-buffer)
   ("C-x r r"       . #'register-list)                               ; replaces copy-rectangle-to-register
   ("C-z"           . #'undo)
   ("ESC <up>"      . #'windmove-up)
+  ("H-;"           . #'cam/realign-eol-comments)
   ("H-M-a"         . #'mc/skip-to-previous-like-this)
   ("H-M-e"         . #'mc/skip-to-next-like-this)
-  ("H-;"           . #'cam/realign-eol-comments)
   ("H-a"           . #'mc/mark-previous-like-this)
   ("H-e"           . #'mc/mark-next-like-this)
+  ("M-/"           . #'hippie-expand)                               ; Instead of dabbrev-expand
   ("M-:"           . #'pp-eval-expression)                          ; Instead of regular eval-expression
   ("M-g"           . #'goto-line)                                   ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
   ("M-j"           . #'cam/join-next-line)
   ("M-x"           . #'helm-M-x)
   ("M-z"           . #'ace-jump-zap-up-to-char)
-  ("M-/"           . #'hippie-expand)                               ; Instead of dabbrev-expand
   ("s-;"           . #'cam/insert-spaces-to-goal-column)
   ("s-Z"           . #'undo-tree-redo)
   ("s-f"           . #'ftf-grepsource)
@@ -894,7 +899,8 @@ Calls `magit-refresh' after the command finishes."
   :mode-name cperl-mode
   :minor-modes (eldoc-mode
                 electric-pair-local-mode
-                perl-completion-mode)
+                ;; perl-completion-mode
+                )
   :vars ((cperl-electric-keywords . t)
          (cperl-indent-level . 4))
   :keys (("C-c C-d" . #'cperl-perldoc))
@@ -902,7 +908,7 @@ Calls `magit-refresh' after the command finishes."
                                                  (car
                                                   (let (cperl-message-on-help-error)
                                                     (cperl-get-help))))))
-  :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
+  ;; :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
   :auto-mode-alist ("\.pl$"
                     "\.pm$"))
 (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
