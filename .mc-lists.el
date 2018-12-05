@@ -20,6 +20,8 @@
         cider-repl-handle-shortcut
         cljr-slash
         clojure-align
+        clojure-convert-collection-to-list
+        clojure-convert-collection-to-map
         clojure-convert-collection-to-vector
         clojure-toggle-keyword-string
         comment-dwim
