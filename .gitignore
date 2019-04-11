@@ -2,6 +2,7 @@
 .\#*
 \#*\#
 *~
+.cache/
 .DS_Store
 ac-comphist.dat
 auto-save-list/
@@ -17,4 +18,7 @@ places
 projectile-bookmarks.eld
 recentf
 server/
+transient/
 url/
+workspace/
+network-security.data

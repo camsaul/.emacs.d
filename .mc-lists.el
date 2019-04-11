@@ -28,6 +28,7 @@
         downcase-region
         electric-newline-and-maybe-indent
         electric-pair-delete-pair
+        fill-paragraph
         forward-sexp
         helm-show-kill-ring
         indent-for-tab-command
