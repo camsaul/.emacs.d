@@ -24,10 +24,12 @@
         clojure-convert-collection-to-map
         clojure-convert-collection-to-vector
         clojure-toggle-keyword-string
+        clojure-unwind-all
         comment-dwim
         downcase-region
         electric-newline-and-maybe-indent
         electric-pair-delete-pair
+        evil-repeat-find-char
         fill-paragraph
         forward-sexp
         helm-show-kill-ring
