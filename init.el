@@ -1281,7 +1281,7 @@ Calls `magit-refresh' after the command finishes."
 
 (defalias 'evil-insert-state 'evil-emacs-state) ; always use emacs state instead of insert state.
 
-(define-key evil-emacs-state-map (kbd "C-[") #'evil-normal-state)
+;; (define-key evil-emacs-state-map (kbd "C-[") #'evil-normal-state)
 
 (evil-mode 1)
 
