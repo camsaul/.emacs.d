@@ -1279,6 +1279,8 @@ Calls `magit-refresh' after the command finishes."
 
 (setq evil-default-state 'emacs)
 
+(defalias 'evil-insert-state 'evil-emacs-state) ; always use emacs state instead of insert state.
+
 (evil-mode 1)
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
