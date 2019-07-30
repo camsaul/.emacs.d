@@ -38,6 +38,7 @@
 ;;;    [[Python]]
 ;;;    [[Shell]]
 ;;;    [[Sly]]
+;;;    [[(Common) Lisp Mode]]
 ;;;    [[Web Mode]]
 ;;;    [[YAML Mode]]
 ;;; [[Global Minor Modes]]
@@ -408,19 +409,36 @@
 
 (setq-default cam/is-lisp-mode-p nil)
 
-(defun cam/lisp-mode-setup ()
-  (setq-local cam/is-lisp-mode-p t)
-  (highlight-parentheses-mode 1)
-  (rainbow-delimiters-mode 1)
-  (show-paren-mode 1)
-  (if evil-mode
-      (cam/evil-mode-lisp-setup)
-    (paredit-mode 1))
+(defun cam/switch-to-paredit ()
+  (when cam/is-lisp-mode-p
+    (paredit-mode 1)
+    (smartparens-mode -1)
+    (when evil-mode
+      (evil-smartparens-mode -1)
+      (evil-cleverparens-mode -1))))
 
-  (add-hook 'before-save-hook
-    #'cam/untabify-current-buffer
-    (not :append)
-    :local))
+(defun cam/switch-to-smartparens ()
+  (when cam/is-lisp-mode-p
+    (paredit-mode -1)
+    (smartparens-mode 1)
+    (when evil-mode
+      (evil-smartparens-mode 1)
+      (evil-cleverparens-mode 1))))
+
+(defun cam/lisp-mode-setup ()
+  (message "In cam/lisp-mode-setup")
+  (unless cam/is-lisp-mode-p
+    (setq-local cam/is-lisp-mode-p t)
+    (highlight-parentheses-mode 1)
+    (rainbow-delimiters-mode 1)
+    (show-paren-mode 1)
+    (if (and evil-mode (cl-member evil-state '(emacs insert)))
+        (cam/switch-to-paredit)
+      (cam/switch-to-smartparens))
+    (add-hook 'before-save-hook
+      #'cam/untabify-current-buffer
+      (not :append)
+      :local)))
 
 
 ;;; [[<auto-complete]]
@@ -929,11 +947,30 @@ Calls `magit-refresh' after the command finishes."
   :keys (("C-j" . #'newline)))
 
 
-;;; [[[<Sly]]
+;;; [[<(Common) Lisp Mode]]
+(defun cam/save-load-switch-to-sly ()
+  (interactive)
+  (save-buffer)
+  (sly-compile-and-load-file)
+  (sly-switch-to-most-recent 'sly-mrepl-mode))
+
+(setq inferior-lisp-program "sbcl")
+
+(add-hook 'inferior-lisp-mode-hook #'cam/lisp-mode-setup)
+
+;; (tweak-package lisp-mode
+;;   :mode-name lisp-mode
+;;   :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
+;;   :minor-modes (auto-complete-mode)
+;;   :keys (("<C-M-s-return>" . #'cam/save-load-switch-to-sly))
+;;   :setup ((cam/lisp-mode-setup))
+;;   )
+
+;;; [[<Sly]]
 (tweak-package sly
-  :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
   :require (ac-sly)
   :minor-modes (auto-complete-mode)
+  :keys (("<S-tab>" . #'auto-complete))
   :setup ((cam/lisp-mode-setup)
           (set-up-sly-ac :fuzzy)))
 
@@ -1093,27 +1130,6 @@ Calls `magit-refresh' after the command finishes."
 
 (setq-default display-line-numbers nil)
 (setq-local display-line-numbers-widen t)
-
-(defun cam/switch-to-paredit ()
-  (when cam/is-lisp-mode-p
-    (paredit-mode 1)
-    (smartparens-mode -1)
-    (evil-smartparens-mode -1)
-    (evil-cleverparens-mode -1)))
-
-(defun cam/switch-to-smartparens ()
-  (when cam/is-lisp-mode-p
-    (paredit-mode -1)
-    (smartparens-mode 1)
-    (evil-smartparens-mode 1)
-    (evil-cleverparens-mode 1)))
-
-(defun cam/evil-mode-lisp-setup ()
-  (interactive)
-  (when evil-mode
-    (if (cl-member evil-state '(emacs insert))
-        (cam/switch-to-paredit)
-      (cam/switch-to-smartparens))))
 
 ;; (defun cam/evil-mode-setup ()
 ;;   (interactive)
