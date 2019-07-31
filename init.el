@@ -123,15 +123,14 @@
 (package-initialize)
 
 
-(setq package-archives '(("gnu"          . "http://elpa.gnu.org/packages/")
+(setq package-archives '(("gnu"          . "https://elpa.gnu.org/packages/")
                          ("melpa-stable" . "https://stable.melpa.org/packages/")
                          ("melpa"        . "https://melpa.org/packages/")
-                         ("org"          . "http://orgmode.org/elpa/")))
+                         ("org"          . "https://orgmode.org/elpa/")))
 
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
     ac-sly                                        ; auto-complete <-> sly
-
     ace-jump-mode
     ace-window                                    ; Ace jump to other windows
     ;; ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
