@@ -503,7 +503,8 @@
       (delete-region (point-min) (point-max)))))
 
 (defun cam/switch-to-test-namespace ()
-  "Switch to the test namespace for the current buffer; or if this is a test namespace, switch back to the code namespace."
+  "Switch to the test namespace for the current buffer; or if this is a test namespace, switch back to the code
+namespace."
   (interactive)
   (find-file
    (if (string-match-p "/src/" buffer-file-name)
@@ -515,7 +516,8 @@
           (replace-regexp-in-string "_test\.clj" ".clj")))))
 
 (defun cam/switch-between-model-and-api-namespaces ()
-  "(For Metabase development) if the current buffer is a /model/ namespace, switch to the corresponding /api/ namespace, and vice versa."
+  "(For Metabase development) if the current buffer is a /model/ namespace, switch to the corresponding /api/ namespace,
+and vice versa."
   (interactive)
   (find-file
    (if (string-match-p "/models/" buffer-file-name)
@@ -531,23 +533,21 @@
   (cider-repl-clear-buffer))
 
 (cl-defun cam/clojure-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
-  "When CIDER is active attempt to load BUFFER (by default, the
-current buffer) and clean its namespace declaration form."
+  "When CIDER is active attempt to load BUFFER (by default, the current buffer) and clean its namespace declaration
+form."
   (interactive "bBuffer: ")
   (with-demoted-errors "Error cleaning namespace declaration: %S"
     (let ((buffer (get-buffer buffer)))
       (with-current-buffer buffer
         (when (cider-current-repl)
           (let ((cider-save-file-on-load t))
-            ;; unfortunately it doesn't look like you can use
-            ;; `cider-load-buffer` programatically without saving the
-            ;; file first, because when binding
-            ;; `cider-save-file-on-load` to `nil` it prompts asking
-            ;; whether you want to save
-            (cider-load-buffer buffer)
-            (cljr-clean-ns)
-            (when (buffer-modified-p)
-              (save-buffer))))))))
+            ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the
+            ;; file first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to
+            ;; save
+            (cider-load-buffer buffer))
+          (cljr-clean-ns)
+          (when (buffer-modified-p)
+            (save-buffer)))))))
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
@@ -600,7 +600,6 @@ current buffer) and clean its namespace declaration form."
                                           (call-interactively #'delete-trailing-whitespace)))
            (#'nrepl-server-filter :around #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
   :minor-modes (auto-complete-mode
-                aggressive-indent-mode
                 eldoc-mode)
   :setup ((cam/lisp-mode-setup)
           (ac-cider-setup))
@@ -656,9 +655,8 @@ unless they are the current buffer."
         (revert-buffer)))))
 
 (defun cam/around-dired-do-delete (fun &optional arg)
-  "Around-advice for `dired-do-delete'. When deleting a file, check
-if its a directory; if so, and the directory is deleted, ask to kill
-any buffers that were visiting files that were children of that directory."
+  "Around-advice for `dired-do-delete'. When deleting a file, check if its a directory; if so, and the directory is
+deleted, ask to kill any buffers that were visiting files that were children of that directory."
   (let* ((file (dired-get-filename))
          (deleting-directory-p (file-directory-p file)))
     (let ((result (funcall fun arg)))
@@ -718,6 +716,7 @@ any buffers that were visiting files that were children of that directory."
   :load ((put 'add-hook 'lisp-indent-function 1))
   :minor-modes (aggressive-indent-mode
                 auto-complete-mode
+                column-enforce-mode
                 eldoc-mode
                 elisp-slime-nav-mode
                 emacs-lisp-color-code-mode
@@ -732,6 +731,8 @@ any buffers that were visiting files that were children of that directory."
                                        (byte-compile-file (buffer-file-name) :load))
                                      (when cam/generate-autoloads
                                        (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
+  :local-vars ((fill-column . 118)
+               (emacs-lisp-docstring-fill-column . 118))
   :keys (("<C-M-s-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
          ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("C-x C-e"        . #'pp-eval-last-sexp)
@@ -868,7 +869,8 @@ Calls `magit-refresh' after the command finishes."
   :vars ((magit-auto-revert-mode-lighter . "")
          (magit-last-seen-setup-instructions . "1.4.0")
          (magit-push-always-verify . nil)
-         (magit-save-repository-buffers . 'dontask)) ; Don't prompt to save buffers in the current repo before performing Magit actions
+         ;; Don't prompt to save buffers in the current repo before performing Magit actions
+         (magit-save-repository-buffers . 'dontask))
   :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
   :keys (("C-x 4 0" . #'cam/kill-all-magit-buffers-and-windows)
          ("M-!"     . #'cam/magit-shell-command)
@@ -1089,7 +1091,8 @@ Calls `magit-refresh' after the command finishes."
       text
       " "
       dashes
-      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so things line up
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so
+      ;; things line up
       (unless (eq (cl-oddp (length text))
                   (cl-oddp total-width))
         "-")))))
@@ -1111,7 +1114,8 @@ Calls `magit-refresh' after the command finishes."
       text-padding
       text
       text-padding
-      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so things line up
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so
+      ;; things line up
       (unless (eq (cl-oddp (length text))
                   (cl-oddp total-width))
         " ")
