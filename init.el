@@ -50,8 +50,11 @@
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
-(setq gc-cons-threshold (* 128 1024 1024) ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
-      load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
+(setq
+ ;; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
+ gc-cons-threshold (* 128 1024 1024)
+ ;; load .el files if they're newer than .elc ones
+ load-prefer-newer t)
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
@@ -69,7 +72,8 @@
   (when scratch-buffer
     (kill-buffer scratch-buffer)))
 
-;; In an effort to be really annoying you can only suppress the startup echo area message if you set it through customize
+;; In an effort to be really annoying you can only suppress the startup echo area message if you set it through
+;; customize
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -81,7 +85,8 @@
 (add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
 
 (defvar cam/has-loaded-init-p nil
-  "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but not again if we call eval-buffer).")
+  "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but
+  not again if we call eval-buffer).")
 
 
 
@@ -221,7 +226,8 @@
 (unless cam/has-loaded-init-p
   (moe-dark)
   (ignore-errors
-    (set-frame-font "Source Code Pro-12" (not :keep-size) t))) ; t = apply font to all frames going forward & save setting to custom.el (supposedly)
+    ;; t = apply font to all frames going forward & save setting to custom.el (supposedly)
+    (set-frame-font "Source Code Pro-12" (not :keep-size) t)))
 
 (defun cam/setup-frame ()
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
@@ -229,7 +235,8 @@
   (moe-theme-random-color)
   (set-face-foreground 'mode-line "#111111")
   (set-cursor-color (face-background 'mode-line))
-  (set-face-background 'mode-line-buffer-id nil)) ;  Don't show a blue background behind buffer name on modeline for deselected frames
+  ;;  Don't show a blue background behind buffer name on modeline for deselected frames
+  (set-face-background 'mode-line-buffer-id nil))
 
 (advice-add #'make-frame-command :after #'cam/setup-frame)
 
@@ -299,7 +306,8 @@
       w32-lwindow-modifier 'super
       w32-rwindow-modifier 'hyper)
 
-(setq-default indent-tabs-mode nil                ; disable insertion of tabs
+(setq-default fill-column 118                     ; My screen can handle more than 70 characters; use 118 so GH won't cut it off
+              indent-tabs-mode nil                ; disable insertion of tabs
               save-place t                        ; Automatically save place in each file
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
@@ -314,7 +322,8 @@
     (delete-trailing-whitespace)
     (set-buffer-file-coding-system 'utf-8-auto-unix)))
 
-(add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p) ; if we're saving a script, give it execute permissions
+;; if we're saving a script, give it execute permissions
+(add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p)
 
 
 ;;; [[<Global Keybindings]]
