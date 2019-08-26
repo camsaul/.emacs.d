@@ -411,7 +411,8 @@
 
 (defun cam/switch-to-paredit ()
   (when cam/is-lisp-mode-p
-    (paredit-mode 1)
+    (ignore-errors
+      (paredit-mode 1))
     (smartparens-mode -1)
     (when evil-mode
       (evil-smartparens-mode -1)
@@ -529,6 +530,25 @@
   (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
   (cider-repl-clear-buffer))
 
+(cl-defun cam/clojure-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
+  "When CIDER is active attempt to load BUFFER (by default, the
+current buffer) and clean its namespace declaration form."
+  (interactive "bBuffer: ")
+  (with-demoted-errors "Error cleaning namespace declaration: %S"
+    (let ((buffer (get-buffer buffer)))
+      (with-current-buffer buffer
+        (when (cider-current-repl)
+          (let ((cider-save-file-on-load t))
+            ;; unfortunately it doesn't look like you can use
+            ;; `cider-load-buffer` programatically without saving the
+            ;; file first, because when binding
+            ;; `cider-save-file-on-load` to `nil` it prompts asking
+            ;; whether you want to save
+            (cider-load-buffer buffer)
+            (cljr-clean-ns)
+            (when (buffer-modified-p)
+              (save-buffer))))))))
+
 (tweak-package clojure-mode
   :mode-name clojure-mode
   :require (clojure-mode-extra-font-locking)
@@ -542,17 +562,19 @@
           (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-"))
   :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
-               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
+               (ac-delay . 1.0) ; use slightly longer delays for AC because CIDER is slow
                (ac-auto-show-menu . 1.0)
                (ac-quick-help-delay . 1.5)
-               (fill-column . 118)                     ; non-docstring column width of 117, which fits nicely on GH
-               (clojure-docstring-fill-column . 118))  ; docstring column width of 117
-  :local-hooks nil
+               (fill-column . 118) ; non-docstring column width of 117, which fits nicely on GH
+               (clojure-docstring-fill-column . 118)) ; docstring column width of 117
+  :local-hooks ((after-save-hook . (lambda ()
+                                     (add-hook 'after-save-hook #'cam/clojure-load-buffer-clean-namespace nil :local))))
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
          ("<f1>" . #'ac-cider-popup-doc)
          ("<f7>" . #'cam/switch-to-test-namespace)
          ("<f8>" . #'cam/switch-between-model-and-api-namespaces)
          ("<S-tab>" . #'auto-complete)))
+
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
