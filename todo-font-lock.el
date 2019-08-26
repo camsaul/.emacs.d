@@ -11,7 +11,7 @@
 ;;;###autoload
 (define-minor-mode todo-font-lock-mode
   "Add extra font-locking for words like TODO and DEPRECATED."
-  :lighter " cam/TodoFL"
+  :lighter ""
   (if todo-font-lock-mode (font-lock-add-keywords nil todo-font-lock--keywords)
     (font-lock-remove-keywords nil todo-font-lock--keywords))
   (font-lock-flush)

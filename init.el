@@ -7,7 +7,6 @@
 ;;;    [[Theme]]
 ;;;    [[Global Requires]]
 ;;;    [[Autoloads]]
-;;;    [[Diminished Minor Modes]]
 ;;;    [[Global Settings]]
 ;;;    [[Global Macros]]
 ;;;    [[Global Functions]]
@@ -39,16 +38,19 @@
 ;;;    [[Python]]
 ;;;    [[Shell]]
 ;;;    [[Sly]]
+;;;    [[(Common) Lisp Mode]]
 ;;;    [[Web Mode]]
 ;;;    [[YAML Mode]]
 ;;; [[Global Minor Modes]]
-;;; [[Final Setup]]
+;;; [[Diminished Minor Modes]]
+;;; [[Powerline & Evil Mode]]
 ;;; [[Experimental]]
+;;; [[Final Setup]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 ;;; (Things that need to happen as soon as this file starts loading)
 
-(setq gc-cons-threshold (* 128 1024 1024)         ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
+(setq gc-cons-threshold (* 128 1024 1024) ; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
       load-prefer-newer t)                        ; load .el files if they're newer than .elc ones
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
@@ -170,7 +172,6 @@
     morlock                                       ; Extra font-locking for Emacs Lisp
     multiple-cursors
     moe-theme
-    nyan-mode                                     ; Nyan Cat shows position in mode-line
     org                                           ; Get latest version of org from Org package archive
     paredit
     ;; perl-completion                               ; Auto-complete for Perl
@@ -184,7 +185,16 @@
     undo-tree
     web-mode                                      ; major-mode for editing web templates
     wiki-nav                                      ; Navigate a file using [[WikiStrings]]
-    yaml-mode))
+    yaml-mode
+
+    evil
+    evil-matchit
+    powerline
+    powerline-evil
+    smartparens
+    evil-smartparens
+    evil-cleverparens
+    ))
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents-p nil)
@@ -220,35 +230,11 @@
   (set-face-foreground 'mode-line "#111111")
   (set-cursor-color (face-background 'mode-line))
   (set-face-background 'mode-line-buffer-id nil)) ;  Don't show a blue background behind buffer name on modeline for deselected frames
+
 (advice-add #'make-frame-command :after #'cam/setup-frame)
 
 (unless cam/has-loaded-init-p
   (cam/setup-frame))
-
-(setq-default mode-line-format
-              '("%e"
-                mode-line-front-space
-                mode-line-mule-info
-                " "
-                (:eval (cond
-                        (buffer-read-only    "[read-only] ")
-                        ((buffer-modified-p) "[modified] ")
-                        (:else                " ")))
-                mode-line-buffer-identification
-                (:propertize " %n "               ; %n = 'Narrow' when narrowing is in effect
-                             face mode-line-buffer-id)
-                " L%l/"                           ; %l = line-number
-                (:eval (int-to-string (line-number-at-pos (point-max))))
-                "  C%c  "                         ; %c = column number
-                (vc-mode vc-mode)
-                "  "
-                (:propertize mode-name
-                             face mode-line-buffer-id)
-                minor-mode-alist
-                mode-line-misc-info
-                mode-line-end-spaces
-                " "
-                mode-line-position))
 
 
 ;;; [[<Global Requires]]
@@ -347,9 +333,10 @@
   ("<S-left>"      . #'cam/windmove-left-or-other-frame)
   ("<S-right>"     . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
   ("<S-up>"        . #'windmove-up)
-  ("<escape>"      . #'ace-jump-mode)
+  ("<escape>"      . #'evil-normal-state)
   ("<f11>"         . nil)
   ("<f11> a"       . #'aggressive-indent-mode)
+  ("<f11> e"       . #'evil-mode)
   ("<f11> p"       . #'paredit-mode)
   ("<f11> r"       . #'read-only-mode)
   ("<f11> w"       . #'whitespace-mode)
@@ -360,7 +347,7 @@
   ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
   ("<f6>"          . #'ftf-grepsource)
   ("<insert>"      . nil)
-  ("<scroll>"      . #'ftf-find-file)                               ; for windows use scroll to open file since s-o doesn't work
+  ("<scroll>"      . #'ftf-find-file)                               ; for Windows use scroll to open file since s-o doesn't work
   ("A-;"           . #'cam/loccur)
   ("A-r l"         . #'rotate-layout)
   ("A-r w"         . #'rotate-window)
@@ -381,8 +368,10 @@
   ("C-x f"         . #'helm-find-files)
   ("C-x k"         . #'kill-this-buffer)
   ("C-x r r"       . #'register-list)                               ; replaces copy-rectangle-to-register
-  ("C-z"           . #'undo)
-  ("ESC <up>"      . #'windmove-up)
+  ("C-x w"         . nil)
+  ("C-x w ."       . #'highlight-symbol-at-point)                   ; this is the normal binding for this function but isn't added until `hi-lock.el` is loaded
+  ("C-z"           . #'evil-normal-state)
+  ;; ("ESC <up>"      . #'windmove-up)
   ("H-;"           . #'cam/realign-eol-comments)
   ("H-M-a"         . #'mc/skip-to-previous-like-this)
   ("H-M-e"         . #'mc/skip-to-next-like-this)
@@ -393,7 +382,6 @@
   ("M-g"           . #'goto-line)                                   ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
   ("M-j"           . #'cam/join-next-line)
   ("M-x"           . #'helm-M-x)
-  ("M-z"           . #'ace-jump-zap-up-to-char)
   ("s-;"           . #'cam/insert-spaces-to-goal-column)
   ("s-Z"           . #'undo-tree-redo)
   ("s-f"           . #'ftf-grepsource)
@@ -413,24 +401,52 @@
 (tweak-package highlight-parentheses
   :load ((diminish 'highlight-parentheses-mode)))
 
-;;; [[<Lisp Modes]]
-(defun cam/lisp-mode-setup ()
-  (highlight-parentheses-mode 1)
-  (paredit-mode 1)
-  (rainbow-delimiters-mode 1)
-  (show-paren-mode 1)
 
-  (add-hook 'before-save-hook
-    #'cam/untabify-current-buffer
-    (not :append)
-    :local))
+
+;;; [[<Lisp Modes]]
+
+;; (declare-function cam/evil-mode-lisp-setup "init.el")
+
+(setq-default cam/is-lisp-mode-p nil)
+
+(defun cam/switch-to-paredit ()
+  (when cam/is-lisp-mode-p
+    (ignore-errors
+      (paredit-mode 1))
+    (smartparens-mode -1)
+    (when evil-mode
+      (evil-smartparens-mode -1)
+      (evil-cleverparens-mode -1))))
+
+(defun cam/switch-to-smartparens ()
+  (when cam/is-lisp-mode-p
+    (paredit-mode -1)
+    (smartparens-mode 1)
+    (when evil-mode
+      (evil-smartparens-mode 1)
+      (evil-cleverparens-mode 1))))
+
+(defun cam/lisp-mode-setup ()
+  (message "In cam/lisp-mode-setup")
+  (unless cam/is-lisp-mode-p
+    (setq-local cam/is-lisp-mode-p t)
+    (highlight-parentheses-mode 1)
+    (rainbow-delimiters-mode 1)
+    (show-paren-mode 1)
+    (if (and evil-mode (cl-member evil-state '(emacs insert)))
+        (cam/switch-to-paredit)
+      (cam/switch-to-smartparens))
+    (add-hook 'before-save-hook
+      #'cam/untabify-current-buffer
+      (not :append)
+      :local)))
 
 
 ;;; [[<auto-complete]]
 (tweak-package auto-complete
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
-  :vars ((ac-delay . 0.15)
-         (ac-auto-show-menu . 0.15)
+  :vars ((ac-delay . 0.2)
+         (ac-auto-show-menu . 0.5)
          (ac-candidate-menu-height . 20)
          ;; (ac-candidate-limit . 20)
          (ac-menu-height . 20)         ; number of results to show
@@ -439,6 +455,7 @@
   :load ((cam/suppress-messages
            (ac-config-default)
            (add-to-list 'ac-modes 'cider-repl-mode)
+           (add-to-list 'ac-modes 'emacs-list-mode)
            (add-to-list 'ac-modes 'ielm-mode)))
   :keymap ac-menu-map
   :keys (("A-f" . #'ac-complete-functions)
@@ -513,6 +530,25 @@
   (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
   (cider-repl-clear-buffer))
 
+(cl-defun cam/clojure-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
+  "When CIDER is active attempt to load BUFFER (by default, the
+current buffer) and clean its namespace declaration form."
+  (interactive "bBuffer: ")
+  (with-demoted-errors "Error cleaning namespace declaration: %S"
+    (let ((buffer (get-buffer buffer)))
+      (with-current-buffer buffer
+        (when (cider-current-repl)
+          (let ((cider-save-file-on-load t))
+            ;; unfortunately it doesn't look like you can use
+            ;; `cider-load-buffer` programatically without saving the
+            ;; file first, because when binding
+            ;; `cider-save-file-on-load` to `nil` it prompts asking
+            ;; whether you want to save
+            (cider-load-buffer buffer)
+            (cljr-clean-ns)
+            (when (buffer-modified-p)
+              (save-buffer))))))))
+
 (tweak-package clojure-mode
   :mode-name clojure-mode
   :require (clojure-mode-extra-font-locking)
@@ -526,18 +562,19 @@
           (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-"))
   :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
-               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
+               (ac-delay . 1.0) ; use slightly longer delays for AC because CIDER is slow
                (ac-auto-show-menu . 1.0)
-               (ac-cider-show-ns . t)
                (ac-quick-help-delay . 1.5)
-               (fill-column . 118)                     ; non-docstring column width of 117, which fits nicely on GH
-               (clojure-docstring-fill-column . 118))  ; docstring column width of 117
-  :local-hooks nil
+               (fill-column . 118) ; non-docstring column width of 117, which fits nicely on GH
+               (clojure-docstring-fill-column . 118)) ; docstring column width of 117
+  :local-hooks ((after-save-hook . (lambda ()
+                                     (add-hook 'after-save-hook #'cam/clojure-load-buffer-clean-namespace nil :local))))
   :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
          ("<f1>" . #'ac-cider-popup-doc)
          ("<f7>" . #'cam/switch-to-test-namespace)
          ("<f8>" . #'cam/switch-between-model-and-api-namespaces)
          ("<S-tab>" . #'auto-complete)))
+
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
@@ -651,9 +688,9 @@ any buffers that were visiting files that were children of that directory."
 
 ;;; [[<Emacs Lisp]]
 
-
 (defvar-local cam/byte-compile nil
   "Make this a file-local variable and we'll byte compile it whenever it's saved.")
+
 (defvar-local cam/generate-autoloads nil
   "Generate autoloads for this file whenever it's saved.")
 
@@ -663,14 +700,17 @@ any buffers that were visiting files that were children of that directory."
   (with-current-buffer "*Pp Macroexpand Output*"
     (macrostep-mode 1)))
 
-(defun cam/emacs-lisp-save-switch-to-ielm-if-visible ()
+(defun cam/emacs-lisp-eval-switch-to-ielm ()
   (interactive)
-  (save-buffer)
-  (-when-let ((ielm-window (get-window-with-predicate (lambda (window)
-                                                        (string= (buffer-name (window-buffer window)) "*ielm*")))))
-    (select-window ielm-window)
-    (comint-clear-buffer)
-    (comint-kill-input)))
+  (eval-buffer)
+  (-if-let (ielm-window (get-window-with-predicate
+                         (lambda (window)
+                           (string= (buffer-name (window-buffer window)) "*ielm*"))))
+      (select-window ielm-window)
+    (let ((new-window (split-window-sensibly)))
+      (select-window new-window)
+      (ielm)
+      (balance-windows))))
 
 ;; TODO - Emacs 25 only
 (tweak-package elisp-mode
@@ -692,9 +732,11 @@ any buffers that were visiting files that were children of that directory."
                                        (byte-compile-file (buffer-file-name) :load))
                                      (when cam/generate-autoloads
                                        (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
-  :keys (("<C-M-s-return>" . #'cam/emacs-lisp-save-switch-to-ielm-if-visible)
+  :keys (("<C-M-s-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
          ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
-         ("C-x C-e"        . #'pp-eval-last-sexp)))
+         ("C-x C-e"        . #'pp-eval-last-sexp)
+         ;; ("<f1>" . #'ac-cider-popup-doc)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package dash
   :declare (dash-enable-font-lock)
@@ -714,7 +756,8 @@ any buffers that were visiting files that were children of that directory."
   :setup ((cam/lisp-mode-setup)
           (ac-emacs-lisp-mode-setup))
   :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
-  :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)))
+  :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)
+         ("<S-tab>" . #'auto-complete)))
 
 (tweak-package nadvice
   :load ((put #'advice-add 'lisp-indent-function 2)))
@@ -926,11 +969,30 @@ Calls `magit-refresh' after the command finishes."
   :keys (("C-j" . #'newline)))
 
 
-;;; [[[<Sly]]
+;;; [[<(Common) Lisp Mode]]
+(defun cam/save-load-switch-to-sly ()
+  (interactive)
+  (save-buffer)
+  (sly-compile-and-load-file)
+  (sly-switch-to-most-recent 'sly-mrepl-mode))
+
+(setq inferior-lisp-program "sbcl")
+
+(add-hook 'inferior-lisp-mode-hook #'cam/lisp-mode-setup)
+
+;; (tweak-package lisp-mode
+;;   :mode-name lisp-mode
+;;   :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
+;;   :minor-modes (auto-complete-mode)
+;;   :keys (("<C-M-s-return>" . #'cam/save-load-switch-to-sly))
+;;   :setup ((cam/lisp-mode-setup))
+;;   )
+
+;;; [[<Sly]]
 (tweak-package sly
-  :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
   :require (ac-sly)
   :minor-modes (auto-complete-mode)
+  :keys (("<S-tab>" . #'auto-complete))
   :setup ((cam/lisp-mode-setup)
           (set-up-sly-ac :fuzzy)))
 
@@ -973,8 +1035,7 @@ Calls `magit-refresh' after the command finishes."
 (ido-mode 1)
 (ido-everywhere 1)
 (ido-vertical-mode 1)
-(nyan-mode 1)                                     ; Nyan Cat in mode line
-(projectile-global-mode 1)
+(projectile-mode 1)
 (rainbow-mode 1)                                  ; Colorize strings like #FCE94F
 (recentf-mode 1)                                  ; Track recently visited files
 (save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
@@ -998,61 +1059,7 @@ Calls `magit-refresh' after the command finishes."
   (diminish mode))
 
 
-;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
-
-(ignore-errors
-  (load-file custom-file))
-
-(unless cam/has-loaded-init-p
-  (toggle-frame-maximized))
-
-(setq cam/has-loaded-init-p t)
-
-(ignore-errors ; only seems to work on Emacs 25+
-  (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
-
-
-;;; ---------------------------------------- [[<Experimental]] ----------------------------------------
-
-;;; ---------------------------------------- [[<Messages Auto-Scrolling]] ----------------------------------------
-
-;; (cl-defun cam/buffer-window (buffer)
-;;   "Return the first window on any frame showing BUFFER, if any."
-;;   (dolist (frame (frame-list))
-;;     (dolist (w (window-list frame))
-;;       (when (eq (window-buffer w) buffer)
-;;         (cl-return-from cam/buffer-window w)))))
-
-;; (defun cam/scroll-messages-to-end ()
-;;   "Scroll to the end of the *Messages* buffer if needed if it is currently visible."
-;;   (when-let (messages-buffer (get-buffer "*Messages*"))
-;;     (when-let (w (cam/buffer-window messages-buffer))
-;;       (when (< (window-end w) (point-max))
-;;         (with-selected-window w
-;;           (set-window-start w (save-excursion
-;;                                 (goto-char (point-max))
-;;                                 (forward-line (- (- (window-height) 3)))
-;;                                 (point))))))))
-
-;; (defvar cam/scroll-messages-async-delay 2
-;;   "Number of seconds to wait before asynchronously scrolling the *Messages* buffer.")
-
-;; (defvar cam/scroll-messages-timer nil)
-
-;; (defun cam/scroll-messages-and-reset-timer ()
-;;   (unwind-protect
-;;       (unless (eq (current-buffer) (get-buffer "*Messages*")) ; don't scroll if *Messages* is the current buffer
-;;         (cam/scroll-messages-to-end))
-;;     (setq cam/scroll-messages-timer nil)))
-
-;; (defun cam/scroll-messages-async (&rest _)
-;;   (unless cam/scroll-messages-timer
-;;     (setq cam/scroll-messages-timer (run-with-timer cam/scroll-messages-async-delay nil #'cam/scroll-messages-and-reset-timer))))
-
-;; (advice-add #'message :after #'cam/scroll-messages-async)
-
-
-;;; ------------------------------------------------------------ Insert logging statements ------------------------------------------------------------
+;;; ------------------------------------------------------------ [[<Experimental]] ------------------------------------------------------------
 
 (defun cam/insert-console-dot-log (text)
   (interactive "sconsole.log: ")
@@ -1083,8 +1090,8 @@ Calls `magit-refresh' after the command finishes."
       " "
       dashes
       ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so things line up
-      (unless (eq (oddp (length text))
-                  (oddp total-width))
+      (unless (eq (cl-oddp (length text))
+                  (cl-oddp total-width))
         "-")))))
 
 (defun cam/insert-large-clojure-header (text)
@@ -1105,8 +1112,8 @@ Calls `magit-refresh' after the command finishes."
       text
       text-padding
       ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so things line up
-      (unless (eq (oddp (length text))
-                  (oddp total-width))
+      (unless (eq (cl-oddp (length text))
+                  (cl-oddp total-width))
         " ")
       "|\n"
       ;; bottom row
@@ -1122,3 +1129,209 @@ Calls `magit-refresh' after the command finishes."
   '(progn
      (define-key clojure-mode-map (kbd "<f9>") #'cam/insert-clojure-header)
      (define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println)))
+
+
+;;; ---------------------------------------- [[<Powerline & Evil Mode]] ----------------------------------------
+
+(require 'evil)
+(require 'powerline)
+(require 'powerline-evil)
+
+(defun cam/evil-state-color (&optional state)
+  (cl-case (or state evil-state)
+    ('emacs "#dd0000")
+    ('normal "#0072bb")
+    ('visual "#ffd034")
+    ('insert "#336600")
+    ('replace "#663399")
+    ('operator "#ff0099")
+    ('motion "orange")
+    (otherwise "#cc6633")))
+
+(set-cursor-color (cam/evil-state-color))
+
+(setq-default display-line-numbers nil)
+(setq-local display-line-numbers-widen t)
+
+;; (defun cam/evil-mode-setup ()
+;;   (interactive)
+;;   (if (eq evil-state 'normal)
+;;       (setq-local display-line-numbers 'visual)
+;;     (progn
+;;       (setq cursor-type 'box)
+;;       (set-cursor-color (cam/evil-state-color nil))
+;;       (kill-local-variable 'display-line-numbers))))
+
+;; (add-hook 'evil-mode-hook #'cam/evil-mode-setup)
+
+;; set colors for evil-STATE-state-cursor for various evil states
+(dolist (state '(emacs normal visual insert replace operator motion))
+  (set (intern (format "evil-%s-state-cursor" state))
+       (list (cam/evil-state-color state) 'box)))
+
+;; define faces for various evil states e.g. cam/active-evil-normal-state
+(defun cam/active-evil-state-face-symb (&optional state)
+  (let ((state (or state evil-state 'nil)))
+    (intern (format "cam/active-evil-%s-state" state))))
+
+(dolist (state '(nil emacs normal visual insert replace operator motion))
+  (let ((symb (cam/active-evil-state-face-symb state))
+        (face (list (list t :background (cam/evil-state-color state) :foreground "white"))))
+    (message (format "(face-spec-set %s %s)" symb face))
+    (face-spec-set symb face)))
+
+(defun cam/face-symb (active-or-inactive where)
+  (intern (format "cam/%s-%s" active-or-inactive where)))
+
+;; define all of our other faces now
+(dolist (group '((active . ((side-outer "gray70" "black")
+                            (side-center "gray80" "black")
+                            (side-inner "gray90" "black")
+                            (center "white" "black")))
+                 (inactive . ((side-outer "gray10" "gray60")
+                              (side-center "gray20" "gray70")
+                              (side-inner "gray30" "gray80")
+                              (center "gray40" "gray90")))))
+  (let ((active-or-inactive (car group))
+        (faces (cdr group)))
+    (dolist (face faces)
+      (let ((symb (cam/face-symb active-or-inactive (car face)))
+            (bg (cadr face))
+            (fg (caddr face)))
+        (face-spec-set symb (list (list t :background bg :foreground fg)))))))
+
+(setq powerline-evil-tag-style 'verbose)
+
+(defun cam/enable-relative-line-numbers ()
+  (interactive)
+  (setq-local display-line-numbers 'visual))
+
+(defun cam/disable-relative-line-numbers ()
+  (interactive)
+  (kill-local-variable 'display-line-numbers))
+
+;; TODO - motion state (?)
+(dolist (hook '(evil-normal-state-entry-hook evil-operator-state-entry-hook evil-motion-state-entry-hook))
+  (add-hook hook #'cam/enable-relative-line-numbers)
+  (add-hook hook #'cam/switch-to-smartparens))
+
+(dolist (hook '(evil-emacs-state-entry-hook evil-insert-state-entry-hook ;; evil-replace-state-entry-hook
+                                            ))
+  (add-hook hook #'cam/disable-relative-line-numbers)
+  (add-hook hook #'cam/switch-to-paredit))
+
+(kill-local-variable 'mode-line-format)
+
+(setq-default
+ mode-line-format
+ '("%e"
+   (:eval
+    (let* ((active?            (powerline-selected-window-active))
+           (active-or-inactive (if active? 'active 'inactive))
+           (color-face         (if active?
+                                   (cam/active-evil-state-face-symb)
+                                 (cam/face-symb active-or-inactive 'side-outer)))
+           (side-outer-face    (cam/face-symb active-or-inactive 'side-outer))
+           (side-center-face   (cam/face-symb active-or-inactive 'side-center))
+           (side-inner-face    (cam/face-symb active-or-inactive 'side-inner))
+           (center-face        (cam/face-symb active-or-inactive 'center))
+
+           (lhs-outside
+            (list
+             (powerline-raw (concat (powerline-evil-tag) " ") color-face 'l)))
+
+           (lhs-center
+            (list
+             (powerline-raw
+              (concat
+               ;; %b = buffer name
+               " %b "
+               (when (buffer-modified-p)
+                 "[modified] "))
+              side-center-face)
+             (powerline-arrow-left side-center-face side-inner-face)))
+
+           (lhs-inside
+            (list
+             (powerline-major-mode side-inner-face 'l)
+             (powerline-process side-inner-face)
+             (powerline-raw " " side-inner-face)))
+
+           (center-left
+            (list
+             (powerline-arrow-left side-inner-face center-face)
+             (powerline-minor-modes center-face 'l)
+             (powerline-narrow center-face 'l)
+             (powerline-raw " " center-face)))
+
+           (center-right
+            (list
+             (when-let ((process (powerline-process)))
+               (powerline-raw process center-face 'r))
+             (powerline-arrow-right center-face side-inner-face)))
+
+           (rhs-inside
+            (list
+             (powerline-raw
+              (concat
+               " "
+               (powerline-encoding)
+               (when buffer-read-only
+                 " [readonly]"))
+              side-inner-face
+              'r)
+             (powerline-arrow-right side-inner-face side-center-face)))
+
+           (rhs-center
+            (list
+             (powerline-raw
+              ;; %l = line number; %C = column number
+              (concat
+               " L%l/"
+               (int-to-string (line-number-at-pos (point-max)))
+               " C%C")
+              side-center-face 'r)
+             (powerline-arrow-right side-center-face side-outer-face)))
+
+           (rhs-outside
+            (list
+             (when global-mode-string
+               (powerline-raw global-mode-string side-outer-face 'r))
+             (powerline-vc side-outer-face 'r)))
+
+           (lhs (append lhs-outside lhs-center lhs-inside center-left))
+
+           (rhs (append center-right rhs-inside rhs-center rhs-outside)))
+      (concat
+       (powerline-render lhs)
+       (powerline-fill center-face (powerline-width rhs))
+       (powerline-render rhs))))))
+
+;; (defun cam/window-configuration-change-evil-setup ()
+;;   (kill-local-variable 'mode-line-format))
+
+;; (add-hook 'window-configuration-change-hook #'cam/window-configuration-change-evil-setup)
+
+(set-face-bold 'mode-line-inactive nil)
+(set-face-bold 'mode-line nil)
+
+(setq evil-default-state 'emacs)
+
+(defalias 'evil-insert-state 'evil-emacs-state) ; always use emacs state instead of insert state.
+
+;; (define-key evil-emacs-state-map (kbd "C-[") #'evil-normal-state)
+
+(evil-mode 1)
+
+;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
+
+(ignore-errors
+  (load-file custom-file))
+
+(unless cam/has-loaded-init-p
+  (toggle-frame-maximized))
+
+(setq cam/has-loaded-init-p t)
+
+(ignore-errors ; only seems to work on Emacs 25+
+  (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
