@@ -541,21 +541,26 @@ and vice versa."
   (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
   (cider-repl-clear-buffer))
 
+(defvar cam/clojure-load-buffer-clean-namespace--namespace-cleaned-p nil)
+
 (cl-defun cam/clojure-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
   "When CIDER is active attempt to load BUFFER (by default, the current buffer) and clean its namespace declaration
 form."
   (interactive "bBuffer: ")
-  (with-demoted-errors "Error cleaning namespace declaration: %S"
-    (with-current-buffer (get-buffer buffer)
-      (when (and (not (string= (file-name-nondirectory (buffer-file-name)) "project.clj"))
-                 (cider-current-repl))
-        ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the file
-        ;; first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to save
-        (let ((cider-save-file-on-load t))
-          (cider-load-buffer))
-        (cljr-clean-ns)
-        (when (buffer-modified-p)
-          (save-buffer))))))
+  (when (not cam/clojure-load-buffer-clean-namespace--namespace-cleaned-p)
+    (with-demoted-errors "Error cleaning namespace declaration: %S"
+      (with-current-buffer (get-buffer buffer)
+        (when (and (not (string= (file-name-nondirectory (buffer-file-name)) "project.clj"))
+                   (cider-current-repl))
+          ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the file
+          ;; first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to save
+          (let ((cider-save-file-on-load t))
+            (cider-load-buffer))
+          (cljr-clean-ns)
+          (when (buffer-modified-p)
+            ;; prevent recursive calls !
+            (let ((cam/clojure-load-buffer-clean-namespace--namespace-cleaned-p t))
+              (save-buffer))))))))
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
