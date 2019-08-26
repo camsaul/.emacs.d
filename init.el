@@ -546,17 +546,16 @@ and vice versa."
 form."
   (interactive "bBuffer: ")
   (with-demoted-errors "Error cleaning namespace declaration: %S"
-    (let ((buffer (get-buffer buffer)))
-      (with-current-buffer buffer
-        (when (cider-current-repl)
-          (let ((cider-save-file-on-load t))
-            ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the
-            ;; file first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to
-            ;; save
-            (cider-load-buffer buffer))
-          (cljr-clean-ns)
-          (when (buffer-modified-p)
-            (save-buffer)))))))
+    (with-current-buffer (get-buffer buffer)
+      (when (and (not (string= (file-name-nondirectory (buffer-file-name)) "project.clj"))
+                 (cider-current-repl))
+        ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the file
+        ;; first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to save
+        (let ((cider-save-file-on-load t))
+          (cider-load-buffer))
+        (cljr-clean-ns)
+        (when (buffer-modified-p)
+          (save-buffer))))))
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
