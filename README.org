@@ -4,3 +4,6 @@
   #+BEGIN_SRC emacs-lisp
     (setq emacs-is-awesome-p t)
   #+END_SRC
+
+
+Old Emacs dir is [here](https://github.com/camsaul/old-emacs-dir)
