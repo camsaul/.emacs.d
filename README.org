@@ -6,4 +6,4 @@
   #+END_SRC
 
 
-Old Emacs dir is [here](https://github.com/camsaul/old-emacs-dir)
+Old Emacs dir is here https://github.com/camsaul/old-emacs-dir
