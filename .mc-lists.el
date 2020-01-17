@@ -26,6 +26,7 @@
         clojure-toggle-keyword-string
         clojure-unwind-all
         comment-dwim
+        cperl-electric-semi
         downcase-region
         electric-newline-and-maybe-indent
         electric-pair-delete-pair

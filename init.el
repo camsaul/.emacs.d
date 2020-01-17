@@ -28,6 +28,7 @@
 ;;;    [[Git Commit Mode]]
 ;;;    [[Guide Key]]
 ;;;    [[Helm]]
+;;;    [[Java]]
 ;;;    [[loccur]]
 ;;;    [[Magit]]
 ;;;    [[markdown]]
@@ -586,7 +587,8 @@ form."
          ("<f1>" . #'ac-cider-popup-doc)
          ("<f7>" . #'cam/switch-to-test-namespace)
          ("<f8>" . #'cam/switch-between-model-and-api-namespaces)
-         ("<S-tab>" . #'auto-complete)))
+         ("<S-tab>" . #'auto-complete)
+         ("<backtab>" . #'auto-complete)))
 
 
 (tweak-package clj-refactor
@@ -619,7 +621,8 @@ form."
   :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
          ("{" . #'paredit-open-curly)
          ("<f1>" . #'ac-cider-popup-doc)
-         ("<S-tab>" . #'auto-complete)))
+         ("<S-tab>" . #'auto-complete)
+         ("<backtab>" . #'auto-complete)))
 
 (tweak-package cider-macroexpansion
   :setup ((read-only-mode -1))
@@ -750,7 +753,8 @@ deleted, ask to kill any buffers that were visiting files that were children of 
          ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("C-x C-e"        . #'pp-eval-last-sexp)
          ;; ("<f1>" . #'ac-cider-popup-doc)
-         ("<S-tab>" . #'auto-complete)))
+         ("<S-tab>" . #'auto-complete)
+         ("<backtab>" . #'auto-complete)))
 
 (tweak-package dash
   :declare (dash-enable-font-lock)
@@ -771,7 +775,8 @@ deleted, ask to kill any buffers that were visiting files that were children of 
           (ac-emacs-lisp-mode-setup))
   :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
   :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)
-         ("<S-tab>" . #'auto-complete)))
+         ("<S-tab>" . #'auto-complete)
+         ("<backtab>" . #'auto-complete)))
 
 (tweak-package nadvice
   :load ((put #'advice-add 'lisp-indent-function 2)))
@@ -827,6 +832,16 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :vars ((helm-buffers-fuzzy-matching . t) ; enable fuzzy matching for helm
          (helm-recentf-fuzzy-match    . t)
          (helm-M-x-fuzzy-match        . t)))
+
+;;; [[<Java]]
+(tweak-package cc-mode
+  :mode-name java-mode
+  :minor-modes (auto-complete-mode
+                electric-pair-local-mode)
+  :local-vars ((tab-width . 4)
+               (c-basic-indent . 4)
+               (c-basic-offset . 4))
+  :keys (("C-j" . #'newline)))
 
 
 ;;; [[<loccur]]
@@ -1007,7 +1022,8 @@ Calls `magit-refresh' after the command finishes."
 (tweak-package sly
   :require (ac-sly)
   :minor-modes (auto-complete-mode)
-  :keys (("<S-tab>" . #'auto-complete))
+  :keys (("<S-tab>" . #'auto-complete)
+         ("<backtab>" . #'auto-complete))
   :setup ((cam/lisp-mode-setup)
           (set-up-sly-ac :fuzzy)))
 
@@ -1352,3 +1368,15 @@ Calls `magit-refresh' after the command finishes."
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
+
+;; these are reversed on the new computer for some reason?
+;; (setq mac-option-modifier 'alt
+;; mac-right-option-modifier 'meta
+;; mac-command-modifier 'hyper
+;; mac-right-command-modifier 'super)
+
+(defun cam/insert-em-dash ()
+  (interactive)
+  (insert-char (char-from-name "EM DASH")))
+
+(global-set-key (kbd "A-e") #'cam/insert-em-dash)
