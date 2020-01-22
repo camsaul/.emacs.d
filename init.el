@@ -350,10 +350,9 @@
   ("<f11> p"       . #'paredit-mode)
   ("<f11> r"       . #'read-only-mode)
   ("<f11> w"       . #'whitespace-mode)
-  ("<f12> b"       . #'cam/bing-search)
+  ("<f12> d"       . #'cam/duckduckgo-search)
   ("<f12> i"       . #'cam/instant-clojure-cheatsheet-search)
   ("<f12> j"       . #'cam/javadocs-search)
-  ("<f12> k"       . #'cam/browse-korma-dox)
   ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
   ("<f6>"          . #'ftf-grepsource)
   ("<insert>"      . nil)

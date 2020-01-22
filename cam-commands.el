@@ -90,17 +90,10 @@
   (browse-url (format "http://localhost:13370/#?q=%s" (url-hexify-string search-term))))
 
 ;;;###autoload
-
-(defun cam/bing-search (search-term)
-  "Open a browser window and search BING for SEARCH-TERM."
-  (interactive (list (read-string "Search Bing for: " (cam/symbol-at-point-name))))
-  (browse-url (concat "http://bing.com/search?q=" search-term)))
-
-;;;###autoload
-(defun cam/browse-korma-dox ()
-  "Open a browser window with the SQL Korma documentation."
-  (interactive)
-  (browse-url "http://www.sqlkorma.com/docs"))
+(defun cam/duckduckgo-search (search-term)
+  "Open a browser window and search DuckDuckGo for SEARCH-TERM."
+  (interactive (list (read-string "Search DuckDuckGo for: " (cam/symbol-at-point-name))))
+  (browse-url (concat "https://duckduckgo.com/?q=" search-term)))
 
 ;;;###autoload
 (defun cam/javadocs-search (search-term)
