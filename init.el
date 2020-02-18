@@ -505,11 +505,11 @@
        ,(if more `(cam/when-let-buffer ,more ,@body)
           `(progn ,@body)))))
 
-(defun cam/cider-clear-output-buffer-when-visible ()
-  "If the `cider-mode' output buffer is visible, clear its contents."
+(defun cam/clear-nrepl-server-buffer ()
+  "Clear contents of the `*nrepl-server*` buffer."
   (cam/when-let-buffer ((buffer (string-prefix-p "*nrepl-server" (buffer-name buffer))))
     (with-current-buffer buffer
-      (delete-region (point-min) (point-max)))))
+      (comint-clear-buffer))))
 
 (defun cam/switch-to-test-namespace ()
   "Switch to the test namespace for the current buffer; or if this is a test namespace, switch back to the code
@@ -538,6 +538,7 @@ and vice versa."
 (defun cam/clojure-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
+  (cam/clear-nrepl-server-buffer)
   (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
   (cider-repl-clear-buffer))
 
