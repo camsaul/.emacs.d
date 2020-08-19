@@ -40,6 +40,7 @@
 ;;;    [[Shell]]
 ;;;    [[Sly]]
 ;;;    [[(Common) Lisp Mode]]
+;;;    [[text-mode]]
 ;;;    [[Web Mode]]
 ;;;    [[YAML Mode]]
 ;;; [[Global Minor Modes]]
@@ -88,8 +89,6 @@
 (defvar cam/has-loaded-init-p nil
   "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but
   not again if we call eval-buffer).")
-
-
 
 ;;; [[<Auxilary Init File Setup]]
 
@@ -228,7 +227,7 @@
   (moe-dark)
   (ignore-errors
     ;; t = apply font to all frames going forward & save setting to custom.el (supposedly)
-    (set-frame-font "Source Code Pro-12" (not :keep-size) t)))
+    (set-frame-font "DejaVuSansMono-18" (not :keep-size) t)))
 
 (defun cam/setup-frame ()
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
@@ -332,7 +331,7 @@
 (cam/global-set-keys
   ("<A-escape>"    . #'helm-mark-ring)
   ("<A-return>"    . #'wiki-nav-ido)
-  ("<C-M-return>"  . #'ace-jump-line-mode)
+  ;; ("<C-M-return>"  . #'ace-jump-line-mode)
   ("<C-return>"    . #'ace-jump-mode)
   ("<H-SPC>"       . #'mc/mark-all-like-this)
   ("<H-return>"    . #'mc/mark-next-lines)
@@ -464,7 +463,7 @@
   :load ((cam/suppress-messages
            (ac-config-default)
            (add-to-list 'ac-modes 'cider-repl-mode)
-           (add-to-list 'ac-modes 'emacs-list-mode)
+           (add-to-list 'ac-modes 'emacs-lisp-mode)
            (add-to-list 'ac-modes 'ielm-mode)))
   :keymap ac-menu-map
   :keys (("A-f" . #'ac-complete-functions)
@@ -576,6 +575,7 @@ form."
                 eldoc-mode
                 todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
+          (flyspell-prog-mode)
           (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-"))
   :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
@@ -586,13 +586,12 @@ form."
                (clojure-docstring-fill-column . 118)) ; docstring column width of 117
   :local-hooks ((after-save-hook . (lambda ()
                                      (add-hook 'after-save-hook #'cam/clojure-load-buffer-clean-namespace nil :local))))
-  :keys (("<C-M-s-return>" . #'cam/clojure-save-load-switch-to-cider)
-         ("<f1>" . #'ac-cider-popup-doc)
-         ("<f7>" . #'cam/switch-to-test-namespace)
-         ("<f8>" . #'cam/switch-between-model-and-api-namespaces)
-         ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)))
-
+  :keys (("<C-M-return>" . #'cam/clojure-save-load-switch-to-cider)
+         ("<f1>"         . #'ac-cider-popup-doc)
+         ("<f7>"         . #'cam/switch-to-test-namespace)
+         ("<f8>"         . #'cam/switch-between-model-and-api-namespaces)
+         ("<S-tab>"      . #'auto-complete)
+         ("<backtab>"    . #'auto-complete)))
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
@@ -725,7 +724,9 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                            (string= (buffer-name (window-buffer window)) "*ielm*"))))
       (select-window ielm-window)
     (let ((new-window (split-window-sensibly)))
-      (select-window new-window)
+      (if new-window
+          (select-window new-window)
+        (other-window 1))
       (ielm)
       (balance-windows))))
 
@@ -752,12 +753,13 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                                        (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
   :local-vars ((fill-column . 118)
                (emacs-lisp-docstring-fill-column . 118))
-  :keys (("<C-M-s-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
-         ("C-c RET"        . #'cam/emacs-lisp-macroexpand-last-sexp)
-         ("C-x C-e"        . #'pp-eval-last-sexp)
+  :keys (("<C-M-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
+         ("C-c RET"      . #'cam/emacs-lisp-macroexpand-last-sexp)
+         ("C-x C-e"      . #'pp-eval-last-sexp)
          ;; ("<f1>" . #'ac-cider-popup-doc)
          ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)))
+         ("<backtab>" . #'auto-complete)
+         ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
 (tweak-package dash
   :declare (dash-enable-font-lock)
@@ -1034,6 +1036,10 @@ Calls `magit-refresh' after the command finishes."
   :setup ((cam/lisp-mode-setup)
           (set-up-sly-ac :fuzzy)))
 
+;;; [[<text-mode]]
+(tweak-package text-mode
+  :mode-name text-mode
+  :minor-modes (flyspell-mode))
 
 ;;; [[<Web Mode]]
 (tweak-package web-mode
@@ -1387,3 +1393,43 @@ Calls `magit-refresh' after the command finishes."
   (insert-char (char-from-name "EM DASH")))
 
 (global-set-key (kbd "A-e") #'cam/insert-em-dash)
+
+(defun cam/-scroll-percentage ()
+  (/ (float (line-number-at-pos (window-start)))
+     (float (line-number-at-pos (point-max)))))
+
+(defun cam/-set-window-start-to-percentage (scroll-percentage)
+  (goto-char (point-min))
+  (let ((target-line-number (truncate (* (line-number-at-pos (point-max)) scroll-percentage))))
+    (forward-line (1- target-line-number)))
+  (set-window-start nil (point)))
+
+(defun cam/-render-markdown-preview-current-buffer ()
+  (message "Rendering Markdown preview of %s" buffer-file-name)
+  (let ((url (concat "file://" buffer-file-name)))
+    (shell-command-on-region (point-min) (point-max) "pandoc -f gfm" "*Preview Markdown Output*")
+    (switch-to-buffer-other-window "*Preview Markdown Output*")
+    (let ((document (libxml-parse-html-region (point) (point-max))))
+      (erase-buffer)
+      (shr-insert-document `(base ((href . ,url)) ,document))
+      (setq buffer-read-only t))))
+
+(defun cam/-preview-markdown-file (filename)
+  (save-selected-window
+    (find-file filename)
+    (let ((scroll-percentage (cam/-scroll-percentage)))
+      (cam/-render-markdown-preview-current-buffer)
+      (cam/-set-window-start-to-percentage scroll-percentage))))
+
+(defun cam/preview-markdown (&optional filename)
+  "Render a markdown preview of FILENAME (by default, the current file) to HTML and display it with `shr-insert-document'."
+  (interactive "fFile: ")
+  (if filename
+      (progn
+        (cam/-preview-markdown-file filename)
+        (switch-to-buffer (current-buffer)))
+    (cam/-preview-markdown-file buffer-file-name)))
+
+(add-hook 'markdown-mode-hook
+  (lambda ()
+    (add-hook 'after-save-hook #'cam/preview-markdown nil t)))
