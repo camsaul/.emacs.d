@@ -16,7 +16,7 @@
 ;;;    [[etc]]
 ;;;    [[Lisp Modes]]
 ;;;    [[auto-complete]]
-;;;    [[C]]
+;;;    [[C/C++]]
 ;;;    [[Clojure]]
 ;;;    [[dired]]
 ;;;    [[company]]
@@ -473,14 +473,21 @@
 (tweak-package auto-complete-config
   :declare (ac-emacs-lisp-mode-setup))
 
-;;; [[<C]]
+;;; [[<C/C++]]
 
-(defun cam/c-mode-setup ()
-  (setq-local tab-width 4)
-  (setq-local c-basic-indent 4)
-  (setq-local c-basic-offset 4))
-(add-hook 'c-mode-hook #'cam/c-mode-setup)
-(add-hook 'c-mode-hook #'electric-pair-local-mode)
+(tweak-package cc-mode
+  :mode-name c-mode
+  :minor-modes (auto-complete-mode
+                electric-pair-local-mode)
+  :local-vars ((tab-width . 4)
+               (c-basic-indent . 4)
+               (c-basic-offset . 4))
+  :keys (("C-j" . #'newline)))
+
+(tweak-package cc-mode
+  :mode-name c++-mode
+  :setup ((cam/c-mode-setup))
+  :keys (("C-j" . #'newline)))
 
 
 ;;; [[<Clojure]]
@@ -845,11 +852,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
 ;;; [[<Java]]
 (tweak-package cc-mode
   :mode-name java-mode
-  :minor-modes (auto-complete-mode
-                electric-pair-local-mode)
-  :local-vars ((tab-width . 4)
-               (c-basic-indent . 4)
-               (c-basic-offset . 4))
+  :setup ((cam/c-mode-setup))
   :keys (("C-j" . #'newline)))
 
 
@@ -930,11 +933,7 @@ Calls `magit-refresh' after the command finishes."
                                 (re-search-forward "@\\<interface\\>"
                                                    magic-mode-regexp-match-limit t)))
                         . objc-mode)))
-  :minor-modes (auto-complete-mode
-                electric-pair-local-mode)
-  :local-vars ((tab-width . 4)
-               (c-basic-indent . 4)
-               (c-basic-offset . 4))
+  :setup ((cam/c-mode-setup))
   :keys (("C-j" . #'newline)))
 
 ;;; [[<Org]]
