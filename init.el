@@ -231,7 +231,6 @@
 
 (defun cam/setup-frame ()
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
-
   (moe-theme-random-color)
   (set-face-foreground 'mode-line "#111111")
   (set-cursor-color (face-background 'mode-line))
@@ -284,6 +283,12 @@
       frame-resize-pixelwise t                    ; maximize as much as possible rather than rounding to closest whole line
       garbage-collection-messages t               ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
+      helm-ff-skip-git-ignored-files t            ; Have C-x C-f skip files in .gitignore
+      helm-ff-skip-boring-files t                 ; Have C-x C-f skip "boring" files matching the regex below
+      helm-ff--boring-regexp (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol)
+                                     (and "~" eol)
+                                     (and bol "#" (1+ anything) "#" eol)
+                                     (and bol ".#")))
       next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
