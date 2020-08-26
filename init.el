@@ -149,6 +149,7 @@
     column-enforce-mode                           ; Highlight text that goes past a certain column limit
     clj-refactor                                  ; Clojure refactoring minor mode
     clojure-mode-extra-font-locking
+    cmake-mode                                    ; Major mode for editing CMake files
     company                                       ; auto-completion
     cperl-mode                                    ; Better than perl-mode
     dash
