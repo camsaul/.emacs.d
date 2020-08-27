@@ -490,10 +490,36 @@
                (c-basic-offset . 4))
   :keys (("C-j" . #'newline)))
 
+(defun cam/c++-switch-between-header-and-impl ()
+  "Toggle between the corresponding C++ header or implementation file for the current buffer. By default, raises an
+error if the corresponding file does not exist; pass the prefix arg to suppress this error and visit the (new) file."
+  (interactive)
+  (let* ((header-extensions '("h" "hpp" "hxx" "hh" "H" "h++"))
+         (impl-extensions '("cpp" "cxx" "cc" "C" "c++"))
+         (possible-extensions (if (member (file-name-extension buffer-file-name) header-extensions)
+                                  impl-extensions
+                                header-extensions))
+         found)
+    (cl-labels ((file-name-with-extension
+                 (extension)
+                 (concat (file-name-sans-extension buffer-file-name) "." extension)))
+      (cl-dolist (extension possible-extensions)
+        (let ((new-file-name (file-name-with-extension extension)))
+          (message "Trying %s..." new-file-name)
+          (when (file-exists-p new-file-name)
+            (find-file new-file-name)
+            (setq found t))))
+      (unless found
+        (if current-prefix-arg
+            (let ((default-extension (car possible-extensions)))
+              (find-file (file-name-with-extension default-extension)))
+          (user-error "Could not find related file for %s" buffer-file-name))))))
+
 (tweak-package cc-mode
   :mode-name c++-mode
   :setup ((cam/c-mode-setup))
-  :keys (("C-j" . #'newline)))
+  :keys (("C-j" . #'newline)
+         ("<f7>" . #'cam/c++-switch-between-header-and-impl)))
 
 
 ;;; [[<Clojure]]
