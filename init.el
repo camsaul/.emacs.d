@@ -337,6 +337,9 @@
 (cam/global-set-keys
   ("<A-escape>"    . #'helm-mark-ring)
   ("<A-return>"    . #'wiki-nav-ido)
+  ("<f2>"          . #'mc/mark-next-like-this)
+  ("<M-f2>"        . #'mc/mark-next-lines)
+  ("<C-f2>"        . #'mc/mark-all-like-this)
   ;; ("<C-M-return>"  . #'ace-jump-line-mode)
   ("<C-return>"    . #'ace-jump-mode)
   ("<H-SPC>"       . #'mc/mark-all-like-this)

@@ -88,6 +88,7 @@
         ftf-grepsource
         goto-line
         helm-M-x
+        helm-confirm-and-exit-minibuffer
         jump-to-register
         magit-status
         mc/mark-next-lines
