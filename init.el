@@ -203,6 +203,9 @@
     evil-smartparens
     evil-cleverparens
 
+    rtags
+    cmake-ide
+
     racket-mode
     ))
 
@@ -496,8 +499,9 @@
   :minor-modes (auto-complete-mode
                 electric-pair-local-mode)
   :local-vars ((tab-width . 4)
-               (c-basic-indent . 4)
-               (c-basic-offset . 4))
+               (c-basic-indent . "k&r")
+               (c-basic-offset . 4)
+               (c-default-style . "linux"))
   :keys (("C-j" . #'newline)))
 
 (defun cam/c++-switch-between-header-and-impl ()
@@ -523,13 +527,66 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
         (if current-prefix-arg
             (let ((default-extension (car possible-extensions)))
               (find-file (file-name-with-extension default-extension)))
-          (user-error "Could not find related file for %s" buffer-file-name))))))
+          (user-error "Could not find related file for %s. Try again with C-u to create it" buffer-file-name))))))
+
+(defun cam/insert-c++-log-message (text)
+  (interactive "sstd::cout << ")
+  (insert
+   (concat
+    "std::cout << "
+    (if current-prefix-arg
+        text
+      (concat "\"" text " = \" << " text))
+    " << std::endl;")))
+
+;; company-rtags
+;; helm-rtags
+;; disaster
+;; lsp-mode
+;; company-lsp
+;; lsp-ui
+;; eglot
+;; eldoc-box
+
+;; MAYBE
+
+;; cpp-auto-include
 
 (tweak-package cc-mode
   :mode-name c++-mode
-  :setup ((cam/c-mode-setup))
-  :keys (("C-j" . #'newline)
-         ("<f7>" . #'cam/c++-switch-between-header-and-impl)))
+  :minor-modes (column-enforce-mode
+                flycheck-mode
+                flyspell-prog-mode
+                ;; smartparens-strict-mode
+                company-mode
+                eldoc-box-hover-mode
+                eldoc-box-hover-at-point-mode
+                todo-font-lock-mode)
+  :require (helm-rtags
+            company-lsp
+            lsp-mode
+            lsp-ui
+            lsp-clangd
+            eglot)
+  :vars ((company-lsp-enable-snippet . nil)
+         (rtags-completions-enabled . t)
+         (rtags-display-result-backend . 'helm))
+  :local-vars ((flycheck-highlighting-mode . nil))
+  :setup ((cam/c-mode-setup)
+          (rtags-start-process-unless-running)
+          (dolist (backend '(company-rtags company-lsp))
+            (add-to-list 'company-backends backend))
+          (add-to-list 'eglot-server-programs '((c++-mode) "clangd"))
+          (eglot-ensure)
+          (auto-complete-mode 0))
+  :keys (("<S-tab>" . #'company-complete)
+         ("<backtab>" . #'company-complete)
+         ("<f1>" . #'eldoc-doc-buffer)
+         ("<f7>" . #'cam/c++-switch-between-header-and-impl)
+         ("C-." . #'disaster)                     ; disassemble code at point
+         ("C-j" . #'newline)
+         ("M-." . #'rtags-find-symbol-at-point)
+         ("<f10>" .  #'cam/insert-c++-log-message)))
 
 
 ;;; [[<Clojure]]
