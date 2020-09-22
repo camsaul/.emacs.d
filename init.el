@@ -43,6 +43,7 @@
 ;;;    [[(Common) Lisp Mode]]
 ;;;    [[text-mode]]
 ;;;    [[Web Mode]]
+;;;    [[(n)xml Mode]]
 ;;;    [[YAML Mode]]
 ;;; [[Global Minor Modes]]
 ;;; [[Diminished Minor Modes]]
@@ -1113,6 +1114,18 @@ Calls `magit-refresh' after the command finishes."
                     "\.html$"
                     "\.jsx$"
                     "\.mustache$"))
+
+;;; [[<(n)xml Mode]]
+
+(tweak-package nxml-mode
+  :mode-name nxml-mode
+  :minor-modes (electric-pair-mode
+                company-mode)
+  :keys (("<S-tab>" . #'company-complete)
+         ("<backtab>" . #'company-complete)
+         ("C-j" . #'newline))
+  :vars ((nxml-slash-auto-complete-flag . t))
+  :auto-mode-alist (".pml$"))
 
 
 ;;; [[<YAML Mode]]
