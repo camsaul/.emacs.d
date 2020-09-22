@@ -37,6 +37,7 @@
 ;;;    [[Paredit]]
 ;;;    [[Perl]]
 ;;;    [[Python]]
+;;;    [[Racket]]
 ;;;    [[Shell]]
 ;;;    [[Sly]]
 ;;;    [[(Common) Lisp Mode]]
@@ -200,6 +201,8 @@
     smartparens
     evil-smartparens
     evil-cleverparens
+
+    racket-mode
     ))
 
 ;;; Install packages as needed
@@ -1036,6 +1039,26 @@ Calls `magit-refresh' after the command finishes."
 (tweak-package python
   :minor-modes (electric-pair-local-mode))
 
+;;; [[<Racket]]
+(tweak-package racket-mode
+  :mode-name racket-mode
+  :minor-modes (company-mode
+                eldoc-mode)
+  :setup ((cam/lisp-mode-setup)
+          (auto-complete-mode -1)
+          (eldoc-mode 1))
+  :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
+  :keys (("<f1>" . #'racket-repl-describe)
+         ("<S-tab>" . #'company-complete)
+         ("<backtab>" . #'company-complete)))
+
+(tweak-package racket-repl
+  :setup ((cam/racket-mode-setup)
+          (eldoc-mode 1))
+  :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
+  :keys (("<f1>" . #'racket-repl-describe)
+         ("<S-tab>" . #'company-complete)
+         ("<backtab>" . #'company-complete)))
 
 ;;; [[<Shell]]
 (tweak-package sh-script
