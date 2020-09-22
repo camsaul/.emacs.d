@@ -306,11 +306,14 @@
       shift-select-mode nil                       ; real Emacs users don't use shift-selection
       vc-make-backup-files t                      ; Make backups of files even if they're under VC
       visible-bell t                              ; Show a visual overlay instead of beeping when doing something like trying to scroll up at top of file
-      w32-pass-lwindow-to-system nil
-      w32-pass-rwindow-to-system nil
-      w32-apps-modifier 'alt
-      w32-lwindow-modifier 'super
-      w32-rwindow-modifier 'hyper)
+      ;; w32-pass-lwindow-to-system nil
+      ;; w32-pass-rwindow-to-system nil
+      ;; w32-apps-modifier 'alt
+      ;; w32-lwindow-modifier 'super
+      ;; w32-rwindow-modifier 'hyper
+
+
+      )
 
 (setq-default fill-column 118                     ; My screen can handle more than 70 characters; use 118 so GH won't cut it off
               indent-tabs-mode nil                ; disable insertion of tabs
