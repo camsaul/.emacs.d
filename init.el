@@ -293,7 +293,7 @@
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
       helm-ff-skip-git-ignored-files t            ; Have C-x C-f skip files in .gitignore
       helm-ff-skip-boring-files t                 ; Have C-x C-f skip "boring" files matching the regex below
-      helm-ff--boring-regexp (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol)
+      helm-ff--boring-regexp (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol) ; TODO -- this skips .emacs.d ??
                                      (and "~" eol)
                                      (and bol "#" (1+ anything) "#" eol)
                                      (and bol ".#")))
@@ -862,7 +862,6 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :keys (("<C-M-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
          ("C-c RET"      . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("C-x C-e"      . #'pp-eval-last-sexp)
-         ;; ("<f1>" . #'ac-cider-popup-doc)
          ("<S-tab>" . #'auto-complete)
          ("<backtab>" . #'auto-complete)
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
@@ -887,7 +886,8 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
   :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)))
+         ("<backtab>" . #'auto-complete)
+         ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
 (tweak-package nadvice
   :load ((put #'advice-add 'lisp-indent-function 2)))
