@@ -916,6 +916,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                                 "*.lisp"
                                 "*.md"
                                 "*.mustache"
+                                "*.pml"
                                 "*.yaml"
                                 "*.yml"))))
 
