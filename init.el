@@ -620,14 +620,16 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
   "Switch to the test namespace for the current buffer; or if this is a test namespace, switch back to the code
 namespace."
   (interactive)
-  (find-file
-   (if (string-match-p "/src/" buffer-file-name)
-       (->> buffer-file-name
-            (replace-regexp-in-string "/src/" "/test/")
-            (replace-regexp-in-string "\.clj" "_test.clj"))
-     (->> buffer-file-name
-          (replace-regexp-in-string "/test/" "/src/")
-          (replace-regexp-in-string "_test\.clj" ".clj")))))
+  (let* ((directory (file-name-directory buffer-file-name))
+         (source-file-p (string-match-p "/src/" directory)))
+    (find-file (concat (if source-file-p
+                           (replace-regexp-in-string "/src/" "/test/" directory)
+                         (replace-regexp-in-string "/test/" "/src/" directory))
+                       (if source-file-p
+                           (concat (file-name-base buffer-file-name) "_test")
+                         (replace-regexp-in-string "_test$" "" (file-name-base buffer-file-name)))
+                       "."
+                       (file-name-extension buffer-file-name)))))
 
 (defun cam/switch-between-model-and-api-namespaces ()
   "(For Metabase development) if the current buffer is a /model/ namespace, switch to the corresponding /api/ namespace,
