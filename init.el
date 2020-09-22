@@ -1166,7 +1166,9 @@ Calls `magit-refresh' after the command finishes."
   :minor-modes (column-enforce-mode
                 electric-pair-local-mode
                 rainbow-delimiters-mode)
-  :keys (("C-j" . #'newline))
+  :keys (("C-j" . #'newline)
+         ("<S-tab>" . #'auto-complete)
+         ("<backtab>" . #'auto-complete))
   :auto-mode-alist ("\.js$"
                     "\.json$"
                     "\.html$"
