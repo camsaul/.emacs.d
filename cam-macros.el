@@ -46,9 +46,6 @@ Like Clojure's `time'."
   `(progn ,@(cl-loop for form in forms
                      collect `(cam/time ,form))))
 
-
-;;; [[cam/suppress-messages]] ----------------------------------------------------------------------
-
 ;;;###autoload
 (defmacro cam/suppress-messages (&rest body)
   "Evaluate BODY with the `message' function temporarily bound to `ignore'."
@@ -56,14 +53,38 @@ Like Clojure's `time'."
   `(cl-letf (((symbol-function 'message) #'ignore))
      ,@body))
 
-
-;;; [[cam/global-set-keys]] ----------------------------------------------------------------------
-
 ;;;###autoload
 (defmacro cam/global-set-keys (&rest keys)
   (declare (indent 0))
   `(progn ,@(cl-loop for (key . command) in keys
                      collect `(global-set-key ,(kbd key) ,command))))
+
+;;;###autoload
+(cl-defun cam/visible-buffer-matching (pred &optional return-multiple-values?)
+  "Return the first buffer visible in any window on any frame that satisfies PRED."
+  (dolist (frame (frame-list))
+    (dolist (window (window-list frame))
+      (let ((buffer (window-buffer window)))
+        (when (funcall pred buffer)
+          (cl-return-from cam/visible-buffer-matching (if return-multiple-values?
+                                                          (list buffer window frame)
+                                                        buffer)))))))
+
+;;;###autoload
+(cl-defmacro cam/when-let-visible-buffer (((binding &body pred-body) &rest more) &body body)
+  "Iterate through all *visibile* buffers; for each buffer, bind it to BINDING, and bind its window and frame to
+anaphors `this-window' and `this-frame', respectively; then evaluate PRED-BODY. If the result is truthy, evaluate
+BODY. Example:
+
+\(cam/when-let-visible-buffer ((buffer (string-equal (buffer-name buffer) \"*Warnings*\")))
+  \(do-something buffer))"
+  (declare (indent 1))
+  `(cl-multiple-value-bind (,binding this-window this-frame) (cam/visible-buffer-matching (lambda (,binding)
+                                                                                            ,@pred-body) :return-multiple-values)
+     (when ,binding
+       ,(if more
+            `(cam/when-let-visible-buffer ,more ,@body)
+          `(progn ,@body)))))
 
 (provide 'cam-macros)
 ;;; cam-macros.el ends here

@@ -32,6 +32,7 @@
 ;;;    [[loccur]]
 ;;;    [[Magit]]
 ;;;    [[markdown]]
+;;;    [[Messages]]
 ;;;    [[Objective-C]]
 ;;;    [[Org]]
 ;;;    [[Paredit]]
@@ -319,6 +320,8 @@
       ;; w32-lwindow-modifier 'super
       ;; w32-rwindow-modifier 'hyper
 
+      ;; EXPERIMENTAL !
+      case-fold-search t                          ; cases and matches should ignore case (TODO -- I think this is the default)
 
       )
 
@@ -376,6 +379,7 @@
   ("<insert>"      . nil)
   ("<scroll>"      . #'ftf-find-file)                               ; for Windows use scroll to open file since s-o doesn't work
   ("A-;"           . #'cam/loccur)
+  ("A-e"           . #'cam/insert-em-dash)
   ("A-r l"         . #'rotate-layout)
   ("A-r w"         . #'rotate-window)
   ("C-="           . #'magit-status)
@@ -454,13 +458,13 @@
       (evil-cleverparens-mode 1))))
 
 (defun cam/lisp-mode-setup ()
-  (message "In cam/lisp-mode-setup")
   (unless cam/is-lisp-mode-p
     (setq-local cam/is-lisp-mode-p t)
     (highlight-parentheses-mode 1)
     (rainbow-delimiters-mode 1)
     (show-paren-mode 1)
-    (if (and evil-mode (cl-member evil-state '(emacs insert)))
+    (if (or (not evil-mode)
+            (cl-member evil-state '(emacs insert)))
         (cam/switch-to-paredit)
       (cam/switch-to-smartparens))
     (add-hook 'before-save-hook
@@ -472,8 +476,8 @@
 ;;; [[<auto-complete]]
 (tweak-package auto-complete
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
-  :vars ((ac-delay . 0.2)
-         (ac-auto-show-menu . 0.5)
+  :vars ((ac-delay . 0.05) ; 0.2
+         (ac-auto-show-menu . 0.1) ; 0.5
          (ac-candidate-menu-height . 20)
          ;; (ac-candidate-limit . 20)
          (ac-menu-height . 20)         ; number of results to show
@@ -556,7 +560,6 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
   :mode-name c++-mode
   :minor-modes (column-enforce-mode
                 flycheck-mode
-                flyspell-prog-mode
                 ;; smartparens-strict-mode
                 company-mode
                 eldoc-box-hover-mode
@@ -578,7 +581,8 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
             (add-to-list 'company-backends backend))
           (add-to-list 'eglot-server-programs '((c++-mode) "clangd"))
           (eglot-ensure)
-          (auto-complete-mode 0))
+          (auto-complete-mode 0)
+          (flyspell-prog-mode))
   :keys (("<S-tab>" . #'company-complete)
          ("<backtab>" . #'company-complete)
          ("<f1>" . #'eldoc-doc-buffer)
@@ -591,28 +595,9 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
 
 ;;; [[<Clojure]]
 
-(cl-defun cam/visible-buffer-matching (pred &optional return-multiple-values?)
-  "Return the first buffer visible in any window on any frame that satisfies PRED."
-  (dolist (frame (frame-list))
-    (dolist (window (window-list frame))
-      (let ((buffer (window-buffer window)))
-        (when (funcall pred buffer)
-          (cl-return-from cam/visible-buffer-matching (if return-multiple-values?
-                                                          (list buffer window frame)
-                                                        buffer)))))))
-
-;; TODO - move these to appropriate places !
-(cl-defmacro cam/when-let-buffer (((binding &body pred-body) &rest more) &body body)
-  (declare (indent 1))
-  `(cl-multiple-value-bind (,binding this-window this-frame) (cam/visible-buffer-matching (lambda (,binding)
-                                                                                            ,@pred-body) :return-multiple-values)
-     (when ,binding
-       ,(if more `(cam/when-let-buffer ,more ,@body)
-          `(progn ,@body)))))
-
 (defun cam/clear-nrepl-server-buffer ()
   "Clear contents of the `*nrepl-server*` buffer."
-  (cam/when-let-buffer ((buffer (string-prefix-p "*nrepl-server" (buffer-name buffer))))
+  (cam/when-let-visible-buffer ((buffer (string-prefix-p "*nrepl-server" (buffer-name buffer))))
     (with-current-buffer buffer
       (comint-clear-buffer))))
 
@@ -660,7 +645,7 @@ form."
       (with-current-buffer (get-buffer buffer)
         (let ((filename (file-name-nondirectory (buffer-file-name))))
           ;; don't run for `project.clj` or EDN files
-          (when (and (not (string= filename "project.clj"))
+          (when (and (not (string-equal filename "project.clj"))
                      (not (string-match-p "\.edn$" filename))
                      (cider-current-repl))
             ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the file
@@ -672,6 +657,63 @@ form."
               ;; prevent recursive calls !
               (let ((cam/clojure-load-buffer-clean-namespace--namespace-cleaned-p t))
                 (save-buffer)))))))))
+
+(defun cam/insert-clojure-println (text)
+  (interactive "sprintln: ")
+  (if current-prefix-arg
+      (insert "(println \"" text "\") ; NOCOMMIT")
+    (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
+
+(defun cam/insert-small-clojure-header (text)
+  "Insert a small header like: ;;; --- TEXT ---"
+  (let* ((total-width 112)
+         (padding (/ (- total-width (length text)) 2))
+         (dashes (make-string padding ?-)))
+    (insert
+     (concat
+      ";;; "
+      dashes
+      " "
+      text
+      " "
+      dashes
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so
+      ;; things line up
+      (unless (eq (cl-oddp (length text))
+                  (cl-oddp total-width))
+        "-")))))
+
+(defun cam/insert-large-clojure-header (text)
+  "Insert a large box-style header."
+  (let* ((total-width 112)
+         (padding (/ (- total-width (length text)) 2))
+         (horizonal-border (concat ";;; +"
+                                   (make-string total-width ?-)
+                                   "+\n"))
+         (text-padding (make-string padding ? )))
+    (insert
+     (concat
+      ;; top row
+      horizonal-border
+      ;; middle row
+      ";;; |"
+      text-padding
+      text
+      text-padding
+      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so
+      ;; things line up
+      (unless (eq (cl-oddp (length text))
+                  (cl-oddp total-width))
+        " ")
+      "|\n"
+      ;; bottom row
+      horizonal-border))))
+
+(defun cam/insert-clojure-header (text)
+  (interactive "sheader text: ")
+  (if current-prefix-arg
+      (cam/insert-small-clojure-header text)
+    (cam/insert-large-clojure-header text)))
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
@@ -687,10 +729,10 @@ form."
           (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-"))
   :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
-               (ac-delay . 1.0) ; use slightly longer delays for AC because CIDER is slow
+               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
                (ac-auto-show-menu . 1.0)
                (ac-quick-help-delay . 1.5)
-               (fill-column . 118) ; non-docstring column width of 117, which fits nicely on GH
+               (fill-column . 118)                    ; non-docstring column width of 117, which fits nicely on GH
                (clojure-docstring-fill-column . 118)) ; docstring column width of 117
   :local-hooks ((after-save-hook . (lambda ()
                                      (add-hook 'after-save-hook #'cam/clojure-load-buffer-clean-namespace nil :local))))
@@ -698,6 +740,8 @@ form."
          ("<f1>"         . #'ac-cider-popup-doc)
          ("<f7>"         . #'cam/switch-to-test-namespace)
          ("<f8>"         . #'cam/switch-between-model-and-api-namespaces)
+         ("<f9>"         . #'cam/insert-clojure-header)
+         ("<f10>"        . #'cam/insert-clojure-println)
          ("<S-tab>"      . #'auto-complete)
          ("<backtab>"    . #'auto-complete)))
 
@@ -829,7 +873,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   (eval-buffer)
   (-if-let (ielm-window (get-window-with-predicate
                          (lambda (window)
-                           (string= (buffer-name (window-buffer window)) "*ielm*"))))
+                           (string-equal (buffer-name (window-buffer window)) "*ielm*"))))
       (select-window ielm-window)
     (let ((new-window (split-window-sensibly)))
       (if new-window
@@ -838,7 +882,12 @@ deleted, ask to kill any buffers that were visiting files that were children of 
       (ielm)
       (balance-windows))))
 
-;; TODO - Emacs 25 only
+(defun cam/emacs-lisp-insert-message (text)
+  (interactive "sprintln: ")
+  (if current-prefix-arg
+      (insert "(message \" text \")")
+    (insert "(message \"" text ": %s\" " text ")")))
+
 (tweak-package elisp-mode
   :mode-name emacs-lisp-mode
   :load ((put 'add-hook 'lisp-indent-function 1))
@@ -852,7 +901,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                 todo-font-lock-mode
                 wiki-nav-mode)
   :setup ((cam/lisp-mode-setup)
-          (unless (string= user-init-file (buffer-file-name))
+          (unless (string-equal user-init-file (buffer-file-name))
             (flycheck-mode 1)))
   :local-hooks ((after-save-hook . (lambda ()
                                      (when cam/byte-compile
@@ -866,7 +915,8 @@ deleted, ask to kill any buffers that were visiting files that were children of 
          ("C-x C-e"      . #'pp-eval-last-sexp)
          ("<S-tab>" . #'auto-complete)
          ("<backtab>" . #'auto-complete)
-         ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
+         ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)
+         ("<f10>" . #'cam/emacs-lisp-insert-message)))
 
 (tweak-package dash
   :declare (dash-enable-font-lock)
@@ -1021,17 +1071,70 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<markdown]]
+
+(defun cam/-scroll-percentage ()
+  (/ (float (line-number-at-pos (window-start)))
+     (float (line-number-at-pos (point-max)))))
+
+(defun cam/-set-window-start-to-percentage (scroll-percentage)
+  (goto-char (point-min))
+  (let ((target-line-number (truncate (* (line-number-at-pos (point-max)) scroll-percentage))))
+    (forward-line (1- target-line-number)))
+  (set-window-start nil (point)))
+
+(defun cam/-render-markdown-preview-current-buffer ()
+  (message "Rendering Markdown preview of %s" buffer-file-name)
+  (let ((url (concat "file://" buffer-file-name)))
+    (shell-command-on-region (point-min) (point-max) "pandoc -f gfm" "*Preview Markdown Output*")
+    (switch-to-buffer-other-window "*Preview Markdown Output*")
+    (let ((document (libxml-parse-html-region (point) (point-max))))
+      (erase-buffer)
+      (shr-insert-document `(base ((href . ,url)) ,document))
+      (setq buffer-read-only t))))
+
+(defun cam/-preview-markdown-file (filename)
+  (save-selected-window
+    (find-file filename)
+    (let ((scroll-percentage (cam/-scroll-percentage)))
+      (cam/-render-markdown-preview-current-buffer)
+      (cam/-set-window-start-to-percentage scroll-percentage))))
+
+(defun cam/preview-markdown (&optional filename)
+  "Render a markdown preview of FILENAME (by default, the current file) to HTML and display it with
+`shr-insert-document'."
+  (interactive "fFile: ")
+  (if filename
+      (progn
+        (cam/-preview-markdown-file filename)
+        (switch-to-buffer (current-buffer)))
+    (cam/-preview-markdown-file buffer-file-name)))
+
 (tweak-package markdown-mode
   :mode-name markdown-mode
-  :minor-modes (flyspell-mode))
+  :minor-modes (flyspell-mode)
+  :setup ((add-hook 'after-save-hook #'cam/preview-markdown (not :append) :local)))
+
+;;; [[<Messages]]
+
+(defun cam/clear-messages-buffer ()
+  (interactive)
+  (cam/when-let-visible-buffer ((buffer (string-equal "*Messages*" (buffer-name buffer))))
+    (with-current-buffer buffer
+      (read-only-mode -1)
+      (delete-region (point-min) (point-max))
+      (read-only-mode 1))))
+
+(tweak-package simple
+  :mode-name messages-buffer-mode
+  :keys (("c" . #'cam/clear-messages-buffer)))
 
 ;;; [[<Objective-C]]
 (tweak-package cc-mode
   :mode-name objc-mode
-  :load ( ;; Automatically open .h files with @interface declarations as obj-c rather than c
+  :load (;; Automatically open .h files with @interface declarations as obj-c rather than c
          (add-to-list 'magic-mode-alist
                       `(,(lambda ()
-                           (and (string= (file-name-extension buffer-file-name) "h")
+                           (and (string-equal (file-name-extension buffer-file-name) "h")
                                 (re-search-forward "@\\<interface\\>"
                                                    magic-mode-regexp-match-limit t)))
                         . objc-mode)))
@@ -1163,6 +1266,13 @@ Calls `magit-refresh' after the command finishes."
   :minor-modes (flyspell-mode))
 
 ;;; [[<Web Mode]]
+
+(defun cam/js-insert-console-dot-log (text)
+  (interactive "sconsole.log: ")
+  (if current-prefix-arg
+      (insert "console.log(\"" text "\"); // NOCOMMIT")
+    (insert "console.log(\"" text ":\", " text "); // NOCOMMIT")))
+
 (tweak-package web-mode
   :mode-name web-mode
   :minor-modes (column-enforce-mode
@@ -1175,7 +1285,8 @@ Calls `magit-refresh' after the command finishes."
                     "\.json$"
                     "\.html$"
                     "\.jsx$"
-                    "\.mustache$"))
+                    "\.mustache$")
+  :keys (("<f10>" . #'cam/js-insert-console-dot-log)))
 
 ;;; [[<(n)xml Mode]]
 
@@ -1187,7 +1298,10 @@ Calls `magit-refresh' after the command finishes."
          ("<backtab>" . #'company-complete)
          ("C-j" . #'newline))
   :vars ((nxml-slash-auto-complete-flag . t))
-  :auto-mode-alist (".pml$"))
+  :auto-mode-alist (".pml$")
+  :setup ((when (string-equal (file-name-extension buffer-file-name) "pml")
+            (message "<Loading cam/pml-mode>")
+            (cam/pml-mode 1))))
 
 
 ;;; [[<YAML Mode]]
@@ -1236,80 +1350,6 @@ Calls `magit-refresh' after the command finishes."
                 rainbow-mode
                 undo-tree-mode))
   (diminish mode))
-
-
-;;; ------------------------------------------------------------ [[<Experimental]] ------------------------------------------------------------
-
-(defun cam/insert-console-dot-log (text)
-  (interactive "sconsole.log: ")
-  (if current-prefix-arg
-      (insert "console.log(\"" text "\"); // NOCOMMIT")
-    (insert "console.log(\"" text ":\", " text "); // NOCOMMIT")))
-
-(eval-after-load 'web-mode
-  '(define-key web-mode-map (kbd "<f10>") #'cam/insert-console-dot-log))
-
-(defun cam/insert-clojure-println (text)
-  (interactive "sprintln: ")
-  (if current-prefix-arg
-      (insert "(println \"" text "\") ; NOCOMMIT")
-    (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
-
-(defun cam/insert-small-clojure-header (text)
-  "Insert a small header like: ;;; --- TEXT ---"
-  (let* ((total-width 112)
-         (padding (/ (- total-width (length text)) 2))
-         (dashes (make-string padding ?-)))
-    (insert
-     (concat
-      ";;; "
-      dashes
-      " "
-      text
-      " "
-      dashes
-      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so
-      ;; things line up
-      (unless (eq (cl-oddp (length text))
-                  (cl-oddp total-width))
-        "-")))))
-
-(defun cam/insert-large-clojure-header (text)
-  "Insert a large box-style header."
-  (let* ((total-width 112)
-         (padding (/ (- total-width (length text)) 2))
-         (horizonal-border (concat ";;; +"
-                                   (make-string total-width ?-)
-                                   "+\n"))
-         (text-padding (make-string padding ? )))
-    (insert
-     (concat
-      ;; top row
-      horizonal-border
-      ;; middle row
-      ";;; |"
-      text-padding
-      text
-      text-padding
-      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so
-      ;; things line up
-      (unless (eq (cl-oddp (length text))
-                  (cl-oddp total-width))
-        " ")
-      "|\n"
-      ;; bottom row
-      horizonal-border))))
-
-(defun cam/insert-clojure-header (text)
-  (interactive "sheader text: ")
-  (if current-prefix-arg
-      (cam/insert-small-clojure-header text)
-    (cam/insert-large-clojure-header text)))
-
-(eval-after-load 'clojure-mode
-  '(progn
-     (define-key clojure-mode-map (kbd "<f9>") #'cam/insert-clojure-header)
-     (define-key clojure-mode-map (kbd "<f10>") #'cam/insert-clojure-println)))
 
 
 ;;; ---------------------------------------- [[<Powerline & Evil Mode]] ----------------------------------------
@@ -1502,7 +1542,7 @@ Calls `magit-refresh' after the command finishes."
 
 ;; (define-key evil-emacs-state-map (kbd "C-[") #'evil-normal-state)
 
-(evil-mode 1)
+;; (evil-mode 1)
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
@@ -1512,59 +1552,17 @@ Calls `magit-refresh' after the command finishes."
 (unless cam/has-loaded-init-p
   (toggle-frame-maximized))
 
+;; delete the *Warnings* buffer after 50 ms
+(defun cam/-delete-warning-buffer ()
+  (message "<DELETE WARNING BUFFER>")
+  (cam/when-let-visible-buffer ((buffer (string-equal (buffer-name buffer) "*Warnings*")))
+    (unless (eq (get-buffer-window nil) this-window)
+      (delete-window this-window))
+    (kill-buffer buffer)))
+
+(run-at-time 0.05 (not :repeat) #'cam/-delete-warning-buffer)
+
 (setq cam/has-loaded-init-p t)
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
-
-;; these are reversed on the new computer for some reason?
-;; (setq mac-option-modifier 'alt
-;; mac-right-option-modifier 'meta
-;; mac-command-modifier 'hyper
-;; mac-right-command-modifier 'super)
-
-(defun cam/insert-em-dash ()
-  (interactive)
-  (insert-char (char-from-name "EM DASH")))
-
-(global-set-key (kbd "A-e") #'cam/insert-em-dash)
-
-(defun cam/-scroll-percentage ()
-  (/ (float (line-number-at-pos (window-start)))
-     (float (line-number-at-pos (point-max)))))
-
-(defun cam/-set-window-start-to-percentage (scroll-percentage)
-  (goto-char (point-min))
-  (let ((target-line-number (truncate (* (line-number-at-pos (point-max)) scroll-percentage))))
-    (forward-line (1- target-line-number)))
-  (set-window-start nil (point)))
-
-(defun cam/-render-markdown-preview-current-buffer ()
-  (message "Rendering Markdown preview of %s" buffer-file-name)
-  (let ((url (concat "file://" buffer-file-name)))
-    (shell-command-on-region (point-min) (point-max) "pandoc -f gfm" "*Preview Markdown Output*")
-    (switch-to-buffer-other-window "*Preview Markdown Output*")
-    (let ((document (libxml-parse-html-region (point) (point-max))))
-      (erase-buffer)
-      (shr-insert-document `(base ((href . ,url)) ,document))
-      (setq buffer-read-only t))))
-
-(defun cam/-preview-markdown-file (filename)
-  (save-selected-window
-    (find-file filename)
-    (let ((scroll-percentage (cam/-scroll-percentage)))
-      (cam/-render-markdown-preview-current-buffer)
-      (cam/-set-window-start-to-percentage scroll-percentage))))
-
-(defun cam/preview-markdown (&optional filename)
-  "Render a markdown preview of FILENAME (by default, the current file) to HTML and display it with `shr-insert-document'."
-  (interactive "fFile: ")
-  (if filename
-      (progn
-        (cam/-preview-markdown-file filename)
-        (switch-to-buffer (current-buffer)))
-    (cam/-preview-markdown-file buffer-file-name)))
-
-(add-hook 'markdown-mode-hook
-  (lambda ()
-    (add-hook 'after-save-hook #'cam/preview-markdown nil t)))

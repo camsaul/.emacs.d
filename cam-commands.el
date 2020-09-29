@@ -162,5 +162,10 @@ if it is active; otherwise re-align comments on the current line."
           (cam/realign-eol-comment-current-line)
           (forward-line))))))
 
+;;;###autoload
+(defun cam/insert-em-dash ()
+  (interactive)
+  (insert-char (char-from-name "EM DASH")))
+
 (provide 'cam-commands)
 ;;; cam-commands.el ends here

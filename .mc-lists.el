@@ -47,6 +47,7 @@
         markdown-enter-key
         markdown-exdent-or-delete
         markdown-outdent-or-delete
+        nxml-electric-slash
         org-self-insert-command
         paredit-backslash
         paredit-backward
