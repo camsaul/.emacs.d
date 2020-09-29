@@ -464,9 +464,9 @@
     (highlight-parentheses-mode 1)
     (rainbow-delimiters-mode 1)
     (show-paren-mode 1)
-    (if (or (not evil-mode)
-            (cl-member evil-state '(emacs insert)))
-        (cam/switch-to-paredit)
+    (cam/switch-to-paredit)
+    (when (and evil-mode
+               (not (cl-member evil-state '(emacs insert))))
       (cam/switch-to-smartparens))
     (add-hook 'before-save-hook
       #'cam/untabify-current-buffer
