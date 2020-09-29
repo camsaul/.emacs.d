@@ -3,7 +3,7 @@
 (message "In cam-pml-mode.el")
 
 (eval-when-compile
-  '(require 'column-enforce-mode))
+  (require 'column-enforce-mode))
 
 (defun cam/pml-insert-inline-code ()
   (interactive)

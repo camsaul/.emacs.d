@@ -111,12 +111,13 @@
 
 ;; byte recompile the other files in this dir if needed
 (defconst cam/auxilary-init-files
-  (eval-when-compile (let (files)
-                       (dolist (file (directory-files user-emacs-directory))
-                         (when (and (string-match "^[-[:alpha:]]+\\.el$" file)
-                                    (not (member file '("autoloads.el" "custom.el" "init.el"))))
-                           (push (concat user-emacs-directory file) files)))
-                       files)))
+  (eval-when-compile
+    (let (files)
+      (dolist (file (directory-files user-emacs-directory))
+        (when (and (string-match "^[-[:alpha:]]+\\.el$" file)
+                   (not (member file '("autoloads.el" "custom.el" "init.el"))))
+          (push (concat user-emacs-directory file) files)))
+      files)))
 
 (eval-when-compile
   (dolist (file cam/auxilary-init-files)
@@ -595,125 +596,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
 
 ;;; [[<Clojure]]
 
-(defun cam/clear-nrepl-server-buffer ()
-  "Clear contents of the `*nrepl-server*` buffer."
-  (cam/when-let-visible-buffer ((buffer (string-prefix-p "*nrepl-server" (buffer-name buffer))))
-    (with-current-buffer buffer
-      (comint-clear-buffer))))
 
-(defun cam/switch-to-test-namespace ()
-  "Switch to the test namespace for the current buffer; or if this is a test namespace, switch back to the code
-namespace."
-  (interactive)
-  (let* ((directory (file-name-directory buffer-file-name))
-         (source-file-p (string-match-p "/src/" directory)))
-    (find-file (concat (if source-file-p
-                           (replace-regexp-in-string "/src/" "/test/" directory)
-                         (replace-regexp-in-string "/test/" "/src/" directory))
-                       (if source-file-p
-                           (concat (file-name-base buffer-file-name) "_test")
-                         (replace-regexp-in-string "_test$" "" (file-name-base buffer-file-name)))
-                       "."
-                       (file-name-extension buffer-file-name)))))
-
-(defun cam/switch-between-model-and-api-namespaces ()
-  "(For Metabase development) if the current buffer is a /model/ namespace, switch to the corresponding /api/ namespace,
-and vice versa."
-  (interactive)
-  (find-file
-   (if (string-match-p "/models/" buffer-file-name)
-       (replace-regexp-in-string "/models/" "/api/" buffer-file-name)
-     (replace-regexp-in-string "/api/" "/models/" buffer-file-name))))
-
-(declare-function cider-load-buffer-and-switch-to-repl-buffer "cider-mode")
-
-(defun cam/clojure-save-load-switch-to-cider ()
-  (interactive)
-  (save-buffer)
-  (cam/clear-nrepl-server-buffer)
-  (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
-  (cider-repl-clear-buffer))
-
-(defvar cam/clojure-load-buffer-clean-namespace--namespace-cleaned-p nil)
-
-(cl-defun cam/clojure-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
-  "When CIDER is active attempt to load BUFFER (by default, the current buffer) and clean its namespace declaration
-form."
-  (interactive "bBuffer: ")
-  (when (not cam/clojure-load-buffer-clean-namespace--namespace-cleaned-p)
-    (with-demoted-errors "Error cleaning namespace declaration: %S"
-      (with-current-buffer (get-buffer buffer)
-        (let ((filename (file-name-nondirectory (buffer-file-name))))
-          ;; don't run for `project.clj` or EDN files
-          (when (and (not (string-equal filename "project.clj"))
-                     (not (string-match-p "\.edn$" filename))
-                     (cider-current-repl))
-            ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the file
-            ;; first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to save
-            (let ((cider-save-file-on-load t))
-              (cider-load-buffer))
-            (cljr-clean-ns)
-            (when (buffer-modified-p)
-              ;; prevent recursive calls !
-              (let ((cam/clojure-load-buffer-clean-namespace--namespace-cleaned-p t))
-                (save-buffer)))))))))
-
-(defun cam/insert-clojure-println (text)
-  (interactive "sprintln: ")
-  (if current-prefix-arg
-      (insert "(println \"" text "\") ; NOCOMMIT")
-    (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
-
-(defun cam/insert-small-clojure-header (text)
-  "Insert a small header like: ;;; --- TEXT ---"
-  (let* ((total-width 112)
-         (padding (/ (- total-width (length text)) 2))
-         (dashes (make-string padding ?-)))
-    (insert
-     (concat
-      ";;; "
-      dashes
-      " "
-      text
-      " "
-      dashes
-      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less dash than needed so add an extra so
-      ;; things line up
-      (unless (eq (cl-oddp (length text))
-                  (cl-oddp total-width))
-        "-")))))
-
-(defun cam/insert-large-clojure-header (text)
-  "Insert a large box-style header."
-  (let* ((total-width 112)
-         (padding (/ (- total-width (length text)) 2))
-         (horizonal-border (concat ";;; +"
-                                   (make-string total-width ?-)
-                                   "+\n"))
-         (text-padding (make-string padding ? )))
-    (insert
-     (concat
-      ;; top row
-      horizonal-border
-      ;; middle row
-      ";;; |"
-      text-padding
-      text
-      text-padding
-      ;; if total-width and text aren't BOTH odd or BOTH even we'll have one less space than needed so add an extra so
-      ;; things line up
-      (unless (eq (cl-oddp (length text))
-                  (cl-oddp total-width))
-        " ")
-      "|\n"
-      ;; bottom row
-      horizonal-border))))
-
-(defun cam/insert-clojure-header (text)
-  (interactive "sheader text: ")
-  (if current-prefix-arg
-      (cam/insert-small-clojure-header text)
-    (cam/insert-large-clojure-header text)))
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
@@ -735,27 +618,19 @@ form."
                (fill-column . 118)                    ; non-docstring column width of 117, which fits nicely on GH
                (clojure-docstring-fill-column . 118)) ; docstring column width of 117
   :local-hooks ((after-save-hook . (lambda ()
-                                     (add-hook 'after-save-hook #'cam/clojure-load-buffer-clean-namespace nil :local))))
-  :keys (("<C-M-return>" . #'cam/clojure-save-load-switch-to-cider)
+                                     (add-hook 'after-save-hook #'cam/clj-load-buffer-clean-namespace nil :local))))
+  :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
          ("<f1>"         . #'ac-cider-popup-doc)
-         ("<f7>"         . #'cam/switch-to-test-namespace)
-         ("<f8>"         . #'cam/switch-between-model-and-api-namespaces)
-         ("<f9>"         . #'cam/insert-clojure-header)
-         ("<f10>"        . #'cam/insert-clojure-println)
+         ("<f7>"         . #'cam/clj-switch-to-test-namespace)
+         ("<f8>"         . #'cam/clj-switch-between-model-and-api-namespaces)
+         ("<f9>"         . #'cam/clj-insert-header)
+         ("<f10>"        . #'cam/clj-insert-println)
          ("<S-tab>"      . #'auto-complete)
          ("<backtab>"    . #'auto-complete)))
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
-  :vars ((cljr-expectations-test-declaration . "[expectations :refer :all]")
-         (cljr-favor-prefix-notation . t)))
-
-(defun cam/ansi-colorize-nrepl-output-buffer-if-needed (f process output)
-  (let ((old-max (with-current-buffer (process-buffer process)
-                   (point-max))))
-    (funcall f process (replace-regexp-in-string "^.+ :: " "" output)) ; strip the logging prefix while we're at it
-    (with-current-buffer (process-buffer process)
-      (ansi-color-apply-on-region old-max (point-max)))))
+  :vars ((cljr-favor-prefix-notation . nil)))
 
 (tweak-package cider
   :mode-name cider-repl-mode
@@ -767,7 +642,7 @@ form."
                                           "Delete trailing whitespace that may have been introduced by `auto-complete'."
                                           (interactive)
                                           (call-interactively #'delete-trailing-whitespace)))
-           (#'nrepl-server-filter :around #'cam/ansi-colorize-nrepl-output-buffer-if-needed))
+           (#'nrepl-server-filter :around #'cam/clj-ansi-colorize-nrepl-output-buffer-if-needed))
   :minor-modes (auto-complete-mode
                 eldoc-mode)
   :setup ((cam/lisp-mode-setup)
@@ -1552,7 +1427,7 @@ Calls `magit-refresh' after the command finishes."
 (unless cam/has-loaded-init-p
   (toggle-frame-maximized))
 
-;; delete the *Warnings* buffer after 50 ms
+;; delete the *Warnings* buffer after 100 ms, then try again at 500ms and 1 second to make sure it's gone.
 (defun cam/-delete-warning-buffer ()
   (message "<DELETE WARNING BUFFER>")
   (cam/when-let-visible-buffer ((buffer (string-equal (buffer-name buffer) "*Warnings*")))
@@ -1560,7 +1435,9 @@ Calls `magit-refresh' after the command finishes."
       (delete-window this-window))
     (kill-buffer buffer)))
 
-(run-at-time 0.05 (not :repeat) #'cam/-delete-warning-buffer)
+(run-at-time 0.1 (not :repeat) #'cam/-delete-warning-buffer)
+(run-at-time 0.5 (not :repeat) #'cam/-delete-warning-buffer)
+(run-at-time 1.0 (not :repeat) #'cam/-delete-warning-buffer)
 
 (setq cam/has-loaded-init-p t)
 
