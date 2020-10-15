@@ -1155,13 +1155,13 @@ Calls `magit-refresh' after the command finishes."
                 rainbow-delimiters-mode)
   :keys (("C-j" . #'newline)
          ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete))
+         ("<backtab>" . #'auto-complete)
+         ("<f10>" . #'cam/js-insert-console-dot-log))
   :auto-mode-alist ("\.js$"
                     "\.json$"
                     "\.html$"
                     "\.jsx$"
-                    "\.mustache$")
-  :keys (("<f10>" . #'cam/js-insert-console-dot-log)))
+                    "\.mustache$"))
 
 ;;; [[<(n)xml Mode]]
 
