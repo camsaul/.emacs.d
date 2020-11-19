@@ -209,6 +209,8 @@
     cmake-ide
 
     racket-mode
+
+    unicode-fonts
     ))
 
 ;;; Install packages as needed
@@ -596,8 +598,6 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
 
 
 ;;; [[<Clojure]]
-
-
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
@@ -1442,3 +1442,6 @@ Calls `magit-refresh' after the command finishes."
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
+
+(require 'unicode-fonts)
+(unicode-fonts-setup)
