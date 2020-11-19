@@ -284,6 +284,7 @@
       `(("." . ,(expand-file-name
                  (concat user-emacs-directory
                          "backups"))))
+      create-lockfiles nil                       ; don't create .#<filename> lockfiles -- we're not in a shared system
 
       custom-file (expand-file-name
                    (concat user-emacs-directory
