@@ -26,17 +26,17 @@
   (declare (indent 1))
   `(progn
      (eval-when-compile
-       '(progn ,@(cl-loop for p in (cons package require)
-                          collect `(require ',p))))
+       ,@(cl-loop for p in (cons package require)
+                  collect `(require ',p)))
      ,@(cl-loop for f in declare
                 collect `(declare-function ,f ,(symbol-name package)))
-     ,@(cl-loop for (var . value) in vars
-                collect `(setq ,var ,value))
      ,(when (or require advice load keys)
         `(eval-after-load ',package
            '(progn
               ,@(cl-loop for other-package in require
                          collect `(require ',other-package))
+              ,@(cl-loop for (var . value) in vars
+                         collect `(setq ,var ,value))
               ,@(cl-loop for item in advice
                          collect `(advice-add ,@item))
               ,@load
