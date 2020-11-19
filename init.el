@@ -1124,16 +1124,40 @@ Calls `magit-refresh' after the command finishes."
   :mode-name web-mode
   :minor-modes (column-enforce-mode
                 electric-pair-local-mode
-                rainbow-delimiters-mode)
+                rainbow-delimiters-mode
+                company-mode)
   :keys (("C-j" . #'newline)
-         ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)
+         ("<S-tab>" . #'company-complete)
+         ("<backtab>" . #'company-complete)
          ("<f10>" . #'cam/js-insert-console-dot-log))
   :auto-mode-alist ("\.js$"
                     "\.json$"
                     "\.html$"
                     "\.jsx$"
-                    "\.mustache$"))
+                    "\.mustache$")
+  :setup
+  ;; make sure autocomplete isn't enabled (we're using company instead)
+  ((auto-complete-mode -1)
+   ;; enable tide-mode for JS files
+   (when (let ((ext (file-name-extension buffer-file-name)))
+           (or (string= ext "js")
+               (string= ext "jsx")))
+     (require 'tide)
+     (tide-setup))))
+
+(tweak-package tide
+  :require (company-lsp)
+  :minor-modes (flycheck-mode
+                eldoc-mode
+                tide-hl-identifier-mode
+                column-enforce-mode
+                electric-pair-local-mode
+                rainbow-delimiters-mode)
+  :keys (("<f1>" . #'tide-documentation-at-point))
+  :vars ((tide-always-show-documentation . t))
+  :setup
+  ((flyspell-prog-mode)
+   (company-mode 1)))
 
 ;;; [[<(n)xml Mode]]
 
