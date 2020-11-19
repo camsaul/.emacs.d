@@ -948,47 +948,19 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; [[<markdown]]
 
-(defun cam/-scroll-percentage ()
-  (/ (float (line-number-at-pos (window-start)))
-     (float (line-number-at-pos (point-max)))))
+(eval-after-load "markdown-mode"
+  '(progn
+     (require 'preview-markdown)
+     (add-hook 'markdown-mode-hook
+       (lambda ()
+         (add-hook 'after-save-hook #'preview-markdown-if-automatic-previews-enabled nil t)))))
 
-(defun cam/-set-window-start-to-percentage (scroll-percentage)
-  (goto-char (point-min))
-  (let ((target-line-number (truncate (* (line-number-at-pos (point-max)) scroll-percentage))))
-    (forward-line (1- target-line-number)))
-  (set-window-start nil (point)))
-
-(defun cam/-render-markdown-preview-current-buffer ()
-  (message "Rendering Markdown preview of %s" buffer-file-name)
-  (let ((url (concat "file://" buffer-file-name)))
-    (shell-command-on-region (point-min) (point-max) "pandoc -f gfm" "*Preview Markdown Output*")
-    (switch-to-buffer-other-window "*Preview Markdown Output*")
-    (let ((document (libxml-parse-html-region (point) (point-max))))
-      (erase-buffer)
-      (shr-insert-document `(base ((href . ,url)) ,document))
-      (setq buffer-read-only t))))
-
-(defun cam/-preview-markdown-file (filename)
-  (save-selected-window
-    (find-file filename)
-    (let ((scroll-percentage (cam/-scroll-percentage)))
-      (cam/-render-markdown-preview-current-buffer)
-      (cam/-set-window-start-to-percentage scroll-percentage))))
-
-(defun cam/preview-markdown (&optional filename)
-  "Render a markdown preview of FILENAME (by default, the current file) to HTML and display it with
-`shr-insert-document'."
-  (interactive "fFile: ")
-  (if filename
-      (progn
-        (cam/-preview-markdown-file filename)
-        (switch-to-buffer (current-buffer)))
-    (cam/-preview-markdown-file buffer-file-name)))
 
 (tweak-package markdown-mode
   :mode-name markdown-mode
   :minor-modes (flyspell-mode)
-  :setup ((add-hook 'after-save-hook #'cam/preview-markdown (not :append) :local)))
+  ;; :setup ((add-hook 'after-save-hook #'user/preview-markdown (not :append) :local))
+  )
 
 ;;; [[<Messages]]
 
