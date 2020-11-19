@@ -24,3 +24,4 @@ workspace/
 network-security.data
 /.tutor
 /racket-mode/
+var/
