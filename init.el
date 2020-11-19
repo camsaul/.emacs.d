@@ -205,8 +205,22 @@
     evil-smartparens
     evil-cleverparens
 
+    ;; new JS stuff
+    lsp-mode
+    company-lsp
+    tide
+
+    ;; new C++ stuff
     rtags
     cmake-ide
+    ;; I'm not sure how many of these we actually need/want
+    company-rtags
+    helm-rtags
+    disaster
+    ;; lsp-ui
+    eglot
+    eldoc-box
+    cpp-auto-include
 
     racket-mode
 
@@ -546,19 +560,6 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
         text
       (concat "\"" text " = \" << " text))
     " << std::endl;")))
-
-;; company-rtags
-;; helm-rtags
-;; disaster
-;; lsp-mode
-;; company-lsp
-;; lsp-ui
-;; eglot
-;; eldoc-box
-
-;; MAYBE
-
-;; cpp-auto-include
 
 (tweak-package cc-mode
   :mode-name c++-mode
