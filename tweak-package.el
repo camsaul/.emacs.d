@@ -26,8 +26,8 @@
   (declare (indent 1))
   `(progn
      (eval-when-compile
-       ,@(cl-loop for p in (cons package require)
-                  collect `(require ',p)))
+       '(progn ,@(cl-loop for p in (cons package require)
+                          collect `(require ',p))))
      ,@(cl-loop for f in declare
                 collect `(declare-function ,f ,(symbol-name package)))
      ,@(cl-loop for (var . value) in vars
