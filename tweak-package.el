@@ -30,7 +30,7 @@
                   collect `(require ',p)))
      ,@(cl-loop for f in declare
                 collect `(declare-function ,f ,(symbol-name package)))
-     ,(when (or require advice load keys)
+     ,(when (or require advice load keys vars)
         `(eval-after-load ',package
            '(progn
               ,@(cl-loop for other-package in require
