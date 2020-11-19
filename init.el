@@ -1117,24 +1117,22 @@ Calls `magit-refresh' after the command finishes."
 
 (setq inferior-lisp-program "sbcl")
 
-(add-hook 'inferior-lisp-mode-hook #'cam/lisp-mode-setup)
-
-;; (tweak-package lisp-mode
-;;   :mode-name lisp-mode
-;;   :vars ((inferior-lisp-program . "/usr/local/bin/sbcl"))
-;;   :minor-modes (auto-complete-mode)
-;;   :keys (("<C-M-s-return>" . #'cam/save-load-switch-to-sly))
-;;   :setup ((cam/lisp-mode-setup))
-;;   )
+;; Tweak configuration for the Sly minor mode as opposed to lisp-mode because otherwise tweak-package will redefine
+;; cam/lisp-mode-setup
 
 ;;; [[<Sly]]
 (tweak-package sly
-  :require (ac-sly)
+  ;; :require (ac-sly)
   :minor-modes (auto-complete-mode)
   :keys (("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete))
+         ("<backtab>" . #'auto-complete)
+         ("<C-M-return>" . #'cam/save-load-switch-to-sly))
   :setup ((cam/lisp-mode-setup)
-          (set-up-sly-ac :fuzzy)))
+          ;; don't load ac-sly until after sly is loaded, otherwise there will be circular requires between them
+          (eval-after-load 'sly
+            '(progn
+               (require 'ac-sly)
+               (set-up-sly-ac :fuzzy)))))
 
 ;;; [[<text-mode]]
 (tweak-package text-mode
