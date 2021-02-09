@@ -7,6 +7,7 @@
 (eval-when-compile
   (require 'cl-lib)
   (require 'dash)
+  (require 'subr-x)
   (require 'loccur))
 
 (cl-eval-when (load)
@@ -84,10 +85,15 @@
   (require 'url-util)) ; for url-hexify-string
 
 ;;;###autoload
-(defun cam/instant-clojure-cheatsheet-search (search-term)
-  "Open a browser window and search Instant Clojure Cheatsheet for SEARCH-TERM."
-  (interactive (list (read-string "Search Instant Clojure Cheatsheet for: " (cam/symbol-at-point-name))))
-  (browse-url (format "http://localhost:13370/#?q=%s" (url-hexify-string search-term))))
+(defun cam/open-metabase-issue-or-pr (issue-number)
+  "Open Metabase GitHub issue or pull request with ISSUE-NUMBER in your browser.
+If there is a number under your current cursor position, uses that number
+automatically; otherwise prompts for a number."
+  (interactive (list (or (when-let ((num (number-at-point)))
+                           (when (integerp num)
+                             num))
+                         (read-number "Issue or pull request number: "))))
+  (browse-url (format "https://github.com/metabase/metabase/pull/%d" issue-number)))
 
 ;;;###autoload
 (defun cam/duckduckgo-search (search-term)
