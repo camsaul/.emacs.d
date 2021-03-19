@@ -602,7 +602,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
 
 (tweak-package clojure-mode
   :mode-name clojure-mode
-  :require (clojure-mode-extra-font-locking)
+  :require (clojure-mode-extra-font-locking cider-eldoc)
   :minor-modes (auto-complete-mode
                 cider-mode
                 clj-refactor-mode
@@ -612,11 +612,14 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
   :setup ((cam/lisp-mode-setup)
           (flyspell-prog-mode)
           (ac-cider-setup)
-          (cljr-add-keybindings-with-modifier "A-H-"))
+          (cljr-add-keybindings-with-modifier "A-H-")
+          (setq-local eldoc-documentation-function #'cider-eldoc)
+          (eldoc-mode 1))
   :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
                (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
                (ac-auto-show-menu . 1.0)
                (ac-quick-help-delay . 1.5)
+               (eldoc-documentation-function . #'cider-eldoc)
                (fill-column . 118)                    ; non-docstring column width of 117, which fits nicely on GH
                (clojure-docstring-fill-column . 118)) ; docstring column width of 117
   :local-hooks ((after-save-hook . (lambda ()
@@ -629,6 +632,8 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
          ("<f10>"        . #'cam/clj-insert-println)
          ("<S-tab>"      . #'auto-complete)
          ("<backtab>"    . #'auto-complete)))
+
+(add-to-list 'auto-mode-alist '(".cljs$" . clojurescript-mode))
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
