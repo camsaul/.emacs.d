@@ -1,5 +1,11 @@
 ;;; -*- lexical-binding: t; coding: utf-8; -*-
 
+(require 'markdown-mode)
+
+(defvar-local preview-markdown-mode
+  nil
+  "Non-nil if Preview Markdown mode is enabled.")
+
 (defun preview-markdown--scroll-percentage ()
   (/ (float (line-number-at-pos (window-start)))
      (float (line-number-at-pos (point-max)))))
@@ -29,7 +35,6 @@
       (preview-markdown--render-preview-current-buffer)
       (preview-markdown--set-window-start-to-percentage scroll-percentage))))
 
-;;;###autoload
 (defun preview-markdown (&optional filename)
   "Render a markdown preview of FILENAME (by default, the current file) to HTML
 and display it with `shr-insert-document'."
@@ -40,14 +45,16 @@ and display it with `shr-insert-document'."
         (switch-to-buffer (current-buffer)))
     (preview-markdown--preview buffer-file-name)))
 
-(defvar-local preview-markdown-enable-automatic-previews t
-  "Whether to enable automatic previews for Markdown files.")
-
-;;;###autoload
-(defun preview-markdown-if-automatic-previews-enabled ()
-  "Render a Markdown preview for the current buffer, but only if
-`preview-markdown-automatic-preview' is truthy."
-  (when preview-markdown-enable-automatic-previews
-    (preview-markdown)))
+(define-minor-mode preview-markdown-mode
+  "A minor mode that automatically renders previews of Markdown files upon save."
+  :lighter " Prev-MD"
+  (if preview-markdown-mode
+      (add-hook 'after-save-hook #'preview-markdown nil t)
+    (remove-hook 'after-save-hook #'preview-markdown t)))
 
 (provide 'preview-markdown)
+
+(define-minor-mode preview-markdown-mode
+  "A minor mode that automatically renders previews of Markdown files upon save."
+  :lighter " Prev-MD"
+  ...)
