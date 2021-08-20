@@ -7,8 +7,6 @@
 (eval-when-compile
   (require 'cl-lib))
 
-(message "LOADED CAM-MACROS!")
-
 ;;; [[cam/time]] ------------------------------------------------------------
 
 (defsubst cam/current-microseconds ()
