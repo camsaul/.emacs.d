@@ -113,6 +113,9 @@
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
 
+(eval-when-compile
+  (require 'package))
+
 (package-initialize)
 
 
@@ -221,6 +224,8 @@
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
+(require 'evil)
+
 ;;; [[<Theme]]
 
 (eval-when-compile
@@ -251,7 +256,7 @@
 ;;; [[<Global Requires]]
 
 (require 'editorconfig)
-(require 'projectile)
+(require 'projectile) ; TODO - why is this a global require?
 
 (eval-when-compile
   (require 'cl-lib)
@@ -933,13 +938,10 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; [[<markdown]]
 
-(eval-after-load "markdown-mode"
-  '(progn
-     (require 'preview-markdown)
-     (add-hook 'markdown-mode-hook
-       (lambda ()
-         (add-hook 'after-save-hook #'preview-markdown-if-automatic-previews-enabled nil t)))))
-
+(with-eval-after-load "markdown-mode"
+  (require 'preview-markdown)
+  ;; enable preview-markdown-mode by default for Markdown files
+  (add-hook 'markdown-mode-hook #'preview-markdown-mode))
 
 (tweak-package markdown-mode
   :mode-name markdown-mode
@@ -1410,10 +1412,10 @@ Calls `magit-refresh' after the command finishes."
 (run-at-time 0.5 (not :repeat) #'cam/-delete-warning-buffer)
 (run-at-time 1.0 (not :repeat) #'cam/-delete-warning-buffer)
 
+(require 'unicode-fonts)
+(unicode-fonts-setup)
+
 (setq cam/has-loaded-init-p t)
 
 (ignore-errors ; only seems to work on Emacs 25+
   (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
-
-(require 'unicode-fonts)
-(unicode-fonts-setup)
