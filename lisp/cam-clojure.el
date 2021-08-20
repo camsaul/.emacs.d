@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; cam/byte-compile: t; cam/generate-autoloads: t; -*-
+;;; -*- lexical-binding: t; -*-
 
 (eval-when-compile
   (require 'cl-lib)

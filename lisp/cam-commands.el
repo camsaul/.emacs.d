@@ -1,4 +1,4 @@
-;;; cam-commands -- General commands that don't need to be loaded right away -*- lexical-binding: t; cam/byte-compile: t; cam/generate-autoloads: t; -*-
+;;; cam-commands -- General commands that don't need to be loaded right away -*- lexical-binding: t;  -*-
 
 ;;; Commentary:
 

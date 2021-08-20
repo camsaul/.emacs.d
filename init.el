@@ -98,7 +98,8 @@
              (expand-file-name (concat cam/-user-source-directory file)))
            (cl-remove-if (lambda (file)
                            (or (not (string-suffix-p ".el" file))
-                               (string-prefix-p ".#" file)))
+                               (string-prefix-p ".#" file)
+                               (string-equal file "")))
                          (directory-files cam/-user-source-directory)))))
 
 (defun cam/-byte-compile-init-files (&optional force-update-autoloads)
@@ -237,46 +238,12 @@
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
-(require 'evil)
+
 
 ;;; [[<Theme]]
 
-(eval-when-compile
-  (require 'moe-theme))
-(require 'moe-theme)
-
 ;; Load the theme just once, otherwise the screen will flicker all cray if we try to eval this buffer again
-(unless cam/has-loaded-init-p
-  (moe-dark)
-  (ignore-errors
-    ;; use a different font size depending on whether we're rendering in pure GTK w/ display scaling or not.
-    (let* ((hdpi-scale (or (when (and (boundp 'pgtk-initialized)
-                                      pgtk-initialized)
-                             (when-let ((scale (getenv "GDK_DPI_SCALE")))
-                               (string-to-number scale)))
-                           1))
-           (font-size (ceiling (/ 20 hdpi-scale)))
-           ;; use shell command `fc-list` to get the list of available fonts on the system.
-           ;; M-x list-fontsets to list the fonts available to Emacs
-           (font-name
-            ;; "DejaVuSansMono"
-            "Cascadia Code")
-           (font (format "%s-%d" font-name font-size)))
-      (message "Using font %s" font)
-      ;; nil = don't worry about keeping the current frame size.
-      ;; t = apply font to all frames going forward & save setting to custom.el (supposedly)
-      (set-frame-font font nil t))))
-
-(defun cam/setup-frame ()
-  (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
-  (moe-theme-random-color)
-  (set-face-foreground 'mode-line "#111111")
-  (set-cursor-color (face-background 'mode-line))
-  ;;  Don't show a blue background behind buffer name on modeline for deselected frames
-  (set-face-background 'mode-line-buffer-id nil))
-
-(advice-add #'make-frame-command :after #'cam/setup-frame)
-
+(require 'cam-theme)
 (unless cam/has-loaded-init-p
   (cam/setup-frame))
 
@@ -349,9 +316,12 @@
 
       )
 
-(setq-default fill-column 118                     ; My screen can handle more than 70 characters; use 118 so GH won't cut it off
+(setq-default display-line-numbers nil            ; don't show line numbers.
+              display-line-numbers-widen t        ; displaying line numbers should disregard narrowing.
+              fill-column 118                     ; My screen can handle more than 70 characters; use 118 so GH won't cut it off
               indent-tabs-mode nil                ; disable insertion of tabs
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
+
 
 (add-to-list 'projectile-globally-ignored-files   ; Tell projectile to always ignore uberdoc.html
              "uberdoc.html")
@@ -370,6 +340,8 @@
 
 ;;; [[<Global Keybindings]]
 
+(autoload 'evil-normal-state "evil")
+
 (cam/global-set-keys
   ("<A-escape>"    . #'helm-mark-ring)
   ("<A-return>"    . #'wiki-nav-ido)
@@ -385,7 +357,7 @@
   ("<S-delete>"    . #'cam/hungry-delete-forward)
   ("<S-down>"      . #'windmove-down)
   ("<S-left>"      . #'cam/windmove-left-or-other-frame)
-  ("<S-right>"     . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
+  ("<S-right>"     . #'cam/windmove-right-or-other-frame) ; Use <f11> <key> for toggling various minor modes
   ("<S-up>"        . #'windmove-up)
   ("<escape>"      . #'evil-normal-state)
   ("<f11>"         . nil)
@@ -397,10 +369,10 @@
   ("<f12> d"       . #'cam/duckduckgo-search)
   ("<f12> i"       . #'cam/open-metabase-issue-or-pr)
   ("<f12> j"       . #'cider-javadoc)
-  ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
+  ("<f5>"          . #'ftf-find-file)           ; alternate bindings since super modifier doesn't work well on Windows
   ("<f6>"          . #'ftf-grepsource)
   ("<insert>"      . nil)
-  ("<scroll>"      . #'ftf-find-file)                               ; for Windows use scroll to open file since s-o doesn't work
+  ("<scroll>"      . #'ftf-find-file)             ; for Windows use scroll to open file since s-o doesn't work
   ("A-;"           . #'cam/loccur)
   ("A-e"           . #'cam/insert-em-dash)
   ("A-r l"         . #'rotate-layout)
@@ -412,18 +384,18 @@
   ("C-c C-g"       . #'keyboard-quit)
   ("C-h M"         . #'describe-minor-mode)
   ("C-x C-b"       . #'helm-buffers-list)
-  ("C-x C-d"       . #'dired)                                       ; instead of ido-list-directory
+  ("C-x C-d"       . #'dired)                     ; instead of ido-list-directory
   ("C-x C-f"       . #'helm-find-files)
   ("C-x C-g"       . #'keyboard-quit)
-  ("C-x C-q"       . nil)                                           ; remove keybinding for read-only-mode since I almost never press it on purpose
+  ("C-x C-q"       . nil)              ; remove keybinding for read-only-mode since I almost never press it on purpose
   ("C-x C-r"       . #'helm-recentf)
-  ("C-x C-z"       . nil)                                           ; instead of suspend-frame
+  ("C-x C-z"       . nil)                         ; instead of suspend-frame
   ("C-x b"         . #'helm-buffers-list)
   ("C-x f"         . #'helm-find-files)
   ("C-x k"         . #'kill-this-buffer)
-  ("C-x r r"       . #'register-list)                               ; replaces copy-rectangle-to-register
+  ("C-x r r"       . #'register-list)             ; replaces copy-rectangle-to-register
   ("C-x w"         . nil)
-  ("C-x w ."       . #'highlight-symbol-at-point)                   ; this is the normal binding for this function but isn't added until `hi-lock.el` is loaded
+  ("C-x w ."       . #'highlight-symbol-at-point) ; this is the normal binding for this function but isn't added until `hi-lock.el` is loaded
   ("C-z"           . #'evil-normal-state)
   ;; ("ESC <up>"      . #'windmove-up)
   ("H-;"           . #'cam/realign-eol-comments)
@@ -431,9 +403,9 @@
   ("H-M-e"         . #'mc/skip-to-next-like-this)
   ("H-a"           . #'mc/mark-previous-like-this)
   ("H-e"           . #'mc/mark-next-like-this)
-  ("M-/"           . #'hippie-expand)                               ; Instead of dabbrev-expand
-  ("M-:"           . #'pp-eval-expression)                          ; Instead of regular eval-expression
-  ("M-g"           . #'goto-line)                                   ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
+  ("M-/"           . #'hippie-expand)             ; Instead of dabbrev-expand
+  ("M-:"           . #'pp-eval-expression)        ; Instead of regular eval-expression
+  ("M-g"           . #'goto-line) ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
   ("M-j"           . #'cam/join-next-line)
   ("M-x"           . #'helm-M-x)
   ("s-;"           . #'cam/insert-spaces-to-goal-column)
@@ -459,26 +431,7 @@
 
 ;;; [[<Lisp Modes]]
 
-;; (declare-function cam/evil-mode-lisp-setup "init.el")
-
 (setq-default cam/is-lisp-mode-p nil)
-
-(defun cam/switch-to-paredit ()
-  (when cam/is-lisp-mode-p
-    (ignore-errors
-      (paredit-mode 1))
-    (smartparens-mode -1)
-    (when evil-mode
-      (evil-smartparens-mode -1)
-      (evil-cleverparens-mode -1))))
-
-(defun cam/switch-to-smartparens ()
-  (when cam/is-lisp-mode-p
-    (paredit-mode -1)
-    (smartparens-mode 1)
-    (when evil-mode
-      (evil-smartparens-mode 1)
-      (evil-cleverparens-mode 1))))
 
 (defun cam/lisp-mode-setup ()
   (unless cam/is-lisp-mode-p
@@ -486,10 +439,11 @@
     (highlight-parentheses-mode 1)
     (rainbow-delimiters-mode 1)
     (show-paren-mode 1)
-    (cam/switch-to-paredit)
-    (when (and evil-mode
-               (not (cl-member evil-state '(emacs insert))))
-      (cam/switch-to-smartparens))
+    (paredit-mode 1)
+    ;; (cam/switch-to-paredit)
+    ;; (when (and evil-mode
+    ;;            (not (cl-member evil-state '(emacs insert))))
+    ;;   (cam/switch-to-smartparens))
     (add-hook 'before-save-hook
       #'cam/untabify-current-buffer
       (not :append)
@@ -1234,207 +1188,16 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; ---------------------------------------- [[<Powerline & Evil Mode]] ----------------------------------------
 
-(require 'evil)
-(require 'powerline)
-(require 'powerline-evil)
+(with-eval-after-load 'evil
+  (require 'cam-evil))
 
-(defun cam/evil-state-color (&optional state)
-  (cl-case (or state evil-state)
-    ('emacs "#dd0000")
-    ('normal "#0072bb")
-    ('visual "#ffd034")
-    ('insert "#336600")
-    ('replace "#663399")
-    ('operator "#ff0099")
-    ('motion "orange")
-    (otherwise "#cc6633")))
 
-(set-cursor-color (cam/evil-state-color))
 
-(setq-default display-line-numbers nil)
-(setq-local display-line-numbers-widen t)
-
-;; (defun cam/evil-mode-setup ()
-;;   (interactive)
-;;   (if (eq evil-state 'normal)
-;;       (setq-local display-line-numbers 'visual)
-;;     (progn
-;;       (setq cursor-type 'box)
-;;       (set-cursor-color (cam/evil-state-color nil))
-;;       (kill-local-variable 'display-line-numbers))))
-
-;; (add-hook 'evil-mode-hook #'cam/evil-mode-setup)
-
-;; set colors for evil-STATE-state-cursor for various evil states
-(dolist (state '(emacs normal visual insert replace operator motion))
-  (set (intern (format "evil-%s-state-cursor" state))
-       (list (cam/evil-state-color state) 'box)))
-
-;; define faces for various evil states e.g. cam/active-evil-normal-state
-(defun cam/active-evil-state-face-symb (&optional state)
-  (let ((state (or state evil-state 'nil)))
-    (intern (format "cam/active-evil-%s-state" state))))
-
-(dolist (state '(nil emacs normal visual insert replace operator motion))
-  (let ((symb (cam/active-evil-state-face-symb state))
-        (face (list (list t :background (cam/evil-state-color state) :foreground "white"))))
-    (face-spec-set symb face)))
-
-(defun cam/face-symb (active-or-inactive where)
-  (intern (format "cam/%s-%s" active-or-inactive where)))
-
-;; define all of our other faces now
-(dolist (group '((active . ((side-outer "gray70" "black")
-                            (side-center "gray80" "black")
-                            (side-inner "gray90" "black")
-                            (center "white" "black")))
-                 (inactive . ((side-outer "gray10" "gray60")
-                              (side-center "gray20" "gray70")
-                              (side-inner "gray30" "gray80")
-                              (center "gray40" "gray90")))))
-  (let ((active-or-inactive (car group))
-        (faces (cdr group)))
-    (dolist (face faces)
-      (let ((symb (cam/face-symb active-or-inactive (car face)))
-            (bg (cadr face))
-            (fg (caddr face)))
-        (face-spec-set symb (list (list t :background bg :foreground fg)))))))
-
-(setq powerline-evil-tag-style 'verbose)
-
-(defun cam/enable-relative-line-numbers ()
-  (interactive)
-  (setq-local display-line-numbers 'visual))
-
-(defun cam/disable-relative-line-numbers ()
-  (interactive)
-  (kill-local-variable 'display-line-numbers))
-
-;; TODO - motion state (?)
-(dolist (hook '(evil-normal-state-entry-hook evil-operator-state-entry-hook evil-motion-state-entry-hook))
-  (add-hook hook #'cam/enable-relative-line-numbers)
-  (add-hook hook #'cam/switch-to-smartparens))
-
-(dolist (hook '(evil-emacs-state-entry-hook evil-insert-state-entry-hook ;; evil-replace-state-entry-hook
-                                            ))
-  (add-hook hook #'cam/disable-relative-line-numbers)
-  (add-hook hook #'cam/switch-to-paredit))
-
-(kill-local-variable 'mode-line-format)
-
-(setq-default
- mode-line-format
- '("%e"
-   (:eval
-    (let* ((active?            (powerline-selected-window-active))
-           (active-or-inactive (if active? 'active 'inactive))
-           (color-face         (if active?
-                                   (cam/active-evil-state-face-symb)
-                                 (cam/face-symb active-or-inactive 'side-outer)))
-           (side-outer-face    (cam/face-symb active-or-inactive 'side-outer))
-           (side-center-face   (cam/face-symb active-or-inactive 'side-center))
-           (side-inner-face    (cam/face-symb active-or-inactive 'side-inner))
-           (center-face        (cam/face-symb active-or-inactive 'center))
-
-           (lhs-outside
-            (list
-             (powerline-raw (concat (powerline-evil-tag) " ") color-face 'l)))
-
-           (lhs-center
-            (list
-             (powerline-raw
-              (concat
-               ;; %b = buffer name
-               " %b "
-               (when (buffer-modified-p)
-                 "[modified] "))
-              side-center-face)
-             (powerline-arrow-left side-center-face side-inner-face)))
-
-           (lhs-inside
-            (list
-             (powerline-major-mode side-inner-face 'l)
-             (powerline-process side-inner-face)
-             (powerline-raw " " side-inner-face)))
-
-           (center-left
-            (list
-             (powerline-arrow-left side-inner-face center-face)
-             (powerline-minor-modes center-face 'l)
-             (powerline-narrow center-face 'l)
-             (powerline-raw " " center-face)))
-
-           (center-right
-            (list
-             (when-let ((process (powerline-process)))
-               (powerline-raw process center-face 'r))
-             (powerline-arrow-right center-face side-inner-face)))
-
-           (rhs-inside
-            (list
-             (powerline-raw
-              (concat
-               " "
-               (powerline-encoding)
-               (when buffer-read-only
-                 " [readonly]"))
-              side-inner-face
-              'r)
-             (powerline-arrow-right side-inner-face side-center-face)))
-
-           (rhs-center
-            (list
-             (powerline-raw
-              ;; %l = line number; %C = column number
-              (concat
-               " L%l/"
-               (int-to-string (line-number-at-pos (point-max)))
-               " C%C")
-              side-center-face 'r)
-             (powerline-arrow-right side-center-face side-outer-face)))
-
-           (rhs-outside
-            (list
-             (when global-mode-string
-               (powerline-raw global-mode-string side-outer-face 'r))
-             (powerline-vc side-outer-face 'r)))
-
-           (lhs (append lhs-outside lhs-center lhs-inside center-left))
-
-           (rhs (append center-right rhs-inside rhs-center rhs-outside)))
-      (concat
-       (powerline-render lhs)
-       (powerline-fill center-face (powerline-width rhs))
-       (powerline-render rhs))))))
-
-;; (defun cam/window-configuration-change-evil-setup ()
-;;   (kill-local-variable 'mode-line-format))
-
-;; (add-hook 'window-configuration-change-hook #'cam/window-configuration-change-evil-setup)
-
-(set-face-bold 'mode-line-inactive nil)
-(set-face-bold 'mode-line nil)
-
-(setq evil-default-state 'emacs)
-
-(defalias 'evil-insert-state 'evil-emacs-state) ; always use emacs state instead of insert state.
-
-;; (define-key evil-emacs-state-map (kbd "C-[") #'evil-normal-state)
-
-;; (evil-mode 1)
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 
 (ignore-errors
   (load-file custom-file))
-
-;; maximize the screen, unless we launched with it maximized.
-(unless cam/has-loaded-init-p
-  (unless (eq (frame-parameter nil 'fullscreen) 'maximized)
-    (toggle-frame-maximized)))
-
-(require 'unicode-fonts)
-(unicode-fonts-setup)
 
 (setq cam/has-loaded-init-p t)
 

@@ -1,4 +1,4 @@
-;;; cam-tweak-package -- macro for organizing personal customizations for a package -*- lexical-binding: t; cam/byte-compile: t; cam/generate-autoloads: t; -*-
+;;; cam-tweak-package -- macro for organizing personal customizations for a package -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

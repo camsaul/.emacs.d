@@ -1,4 +1,4 @@
-;;; cam-macros -- General Macros -*- lexical-binding: t; cam/byte-compile: t; cam/generate-autoloads: t; -*-
+;;; cam-macros -- General Macros -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
