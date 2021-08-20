@@ -1413,8 +1413,10 @@ Calls `magit-refresh' after the command finishes."
 (ignore-errors
   (load-file custom-file))
 
+;; maximize the screen, unless we launched with it maximized.
 (unless cam/has-loaded-init-p
-  (toggle-frame-maximized))
+  (unless (eq (frame-parameter nil 'fullscreen) 'maximized)
+    (toggle-frame-maximized)))
 
 ;; delete the *Warnings* buffer after 100 ms, then try again at 500ms and 1 second to make sure it's gone.
 (defun cam/-delete-warning-buffer ()
