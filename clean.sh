@@ -6,5 +6,5 @@ rm -rf eln-cache
 rm -f *.elc
 rm -f *.eld
 rm -f lisp/*.elc
-rm -f loaddefs.el
+rm -f lisp/loaddefs.el
 rm -f autoloads.el
