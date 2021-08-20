@@ -106,7 +106,7 @@
 
 (add-to-list 'load-path (expand-file-name user-emacs-directory) t) ; t = append
 
-(require 'tweak-package)
+(require 'cam-tweak-package)
 (eval-when-compile
   (require 'cam-macros))
 
@@ -440,13 +440,13 @@
 
 ;;; [[<etc]]
 
-(tweak-package button-lock
+(cam/tweak-package button-lock
   :load ((diminish 'button-lock-mode)))
 
-(tweak-package wiki-nav
+(cam/tweak-package wiki-nav
   :load ((diminish 'wiki-nav-mode)))
 
-(tweak-package highlight-parentheses
+(cam/tweak-package highlight-parentheses
   :load ((diminish 'highlight-parentheses-mode)))
 
 
@@ -490,7 +490,7 @@
       :local)))
 
 ;;; [[<auto-complete]]
-(tweak-package auto-complete
+(cam/tweak-package auto-complete
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
   :vars ((ac-delay . 0.05) ; 0.2
          (ac-auto-show-menu . 0.1) ; 0.5
@@ -515,13 +515,13 @@
          ("<backtab>" . #'auto-complete)))
 
 ;;; [[<company-mode]]
-(tweak-package company
+(cam/tweak-package company
   :keys (("<S-tab>"   . #'company-complete)
          ("<backtab>" . #'company-complete)))
 
 ;;; [[<C/C++]]
 
-(tweak-package cc-mode
+(cam/tweak-package cc-mode
   :mode-name c-mode
   :minor-modes (auto-complete-mode
                 electric-pair-local-mode)
@@ -566,7 +566,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
       (concat "\"" text " = \" << " text))
     " << std::endl;")))
 
-(tweak-package cc-mode
+(cam/tweak-package cc-mode
   :mode-name c++-mode
   :minor-modes (column-enforce-mode
                 flycheck-mode
@@ -602,7 +602,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
 
 ;;; [[<Clojure]]
 
-(tweak-package clojure-mode
+(cam/tweak-package clojure-mode
   :mode-name clojure-mode
   :require (clojure-mode-extra-font-locking cider-eldoc)
   :minor-modes (auto-complete-mode
@@ -636,11 +636,11 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
 
 (add-to-list 'auto-mode-alist '("\\.cljs$" . clojurescript-mode))
 
-(tweak-package clj-refactor
+(cam/tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
   :vars ((cljr-favor-prefix-notation . nil)))
 
-(tweak-package cider
+(cam/tweak-package cider
   :mode-name cider-repl-mode
   :declare (cider-jack-in)
   :vars ((cider-auto-select-error-buffer . nil)
@@ -659,31 +659,31 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
          ("{" . #'paredit-open-curly)
          ("<f1>" . #'ac-cider-popup-doc)))
 
-(tweak-package cider-macroexpansion
+(cam/tweak-package cider-macroexpansion
   :setup ((read-only-mode -1))
   :keys  (("C-c RET" . #'cider-macroexpand-1)))
 
-(tweak-package cider-eval
+(cam/tweak-package cider-eval
   :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
 
-(tweak-package cider-repl
+(cam/tweak-package cider-repl
   :declare (cider-repl-clear-buffer cider-repl-return cider-repl-set-ns))
 
 
 ;;; [[<column-enforce-mode]]
-(tweak-package column-enforce-mode
+(cam/tweak-package column-enforce-mode
   :mode-name column-enforce-mode
   :vars ((column-enforce-column . 120)))
 
 
 ;;; [[<css-mode]]
-(tweak-package css-mode
+(cam/tweak-package css-mode
   :mode-name css-mode
   :minor-modes (electric-pair-local-mode))
 
 
 ;;; [[<company]]
-(tweak-package company
+(cam/tweak-package company
   :vars ((company-idle-delay . 0.01)
          (company-minimum-prefix-length . 1)))
 
@@ -719,7 +719,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
               (kill-buffer-ask buf)))))
       result)))
 
-(tweak-package dired
+(cam/tweak-package dired
   :declare (dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
   :vars ((dired-recursive-copies  . 'always)
          (dired-recursive-deletes . 'always))
@@ -731,7 +731,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :load ((add-hook 'focus-in-hook #'cam/revert-dired-buffers))
   :minor-modes (dired-hide-details-mode))
 
-(tweak-package dired-x
+(cam/tweak-package dired-x
   :declare (dired-smart-shell-command))
 
 
@@ -763,7 +763,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
       (insert "(message \" text \")")
     (insert "(message \"" text ": %s\" " text ")")))
 
-(tweak-package elisp-mode
+(cam/tweak-package elisp-mode
   :mode-name emacs-lisp-mode
   :load ((put 'add-hook 'lisp-indent-function 1))
   :minor-modes (aggressive-indent-mode
@@ -788,15 +788,15 @@ deleted, ask to kill any buffers that were visiting files that were children of 
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)
          ("<f10>" . #'cam/emacs-lisp-insert-message)))
 
-(tweak-package dash
+(cam/tweak-package dash
   :declare (dash-enable-font-lock)
   :load ((dash-enable-font-lock)))
 
-(tweak-package elisp-slime-nav
+(cam/tweak-package elisp-slime-nav
   :load ((diminish 'elisp-slime-nav-mode))
   :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
-(tweak-package ielm
+(cam/tweak-package ielm
   :mode-name inferior-emacs-lisp-mode
   :hook-name ielm-mode-hook
   :minor-modes (aggressive-indent-mode
@@ -809,12 +809,12 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
-(tweak-package nadvice
+(cam/tweak-package nadvice
   :load ((put #'advice-add 'lisp-indent-function 2)))
 
 
 ;;; [[<Eval Expresssion (Minibuffer)]]
-(tweak-package simple
+(cam/tweak-package simple
   :hook-name eval-expression-minibuffer-setup-hook
   :minor-modes (company-mode
                 paredit-mode)
@@ -822,7 +822,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
 
 
 ;;; [[<Find Things Fast]]
-(tweak-package find-things-fast
+(cam/tweak-package find-things-fast
   :load ((nconc ftf-filetypes '("*.clj"
                                 "*.cljc"
                                 "*.cljs"
@@ -855,13 +855,13 @@ deleted, ask to kill any buffers that were visiting files that were children of 
 
 
 ;;; [[<Git Commit Mode]]
-(tweak-package git-commit
+(cam/tweak-package git-commit
   :mode-name git-commit
   :minor-modes (flyspell-mode))
 
 
 ;;; [[<Guide Key]]
-(tweak-package guide-key
+(cam/tweak-package guide-key
   :vars ((guide-key/idle-delay . 1.0)
          (guide-key/recursive-key-sequence-flag . t)
          (guide-key/guide-key-sequence . '("<f12>" "<f1>"
@@ -877,20 +877,20 @@ deleted, ask to kill any buffers that were visiting files that were children of 
 
 
 ;;; [[<Helm]]
-(tweak-package helm
+(cam/tweak-package helm
   :vars ((helm-buffers-fuzzy-matching . t) ; enable fuzzy matching for helm
          (helm-recentf-fuzzy-match    . t)
          (helm-M-x-fuzzy-match        . t)))
 
 ;;; [[<Java]]
-(tweak-package cc-mode
+(cam/tweak-package cc-mode
   :mode-name java-mode
   :setup ((cam/c-mode-setup))
   :keys (("C-j" . #'newline)))
 
 
 ;;; [[<loccur]]
-(tweak-package loccur
+(cam/tweak-package loccur
   :declare (loccur))
 
 ;;; [[<Magit]]
@@ -936,7 +936,7 @@ Calls `magit-refresh' after the command finishes."
     (when (cam/magit-buffer-p buffer)
       (kill-buffer buffer))))
 
-(tweak-package magit
+(cam/tweak-package magit
   :mode-name magit-status-mode
   :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
   :vars ((magit-auto-revert-mode-lighter . "")
@@ -958,7 +958,7 @@ Calls `magit-refresh' after the command finishes."
   ;; enable preview-markdown-mode by default for Markdown files
   (add-hook 'markdown-mode-hook #'preview-markdown-mode))
 
-(tweak-package markdown-mode
+(cam/tweak-package markdown-mode
   :mode-name markdown-mode
   :minor-modes (flyspell-mode)
   ;; :setup ((add-hook 'after-save-hook #'user/preview-markdown (not :append) :local))
@@ -974,12 +974,12 @@ Calls `magit-refresh' after the command finishes."
       (delete-region (point-min) (point-max))
       (read-only-mode 1))))
 
-(tweak-package simple
+(cam/tweak-package simple
   :mode-name messages-buffer-mode
   :keys (("c" . #'cam/clear-messages-buffer)))
 
 ;;; [[<Objective-C]]
-(tweak-package cc-mode
+(cam/tweak-package cc-mode
   :mode-name objc-mode
   :load (;; Automatically open .h files with @interface declarations as obj-c rather than c
          (add-to-list 'magic-mode-alist
@@ -1004,19 +1004,19 @@ Calls `magit-refresh' after the command finishes."
   (org-return-indent)
   (org-edit-src-code))
 
-(tweak-package org
+(cam/tweak-package org
   :declare (org-bookmark-jump-unhide org-end-of-line org-return-indent)
   :vars ((org-support-shift-select . nil))
   :minor-modes (flyspell-mode)
   :local-vars ((truncate-lines . nil))
   :keys (("C-c c" . #'cam/org-insert-code-block)))
 
-(tweak-package org-src
+(cam/tweak-package org-src
   :declare (org-edit-src-code))
 
 
 ;;; [[<Paredit]]
-(tweak-package paredit
+(cam/tweak-package paredit
   :declare (paredit-backward-delete
             paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline
             paredit-open-round paredit-open-square paredit-reindent-defun)
@@ -1030,7 +1030,7 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<Perl]]
-(tweak-package cperl-mode
+(cam/tweak-package cperl-mode
   :mode-name cperl-mode
   :minor-modes (eldoc-mode
                 electric-pair-local-mode
@@ -1050,11 +1050,11 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<Python]]
-(tweak-package python
+(cam/tweak-package python
   :minor-modes (electric-pair-local-mode))
 
 ;;; [[<Racket]]
-(tweak-package racket-mode
+(cam/tweak-package racket-mode
   :mode-name racket-mode
   :minor-modes (company-mode
                 eldoc-mode)
@@ -1064,14 +1064,14 @@ Calls `magit-refresh' after the command finishes."
   :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
   :keys (("<f1>" . #'racket-repl-describe)))
 
-(tweak-package racket-repl
+(cam/tweak-package racket-repl
   :setup ((cam/racket-mode-setup)
           (eldoc-mode 1))
   :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
   :keys (("<f1>" . #'racket-repl-describe)))
 
 ;;; [[<Shell]]
-(tweak-package sh-script
+(cam/tweak-package sh-script
   :mode-name sh-mode
   :minor-modes (electric-pair-local-mode
                 todo-font-lock-mode)
@@ -1087,11 +1087,11 @@ Calls `magit-refresh' after the command finishes."
 
 (setq inferior-lisp-program "sbcl")
 
-;; Tweak configuration for the Sly minor mode as opposed to lisp-mode because otherwise tweak-package will redefine
-;; cam/lisp-mode-setup
+;; Tweak configuration for the Sly minor mode as opposed to lisp-mode because otherwise cam/tweak-package will
+;; redefine cam/lisp-mode-setup
 
 ;;; [[<Sly]]
-(tweak-package sly
+(cam/tweak-package sly
   ;; :require (ac-sly)
   :minor-modes (company-mode)
   :keys (("<C-M-return>" . #'cam/save-load-switch-to-sly))
@@ -1103,7 +1103,7 @@ Calls `magit-refresh' after the command finishes."
                (set-up-sly-ac :fuzzy)))))
 
 ;;; [[<text-mode]]
-(tweak-package text-mode
+(cam/tweak-package text-mode
   :mode-name text-mode
   :minor-modes (flyspell-mode))
 
@@ -1115,7 +1115,7 @@ Calls `magit-refresh' after the command finishes."
       (insert "console.log(\"" text "\"); // NOCOMMIT")
     (insert "console.log(\"" text ":\", " text "); // NOCOMMIT")))
 
-(tweak-package web-mode
+(cam/tweak-package web-mode
   :mode-name web-mode
   :minor-modes (column-enforce-mode
                 electric-pair-local-mode
@@ -1138,7 +1138,7 @@ Calls `magit-refresh' after the command finishes."
      (require 'tide)
      (tide-setup))))
 
-(tweak-package tide
+(cam/tweak-package tide
   :require (company-lsp)
   :minor-modes (flycheck-mode
                 eldoc-mode
@@ -1154,7 +1154,7 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; [[<(n)xml Mode]]
 
-(tweak-package nxml-mode
+(cam/tweak-package nxml-mode
   :mode-name nxml-mode
   :minor-modes (electric-pair-mode
                 company-mode)
@@ -1167,7 +1167,7 @@ Calls `magit-refresh' after the command finishes."
 
 
 ;;; [[<YAML Mode]]
-(tweak-package yaml-mode
+(cam/tweak-package yaml-mode
   :mode-name yaml-mode
   :keys (("C-j" . #'newline-and-indent)
          ("C-m" . #'newline-and-indent)))

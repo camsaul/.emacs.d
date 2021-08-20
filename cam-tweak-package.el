@@ -1,4 +1,4 @@
-;;; tweak-package -- macro for organizing personal customizations for a package -*- lexical-binding: t; cam/byte-compile: t; cam/generate-autoloads: t; -*-
+;;; cam-tweak-package -- macro for organizing personal customizations for a package -*- lexical-binding: t; cam/byte-compile: t; cam/generate-autoloads: t; -*-
 
 ;;; Commentary:
 
@@ -8,21 +8,21 @@
   (require 'cl-lib))
 
 ;;;###autoload
-(cl-defmacro tweak-package (package &key
-                                    (mode-name (intern (format "%s-mode" (symbol-name package))))
-                                    (hook-name (intern (format "%s-hook" (symbol-name mode-name))))
-                                    declare
-                                    vars
-                                    require
-                                    advice
-                                    load
-                                    minor-modes
-                                    setup
-                                    local-vars
-                                    local-hooks
-                                    (keymap (intern (format "%s-map" (symbol-name mode-name))))
-                                    keys
-                                    auto-mode-alist)
+(cl-defmacro cam/tweak-package (package &key
+                                        (mode-name (intern (format "%s-mode" (symbol-name package))))
+                                        (hook-name (intern (format "%s-hook" (symbol-name mode-name))))
+                                        declare
+                                        vars
+                                        require
+                                        advice
+                                        load
+                                        minor-modes
+                                        setup
+                                        local-vars
+                                        local-hooks
+                                        (keymap (intern (format "%s-map" (symbol-name mode-name))))
+                                        keys
+                                        auto-mode-alist)
   (declare (indent 1))
   `(progn
      (eval-when-compile
@@ -56,5 +56,5 @@
      ,@(cl-loop for pattern in auto-mode-alist
                 collect `(add-to-list 'auto-mode-alist '(,pattern . ,mode-name)))))
 
-(provide 'tweak-package)
-;;; tweak-package.el ends here
+(provide 'cam-tweak-package)
+;;; cam-tweak-package.el ends here
