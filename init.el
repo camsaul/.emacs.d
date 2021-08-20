@@ -375,7 +375,7 @@
   ("<f11> w"       . #'whitespace-mode)
   ("<f12> d"       . #'cam/duckduckgo-search)
   ("<f12> i"       . #'cam/open-metabase-issue-or-pr)
-  ("<f12> j"       . #'cam/javadocs-search)
+  ("<f12> j"       . #'cider-javadoc)
   ("<f5>"          . #'ftf-find-file)                               ; alternate bindings since super modifier doesn't work well on Windows
   ("<f6>"          . #'ftf-grepsource)
   ("<insert>"      . nil)
