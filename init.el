@@ -55,6 +55,11 @@
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 
+(defvar cam/has-loaded-init-p nil
+  "Have we done a complete load of the init file yet? (Use this to
+  keep track of things we only want to run once, but not again if
+  we call eval-buffer).")
+
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
 (dolist (mode '(scroll-bar-mode tool-bar-mode))
@@ -77,19 +82,24 @@
  ;; If there is more than one, they won't work right.
  '(inhibit-startup-echo-area-message (user-login-name)))
 
+(defconst cam/-user-source-directory
+  (expand-file-name (concat user-emacs-directory "lisp/")))
+
+(defconst cam/autoloads-file
+  (expand-file-name (concat cam/-user-source-directory "loaddefs.el")))
+
+(add-to-list 'load-path cam/-user-source-directory t) ; t = append
+
 ;; compile init files if they haven't already been compiled.
 (defun cam/-init-files ()
-  (mapcar (lambda (file)
-            (expand-file-name  (concat user-emacs-directory file)))
-          (cl-remove-if (lambda (file)
-                          (or (not (string-suffix-p ".el" file))
-                              (string-prefix-p ".#" file)
-                              (member file '("early-init.el"
-                                             "custom.el"
-                                             "autoloads.el"
-                                             "loaddefs.el"
-                                             ".mc-lists.el"))))
-                        (directory-files user-emacs-directory))))
+  (cons
+   (expand-file-name (concat user-emacs-directory "init.el"))
+   (mapcar (lambda (file)
+             (expand-file-name (concat cam/-user-source-directory file)))
+           (cl-remove-if (lambda (file)
+                           (or (not (string-suffix-p ".el" file))
+                               (string-prefix-p ".#" file)))
+                         (directory-files cam/-user-source-directory)))))
 
 (defun cam/-byte-compile-init-files (&optional force-update-autoloads)
   (unless (file-exists-p cam/autoloads-file)
@@ -101,20 +111,14 @@
     (when (or (not (eq (byte-recompile-file file nil 0) 'no-byte-compile))
               force-update-autoloads)
       (message "Updating autoloads for %s" file)
-      (update-file-autoloads file nil cam/autoloads-file))))
+      ;; t = save the autoloads file when finished.
+      (update-file-autoloads file t cam/autoloads-file))))
 
 (cam/-byte-compile-init-files)
 
 (load-file cam/autoloads-file)
 
-(defvar cam/has-loaded-init-p nil
-  "Have we done a complete load of the init file yet? (Use this to
-  keep track of things we only want to run once, but not again if
-  we call eval-buffer).")
-
 ;;; [[<Auxilary Init File Setup]]
-
-(add-to-list 'load-path (expand-file-name user-emacs-directory) t) ; t = append
 
 (require 'cam-tweak-package)
 (eval-when-compile
@@ -347,7 +351,6 @@
 
 (setq-default fill-column 118                     ; My screen can handle more than 70 characters; use 118 so GH won't cut it off
               indent-tabs-mode nil                ; disable insertion of tabs
-              save-place t                        ; Automatically save place in each file
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 (add-to-list 'projectile-globally-ignored-files   ; Tell projectile to always ignore uberdoc.html
@@ -766,7 +769,10 @@ deleted, ask to kill any buffers that were visiting files that were children of 
       (insert "(message \" text \")")
     (insert "(message \"" text ": %s\" " text ")")))
 
-;; (autoload 'cam/emacs-lisp-color-code-mode "cam-emacs-lisp-color-code")
+;; FIXME -- not sure why we need to have these here when we're supposed to be generating autoloads automatically.
+;; Doesn't seem to be able to open init.el for editing tho if these aren't here.
+(autoload 'cam/emacs-lisp-color-code-mode "cam-emacs-lisp-color-code")
+(autoload 'cam/todo-font-lock-mode "cam-todo-font-lock")
 
 (cam/tweak-package elisp-mode
   :mode-name emacs-lisp-mode
@@ -784,7 +790,9 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                 wiki-nav-mode)
   :setup ((cam/lisp-mode-setup)
           (unless (string-equal user-init-file (buffer-file-name))
-            (flycheck-mode 1)))
+            (flycheck-mode 1))
+          (with-eval-after-load 'dash
+            (global-dash-fontify-mode 1)))
   :local-vars ((fill-column . 118)
                (emacs-lisp-docstring-fill-column . 118))
   :keys (("<C-M-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
@@ -792,10 +800,6 @@ deleted, ask to kill any buffers that were visiting files that were children of 
          ("C-x C-e"      . #'pp-eval-last-sexp)
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)
          ("<f10>" . #'cam/emacs-lisp-insert-message)))
-
-(cam/tweak-package dash
-  :declare (dash-enable-font-lock)
-  :load ((dash-enable-font-lock)))
 
 (cam/tweak-package elisp-slime-nav
   :load ((diminish 'elisp-slime-nav-mode))
@@ -808,8 +812,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                 company-mode
                 elisp-slime-nav-mode
                 morlock-mode)
-  :setup ((cam/lisp-mode-setup)
-          (ac-emacs-lisp-mode-setup))
+  :setup ((cam/lisp-mode-setup))
   :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
   :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
@@ -888,8 +891,9 @@ deleted, ask to kill any buffers that were visiting files that were children of 
          (helm-buffers-fuzzy-matching . t)
          (helm-recentf-fuzzy-match    . t)
          (helm-M-x-fuzzy-match        . t)
-         ;; Have C-x C-f skip files in .gitignore
-         (helm-ff-skip-git-ignored-files . t)
+         ;; Have C-x C-f skip files in .gitignore TODO -- disabled to now -- too hard to find these files when I need
+         ;; to look at them.
+         (helm-ff-skip-git-ignored-files . nil)
          ;; Have C-x C-f skip "boring" files matching the regex below
          (helm-ff-skip-boring-files . t)
          ;; TODO -- this skips .emacs.d ??
@@ -969,16 +973,14 @@ Calls `magit-refresh' after the command finishes."
 
 ;;; [[<markdown]]
 
-(with-eval-after-load "markdown-mode"
-  (require 'preview-markdown)
-  ;; enable preview-markdown-mode by default for Markdown files
-  (add-hook 'markdown-mode-hook #'preview-markdown-mode))
+;; (with-eval-after-load "markdown-mode"
+;;   (require 'preview-markdown)
+;;   ;; enable preview-markdown-mode by default for Markdown files
+;;   (add-hook 'markdown-mode-hook #'preview-markdown-mode))
 
 (cam/tweak-package markdown-mode
   :mode-name markdown-mode
-  :minor-modes (flyspell-mode)
-  ;; :setup ((add-hook 'after-save-hook #'user/preview-markdown (not :append) :local))
-  )
+  :minor-modes (flyspell-mode))
 
 ;;; [[<Messages]]
 
@@ -1430,17 +1432,6 @@ Calls `magit-refresh' after the command finishes."
 (unless cam/has-loaded-init-p
   (unless (eq (frame-parameter nil 'fullscreen) 'maximized)
     (toggle-frame-maximized)))
-
-;; delete the *Warnings* buffer after 100 ms, then try again at 500ms and 1 second to make sure it's gone.
-(defun cam/-delete-warning-buffer ()
-  (cam/when-let-visible-buffer ((buffer (string-equal (buffer-name buffer) "*Warnings*")))
-    (unless (eq (get-buffer-window nil) this-window)
-      (delete-window this-window))
-    (kill-buffer buffer)))
-
-(run-at-time 0.1 (not :repeat) #'cam/-delete-warning-buffer)
-(run-at-time 0.5 (not :repeat) #'cam/-delete-warning-buffer)
-(run-at-time 1.0 (not :repeat) #'cam/-delete-warning-buffer)
 
 (require 'unicode-fonts)
 (unicode-fonts-setup)

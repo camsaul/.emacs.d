@@ -51,8 +51,8 @@
 
 ;;;###autoload
 (define-minor-mode cam/pml-mode
-  :init-value nil
-  :ligher " cam/pml"
+  "Cam's minor mode for editing PML book source files"
+  :lighter " cam/pml"
   :keymap `((,(kbd "<f9> m") . cam/pml-insert-method)
             (,(kbd "<f9> f") . cam/pml-insert-filename)
             (,(kbd "<f9> v") . cam/pml-insert-variable)

@@ -14,7 +14,7 @@
     (when-let ((dir (car (file-name-all-completions package-name elpa-dir))))
       (concat elpa-dir dir))))
 
-(defconst cam/autoloads-file (expand-file-name (concat user-emacs-directory "loaddefs.el")))
+(defconst cam/autoloads-file (expand-file-name (concat user-emacs-directory "lisp/loaddefs.el")))
 
 ;; if the packed and auto-compile packages exist...
 (when-let ((packed-dir (cam/-package-directory "packed"))
