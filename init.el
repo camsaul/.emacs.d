@@ -574,7 +574,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
                 company-mode
                 eldoc-box-hover-mode
                 eldoc-box-hover-at-point-mode
-                todo-font-lock-mode)
+                cam/todo-font-lock-mode)
   :require (company-lsp
             lsp-mode
             lsp-ui
@@ -610,7 +610,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
                 clj-refactor-mode
                 column-enforce-mode
                 eldoc-mode
-                todo-font-lock-mode)
+                cam/todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
           (flyspell-prog-mode)
           (ac-cider-setup)
@@ -775,7 +775,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                 emacs-lisp-color-code-mode
                 flyspell-mode
                 morlock-mode
-                todo-font-lock-mode
+                cam/todo-font-lock-mode
                 wiki-nav-mode)
   :setup ((cam/lisp-mode-setup)
           (unless (string-equal user-init-file (buffer-file-name))
@@ -1074,7 +1074,7 @@ Calls `magit-refresh' after the command finishes."
 (cam/tweak-package sh-script
   :mode-name sh-mode
   :minor-modes (electric-pair-local-mode
-                todo-font-lock-mode)
+                cam/todo-font-lock-mode)
   :keys (("C-j" . #'newline)))
 
 
