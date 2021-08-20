@@ -3,9 +3,14 @@
 (eval-when-compile
   (require 'cl-lib)
   (require 'cam-macros)
+  (require 'clojure-mode)
   (require 'cider)
-  (require 'cider-repl)
-  )
+  (require 'cider-repl))
+
+(define-clojure-indent
+  (matcha '(1 (:defn)))
+  (matche '(1 (:defn)))
+  (matchu '(1 (:defn))))
 
 ;;;###autoload
 (defun cam/clj-switch-to-test-namespace ()
