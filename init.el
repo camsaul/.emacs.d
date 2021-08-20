@@ -818,7 +818,20 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                                 "*.mustache"
                                 "*.pml"
                                 "*.yaml"
-                                "*.yml"))))
+                                "*.yml")))
+  ;; normally ftf deduplicates stuff only based on the immediate parent directory; instead tweak it so it uses the
+  ;; entire path relative to the project root.
+  :advice ((#'ftf-uniqueify :around (lambda (f file-cons)
+                                      ;; cache the value of `(ftf-project-directory) because it's way to slow to call
+                                      ;; on a big list of a few hundred files.
+                                      (unless (boundp 'cam/-ftf-project-directory)
+                                        (setq-local cam/-ftf-project-directory (ftf-project-directory)))
+                                      (setcar file-cons
+                                              (concat (car file-cons)
+                                                      ": "
+                                                      (string-remove-prefix
+                                                       cam/-ftf-project-directory
+                                                       (file-name-directory (cdr file-cons)))))))))
 
 
 ;;; [[<Git Commit Mode]]
@@ -1093,11 +1106,11 @@ Calls `magit-refresh' after the command finishes."
                 company-mode)
   :keys (("C-j" . #'newline)
          ("<f10>" . #'cam/js-insert-console-dot-log))
-  :auto-mode-alist ("\.js$"
-                    "\.json$"
-                    "\.html$"
-                    "\.jsx$"
-                    "\.mustache$")
+  :auto-mode-alist ("\\.js$"
+                    "\\.json$"
+                    "\\.html$"
+                    "\\.jsx$"
+                    "\\.mustache$")
   :setup
   ;; make sure autocomplete isn't enabled (we're using company instead)
   ((auto-complete-mode -1)
