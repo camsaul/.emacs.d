@@ -123,13 +123,11 @@
 
 (defconst cam/packages
   '(ac-cider                                      ; auto-complete <-> cider
-    ac-sly                                        ; auto-complete <-> sly
+    ;; ac-sly                                        ; auto-complete <-> sly
     ace-jump-mode
     ace-window                                    ; Ace jump to other windows
-    ;; ace-jump-zap                                  ; ace-jump-mode version of zap-to-char / zap-up-to-char
     aggressive-indent                             ; Minor mode to aggressively keep code always indented
     anzu                                          ; Show number of matches in mode-line while searching
-    ;; anything                                      ; prereq for perl-completion
     auto-complete                                 ; auto-completion
     auto-compile                                  ; automatically byte-compile Emacs Lisp files
     cider                                         ; Clojure Interactive Development Environment that Rocks
@@ -147,7 +145,6 @@
     elisp-slime-nav                               ; Make M-. and M-, work in elisp like the do in slime
     ert                                           ; Emacs Lisp Regression Testing
     esup                                          ; Emacs Start-Up Profiler <3
-    ;; everything                                    ; Required by perl-completion-mode
     find-things-fast
     flycheck                                      ; on-the-fly syntax checking
     flyspell                                      ; spell checking
@@ -167,7 +164,6 @@
     moe-theme
     org                                           ; Get latest version of org from Org package archive
     paredit
-    ;; perl-completion                               ; Auto-complete for Perl
     projectile
     rainbow-delimiters
     rainbow-mode
@@ -198,7 +194,7 @@
     cmake-ide
     ;; I'm not sure how many of these we actually need/want
     company-rtags
-    helm-rtags
+    ;; helm-rtags
     disaster
     ;; lsp-ui
     eglot
