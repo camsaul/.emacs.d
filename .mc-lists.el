@@ -7,6 +7,7 @@
         auto-complete
         backward-kill-sexp
         backward-sexp
+        beginning-of-defun
         c-electric-brace
         c-electric-paren
         cam/align-map
@@ -17,16 +18,19 @@
         cam/insert-spaces-to-goal-column
         cam/join-next-line
         cam/realign-eol-comments
+        cider-eval-last-sexp
         cider-repl-handle-shortcut
         cljr-slash
         clojure-align
         clojure-convert-collection-to-list
         clojure-convert-collection-to-map
+        clojure-convert-collection-to-set
         clojure-convert-collection-to-vector
         clojure-toggle-keyword-string
         clojure-unwind-all
         comment-dwim
         cperl-electric-semi
+        default-indent-new-line
         downcase-region
         electric-newline-and-maybe-indent
         electric-pair-delete-pair
@@ -36,6 +40,7 @@
         helm-show-kill-ring
         indent-for-tab-command
         indent-new-comment-line
+        insert-char
         insert-register
         join-next-line
         kill-region
@@ -51,6 +56,8 @@
         org-self-insert-command
         paredit-backslash
         paredit-backward
+        paredit-backward-barf-sexp
+        paredit-backward-slurp-sexp
         paredit-close-curly
         paredit-close-round
         paredit-close-square
@@ -68,6 +75,7 @@
         paredit-reindent-defun
         paredit-semicolon
         sh-assignment
+        shell-command
         tab-to-tab-stop
         yaml-electric-backspace
         yaml-electric-bar-and-angle
@@ -79,6 +87,8 @@
         ace-jump-done
         ace-jump-mode
         beginning-of-buffer
+        cam/clj-save-load-switch-to-cider
+        cam/clj-switch-to-test-namespace
         cam/clojure-save-load-switch-to-cider
         cam/loccur
         cam/windmove-left-or-other-frame
@@ -90,12 +100,16 @@
         goto-line
         helm-M-x
         helm-confirm-and-exit-minibuffer
+        helm-imenu
         jump-to-register
+        keyboard-quit
         magit-status
         mc/mark-next-lines
+        mouse-set-region
         next-buffer
         paredit-mode
         previous-buffer
         projectile-replace
+        reposition-window
         yas-expand
         ))
