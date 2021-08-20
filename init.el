@@ -16,6 +16,7 @@
 ;;;    [[etc]]
 ;;;    [[Lisp Modes]]
 ;;;    [[auto-complete]]
+;;;    [[company-mode]]
 ;;;    [[C/C++]]
 ;;;    [[Clojure]]
 ;;;    [[dired]]
@@ -504,15 +505,22 @@
   :load ((cam/suppress-messages
            (ac-config-default)
            (add-to-list 'ac-modes 'cider-repl-mode)
-           (add-to-list 'ac-modes 'emacs-lisp-mode)
-           (add-to-list 'ac-modes 'ielm-mode)))
+           ;; (add-to-list 'ac-modes 'emacs-lisp-mode)
+           ;; (add-to-list 'ac-modes 'ielm-mode)
+           (delete 'emacs-lisp-mode ac-modes)
+           (delete 'lisp-mode ac-modes)
+           (delete 'lisp-interaction-mode ac-modes)))
   :keymap ac-menu-map
-  :keys (("A-f" . #'ac-complete-functions)
-         ("A-s" . #'ac-complete-symbols)
-         ("A-v" . #'ac-complete-variables)))
+  :keys (("A-f"       . #'ac-complete-functions)
+         ("A-s"       . #'ac-complete-symbols)
+         ("A-v"       . #'ac-complete-variables)
+         ("<S-tab>"   . #'auto-complete)
+         ("<backtab>" . #'auto-complete)))
 
-(tweak-package auto-complete-config
-  :declare (ac-emacs-lisp-mode-setup))
+;;; [[<company-mode]]
+(tweak-package company
+  :keys (("<S-tab>"   . #'company-complete)
+         ("<backtab>" . #'company-complete)))
 
 ;;; [[<C/C++]]
 
@@ -570,8 +578,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
                 eldoc-box-hover-mode
                 eldoc-box-hover-at-point-mode
                 todo-font-lock-mode)
-  :require (helm-rtags
-            company-lsp
+  :require (company-lsp
             lsp-mode
             lsp-ui
             lsp-clangd
@@ -588,9 +595,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
           (eglot-ensure)
           (auto-complete-mode 0)
           (flyspell-prog-mode))
-  :keys (("<S-tab>" . #'company-complete)
-         ("<backtab>" . #'company-complete)
-         ("<f1>" . #'eldoc-doc-buffer)
+  :keys (("<f1>" . #'eldoc-doc-buffer)
          ("<f7>" . #'cam/c++-switch-between-header-and-impl)
          ("C-." . #'disaster)                     ; disassemble code at point
          ("C-j" . #'newline)
@@ -630,10 +635,9 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
          ("<f8>"         . #'cam/clj-switch-between-model-and-api-namespaces)
          ("<f9>"         . #'cam/clj-insert-header)
          ("<f10>"        . #'cam/clj-insert-println)
-         ("<S-tab>"      . #'auto-complete)
-         ("<backtab>"    . #'auto-complete)))
+         ("<insert>"     . #'helm-imenu)))
 
-(add-to-list 'auto-mode-alist '(".cljs$" . clojurescript-mode))
+(add-to-list 'auto-mode-alist '("\\.cljs$" . clojurescript-mode))
 
 (tweak-package clj-refactor
   :load ((diminish 'clj-refactor-mode))
@@ -656,9 +660,7 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
           (ac-cider-setup))
   :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
          ("{" . #'paredit-open-curly)
-         ("<f1>" . #'ac-cider-popup-doc)
-         ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)))
+         ("<f1>" . #'ac-cider-popup-doc)))
 
 (tweak-package cider-macroexpansion
   :setup ((read-only-mode -1))
@@ -795,8 +797,6 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :keys (("<C-M-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
          ("C-c RET"      . #'cam/emacs-lisp-macroexpand-last-sexp)
          ("C-x C-e"      . #'pp-eval-last-sexp)
-         ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)
          ("<f10>" . #'cam/emacs-lisp-insert-message)))
 
@@ -819,8 +819,6 @@ deleted, ask to kill any buffers that were visiting files that were children of 
           (ac-emacs-lisp-mode-setup))
   :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
   :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)
-         ("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
 
 (tweak-package nadvice
@@ -1066,17 +1064,13 @@ Calls `magit-refresh' after the command finishes."
           (auto-complete-mode -1)
           (eldoc-mode 1))
   :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
-  :keys (("<f1>" . #'racket-repl-describe)
-         ("<S-tab>" . #'company-complete)
-         ("<backtab>" . #'company-complete)))
+  :keys (("<f1>" . #'racket-repl-describe)))
 
 (tweak-package racket-repl
   :setup ((cam/racket-mode-setup)
           (eldoc-mode 1))
   :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
-  :keys (("<f1>" . #'racket-repl-describe)
-         ("<S-tab>" . #'company-complete)
-         ("<backtab>" . #'company-complete)))
+  :keys (("<f1>" . #'racket-repl-describe)))
 
 ;;; [[<Shell]]
 (tweak-package sh-script
@@ -1101,10 +1095,8 @@ Calls `magit-refresh' after the command finishes."
 ;;; [[<Sly]]
 (tweak-package sly
   ;; :require (ac-sly)
-  :minor-modes (auto-complete-mode)
-  :keys (("<S-tab>" . #'auto-complete)
-         ("<backtab>" . #'auto-complete)
-         ("<C-M-return>" . #'cam/save-load-switch-to-sly))
+  :minor-modes (company-mode)
+  :keys (("<C-M-return>" . #'cam/save-load-switch-to-sly))
   :setup ((cam/lisp-mode-setup)
           ;; don't load ac-sly until after sly is loaded, otherwise there will be circular requires between them
           (eval-after-load 'sly
@@ -1132,8 +1124,6 @@ Calls `magit-refresh' after the command finishes."
                 rainbow-delimiters-mode
                 company-mode)
   :keys (("C-j" . #'newline)
-         ("<S-tab>" . #'company-complete)
-         ("<backtab>" . #'company-complete)
          ("<f10>" . #'cam/js-insert-console-dot-log))
   :auto-mode-alist ("\.js$"
                     "\.json$"
@@ -1170,9 +1160,7 @@ Calls `magit-refresh' after the command finishes."
   :mode-name nxml-mode
   :minor-modes (electric-pair-mode
                 company-mode)
-  :keys (("<S-tab>" . #'company-complete)
-         ("<backtab>" . #'company-complete)
-         ("C-j" . #'newline))
+  :keys (("C-j" . #'newline))
   :vars ((nxml-slash-auto-complete-flag . t))
   :auto-mode-alist (".pml$")
   :setup ((when (string-equal (file-name-extension buffer-file-name) "pml")
