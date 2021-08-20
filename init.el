@@ -236,8 +236,23 @@
 (unless cam/has-loaded-init-p
   (moe-dark)
   (ignore-errors
-    ;; t = apply font to all frames going forward & save setting to custom.el (supposedly)
-    (set-frame-font "DejaVuSansMono-18" (not :keep-size) t)))
+    ;; use a different font size depending on whether we're rendering in pure GTK w/ display scaling or not.
+    (let* ((hdpi-scale (or (when (and (boundp 'pgtk-initialized)
+                                      pgtk-initialized)
+                             (when-let ((scale (getenv "GDK_DPI_SCALE")))
+                               (string-to-number scale)))
+                           1))
+           (font-size (ceiling (/ 20 hdpi-scale)))
+           ;; use shell command `fc-list` to get the list of available fonts on the system.
+           ;; M-x list-fontsets to list the fonts available to Emacs
+           (font-name
+            ;; "DejaVuSansMono"
+            "Cascadia Code")
+           (font (format "%s-%d" font-name font-size)))
+      (message "Using font %s" font)
+      ;; nil = don't worry about keeping the current frame size.
+      ;; t = apply font to all frames going forward & save setting to custom.el (supposedly)
+      (set-frame-font font nil t))))
 
 (defun cam/setup-frame ()
   (set-fringe-style '(6 . 0))                     ; ¾ width fringe on the left and none on the right
