@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; coding: utf-8; cam/byte-compile: t; comment-column: 50; -*-
+;;; -*- lexical-binding: t; coding: utf-8; comment-column: 50; no-byte-compile: nil; -*-
 
 ;;; TOC:
 ;;; [[Initial Setup]]
@@ -54,13 +54,6 @@
 ;;; [[Final Setup]]
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
-;;; (Things that need to happen as soon as this file starts loading)
-
-(setq
- ;; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
- gc-cons-threshold (* 128 1024 1024)
- ;; load .el files if they're newer than .elc ones
- load-prefer-newer t)
 
 ;;; Don't show toolbar, scrollbar, splash screen, startup screen
 
@@ -68,15 +61,12 @@
   (when (fboundp mode)
     (funcall mode -1)))
 
+;; if os isn't macOS, don't show the top menu bar
 (unless (eq window-system 'ns)
   (menu-bar-mode -1))
 
 (setq inhibit-splash-screen t
       inhibit-startup-screen t)
-
-(let ((scratch-buffer (get-buffer "*scratch")))
-  (when scratch-buffer
-    (kill-buffer scratch-buffer)))
 
 ;; In an effort to be really annoying you can only suppress the startup echo area message if you set it through
 ;; customize
@@ -87,47 +77,38 @@
  ;; If there is more than one, they won't work right.
  '(inhibit-startup-echo-area-message (user-login-name)))
 
-(add-to-list 'safe-local-variable-values '(cam/byte-compile . t))
-(add-to-list 'safe-local-variable-values '(cam/generate-autoloads . t))
+;; compile init files if they haven't already been compiled.
+(defun cam/-init-files ()
+  (cl-remove-if (lambda (file)
+                  (or (not (string-suffix-p ".el" file))
+                      (member file '("early-init.el"
+                                     "custom.el"
+                                     "autoloads.el"
+                                     "loaddefs.el"
+                                     ".mc-lists.el"))))
+                (directory-files user-emacs-directory)))
+
+(dolist (file (cam/-init-files))
+  ;; nil = don't force recompilation if .elc is newer
+  ;; 0 = compile file if .elc didn't already exist
+  (unless (eq (byte-recompile-file file nil 0) 'no-byte-compile)
+    (message "Updating autoloads for %s" file)
+    (update-file-autoloads file nil cam/autoloads-file)))
+
+(load-file cam/autoloads-file)
 
 (defvar cam/has-loaded-init-p nil
-  "Have we done a complete load of the init file yet? (Use this to keep track of things we only want to run once, but
-  not again if we call eval-buffer).")
+  "Have we done a complete load of the init file yet? (Use this to
+  keep track of things we only want to run once, but not again if
+  we call eval-buffer).")
 
 ;;; [[<Auxilary Init File Setup]]
 
-;; Check to make sure init file is up-to-date
-;; user-init-file is the .elc file when LOADING
-(when (string-suffix-p "elc" user-init-file)
-  (let ((init-file-source (concat user-emacs-directory "init.el")))
-    (when (file-newer-than-file-p init-file-source user-init-file)
-      ;; If not, trash .elc file and kill Emacs. We'll recompile on next launch
-      (delete-file user-init-file)
-      (while (not (y-or-n-p "init.el is out of date. We need to restart Emacs. Ready? ")))
-      (kill-emacs))))
+(add-to-list 'load-path (expand-file-name user-emacs-directory) t) ; t = append
 
-(add-to-list 'load-path (expand-file-name user-emacs-directory) :append)
-
-(defconst cam/autoloads-file (concat user-emacs-directory "autoloads.el"))
-
-;; byte recompile the other files in this dir if needed
-(defconst cam/auxilary-init-files
-  (eval-when-compile
-    (let (files)
-      (dolist (file (directory-files user-emacs-directory))
-        (when (and (string-match "^[-[:alpha:]]+\\.el$" file)
-                   (not (member file '("autoloads.el" "custom.el" "init.el"))))
-          (push (concat user-emacs-directory file) files)))
-      files)))
-
+(require 'tweak-package)
 (eval-when-compile
-  (dolist (file cam/auxilary-init-files)
-    (unless (file-exists-p (concat file "c"))
-      (byte-compile-file file :load)
-      (update-file-autoloads file :save-after cam/autoloads-file))))
-
-(ignore-errors
-  (load-file cam/autoloads-file))
+  (require 'cam-macros))
 
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
@@ -150,6 +131,7 @@
     anzu                                          ; Show number of matches in mode-line while searching
     ;; anything                                      ; prereq for perl-completion
     auto-complete                                 ; auto-completion
+    auto-compile                                  ; automatically byte-compile Emacs Lisp files
     cider                                         ; Clojure Interactive Development Environment that Rocks
     column-enforce-mode                           ; Highlight text that goes past a certain column limit
     clj-refactor                                  ; Clojure refactoring minor mode
@@ -491,7 +473,6 @@
       (not :append)
       :local)))
 
-
 ;;; [[<auto-complete]]
 (tweak-package auto-complete
   :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
@@ -740,12 +721,6 @@ deleted, ask to kill any buffers that were visiting files that were children of 
 
 ;;; [[<Emacs Lisp]]
 
-(defvar-local cam/byte-compile nil
-  "Make this a file-local variable and we'll byte compile it whenever it's saved.")
-
-(defvar-local cam/generate-autoloads nil
-  "Generate autoloads for this file whenever it's saved.")
-
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
   (interactive)
   (call-interactively #'pp-macroexpand-last-sexp)
@@ -776,22 +751,19 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :mode-name emacs-lisp-mode
   :load ((put 'add-hook 'lisp-indent-function 1))
   :minor-modes (aggressive-indent-mode
-                auto-complete-mode
+                auto-compile-mode
                 column-enforce-mode
+                company-mode
                 eldoc-mode
                 elisp-slime-nav-mode
                 emacs-lisp-color-code-mode
+                flyspell-mode
                 morlock-mode
                 todo-font-lock-mode
                 wiki-nav-mode)
   :setup ((cam/lisp-mode-setup)
           (unless (string-equal user-init-file (buffer-file-name))
             (flycheck-mode 1)))
-  :local-hooks ((after-save-hook . (lambda ()
-                                     (when cam/byte-compile
-                                       (byte-compile-file (buffer-file-name) :load))
-                                     (when cam/generate-autoloads
-                                       (update-file-autoloads (buffer-file-name) :save-after cam/autoloads-file)))))
   :local-vars ((fill-column . 118)
                (emacs-lisp-docstring-fill-column . 118))
   :keys (("<C-M-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
@@ -812,7 +784,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
   :mode-name inferior-emacs-lisp-mode
   :hook-name ielm-mode-hook
   :minor-modes (aggressive-indent-mode
-                auto-complete-mode
+                company-mode
                 elisp-slime-nav-mode
                 morlock-mode)
   :setup ((cam/lisp-mode-setup)
@@ -1420,7 +1392,6 @@ Calls `magit-refresh' after the command finishes."
 
 ;; delete the *Warnings* buffer after 100 ms, then try again at 500ms and 1 second to make sure it's gone.
 (defun cam/-delete-warning-buffer ()
-  (message "<DELETE WARNING BUFFER>")
   (cam/when-let-visible-buffer ((buffer (string-equal (buffer-name buffer) "*Warnings*")))
     (unless (eq (get-buffer-window nil) this-window)
       (delete-window this-window))
