@@ -79,21 +79,31 @@
 
 ;; compile init files if they haven't already been compiled.
 (defun cam/-init-files ()
-  (cl-remove-if (lambda (file)
-                  (or (not (string-suffix-p ".el" file))
-                      (member file '("early-init.el"
-                                     "custom.el"
-                                     "autoloads.el"
-                                     "loaddefs.el"
-                                     ".mc-lists.el"))))
-                (directory-files user-emacs-directory)))
+  (mapcar (lambda (file)
+            (expand-file-name  (concat user-emacs-directory file)))
+          (cl-remove-if (lambda (file)
+                          (or (not (string-suffix-p ".el" file))
+                              (string-prefix-p ".#" file)
+                              (member file '("early-init.el"
+                                             "custom.el"
+                                             "autoloads.el"
+                                             "loaddefs.el"
+                                             ".mc-lists.el"))))
+                        (directory-files user-emacs-directory))))
 
-(dolist (file (cam/-init-files))
-  ;; nil = don't force recompilation if .elc is newer
-  ;; 0 = compile file if .elc didn't already exist
-  (unless (eq (byte-recompile-file file nil 0) 'no-byte-compile)
-    (message "Updating autoloads for %s" file)
-    (update-file-autoloads file nil cam/autoloads-file)))
+(defun cam/-byte-compile-init-files (&optional force-update-autoloads)
+  (unless (file-exists-p cam/autoloads-file)
+    (setq force-update-autoloads t))
+  (dolist (file (cam/-init-files))
+    (message "Compile %s if needed..." file)
+    ;; nil = don't force recompilation if .elc is newer
+    ;; 0 = compile file if .elc didn't already exist
+    (when (or (not (eq (byte-recompile-file file nil 0) 'no-byte-compile))
+              force-update-autoloads)
+      (message "Updating autoloads for %s" file)
+      (update-file-autoloads file nil cam/autoloads-file))))
+
+(cam/-byte-compile-init-files)
 
 (load-file cam/autoloads-file)
 
@@ -117,7 +127,6 @@
   (require 'package))
 
 (package-initialize)
-
 
 (setq package-archives '(("gnu"          . "https://elpa.gnu.org/packages/")
                          ("melpa-stable" . "https://stable.melpa.org/packages/")
@@ -309,12 +318,6 @@
       frame-resize-pixelwise t                    ; maximize as much as possible rather than rounding to closest whole line
       garbage-collection-messages t               ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
-      helm-ff-skip-git-ignored-files t            ; Have C-x C-f skip files in .gitignore
-      helm-ff-skip-boring-files t                 ; Have C-x C-f skip "boring" files matching the regex below
-      helm-ff--boring-regexp (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol) ; TODO -- this skips .emacs.d ??
-                                     (and "~" eol)
-                                     (and bol "#" (1+ anything) "#" eol)
-                                     (and bol ".#")))
       next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       ns-right-command-modifier 'hyper
       ns-right-control-modifier 'hyper
@@ -763,6 +766,8 @@ deleted, ask to kill any buffers that were visiting files that were children of 
       (insert "(message \" text \")")
     (insert "(message \"" text ": %s\" " text ")")))
 
+;; (autoload 'cam/emacs-lisp-color-code-mode "cam-emacs-lisp-color-code")
+
 (cam/tweak-package elisp-mode
   :mode-name emacs-lisp-mode
   :load ((put 'add-hook 'lisp-indent-function 1))
@@ -772,7 +777,7 @@ deleted, ask to kill any buffers that were visiting files that were children of 
                 company-mode
                 eldoc-mode
                 elisp-slime-nav-mode
-                emacs-lisp-color-code-mode
+                cam/emacs-lisp-color-code-mode
                 flyspell-mode
                 morlock-mode
                 cam/todo-font-lock-mode
@@ -878,9 +883,20 @@ deleted, ask to kill any buffers that were visiting files that were children of 
 
 ;;; [[<Helm]]
 (cam/tweak-package helm
-  :vars ((helm-buffers-fuzzy-matching . t) ; enable fuzzy matching for helm
+  :vars (
+         ;; enable fuzzy matching for helm
+         (helm-buffers-fuzzy-matching . t)
          (helm-recentf-fuzzy-match    . t)
-         (helm-M-x-fuzzy-match        . t)))
+         (helm-M-x-fuzzy-match        . t)
+         ;; Have C-x C-f skip files in .gitignore
+         (helm-ff-skip-git-ignored-files . t)
+         ;; Have C-x C-f skip "boring" files matching the regex below
+         (helm-ff-skip-boring-files . t)
+         ;; TODO -- this skips .emacs.d ??
+         (helm-ff--boring-regexp . (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol)
+                                           (and "~" eol)
+                                           (and bol "#" (1+ anything) "#" eol)
+                                           (and bol ".#"))))))
 
 ;;; [[<Java]]
 (cam/tweak-package cc-mode
@@ -1260,7 +1276,6 @@ Calls `magit-refresh' after the command finishes."
 (dolist (state '(nil emacs normal visual insert replace operator motion))
   (let ((symb (cam/active-evil-state-face-symb state))
         (face (list (list t :background (cam/evil-state-color state) :foreground "white"))))
-    (message (format "(face-spec-set %s %s)" symb face))
     (face-spec-set symb face)))
 
 (defun cam/face-symb (active-or-inactive where)

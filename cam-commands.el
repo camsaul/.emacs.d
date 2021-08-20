@@ -10,9 +10,6 @@
   (require 'subr-x)
   (require 'loccur))
 
-(cl-eval-when (load)
-  (message "CAM COMMANDS AUTOLOADED!"))
-
 
 ;;; [[General Editing/Navigation Functions]] ------------------------------------------------------------
 
