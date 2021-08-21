@@ -35,9 +35,7 @@
 (defun cam/evil--disable-relative-line-numbers ()
   (kill-local-variable 'display-line-numbers))
 
-(defun cam/evil--is-lisp-mode-p ()
-  (and (boundp 'cam/is-lisp-mode-p)
-       cam/is-lisp-mode-p))
+(require 'cam-lisp) ; for cam-is-lisp-mode-p
 
 (declare-function smartparens-mode "smartparens")
 (declare-function paredit-mode "paredit")
@@ -45,7 +43,7 @@
 (declare-function evil-cleverparens-mode "evil-cleverparens")
 
 (defun cam/evil--switch-to-paredit ()
-  (when (cam/evil--is-lisp-mode-p)
+  (when cam/is-lisp-mode-p
     (ignore-errors
       (paredit-mode 1))
     (smartparens-mode -1)
@@ -54,7 +52,7 @@
       (evil-cleverparens-mode -1))))
 
 (defun cam/evil--switch-to-smartparens ()
-  (when (cam/evil--is-lisp-mode-p)
+  (when cam/is-lisp-mode-p
     (paredit-mode -1)
     (smartparens-mode 1)
     (when evil-mode

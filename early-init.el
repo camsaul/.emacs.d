@@ -6,7 +6,9 @@
  ;; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
  gc-cons-threshold (* 128 1024 1024)
  ;; load .el files if they're newer than .elc/.eld ones
- load-prefer-newer t)
+ load-prefer-newer t
+ ;; do native compilation whenever we do byte compilation.
+ native-comp-deferred-compilation t)
 
 ;; this stuff adapted from https://github.com/emacscollective/auto-compile#setup
 (defun cam/-package-directory (package-name)

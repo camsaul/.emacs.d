@@ -1,11 +1,11 @@
-;;; -*- lexical-binding: t; coding: utf-8; comment-column: 50; no-byte-compile: nil; -*-
+;;; -*- lexical-binding: t; coding: utf-8; comment-column: 80; no-byte-compile: nil; -*-
 
 ;;; TOC:
 ;;; [[Initial Setup]]
+;;;    [[Additional Init File Setup & Compiliation]]
 ;;; [[Package Setup]]
 ;;; [[Global Setup]]
 ;;;    [[Theme]]
-;;;    [[Global Requires]]
 ;;;    [[Autoloads]]
 ;;;    [[Global Settings]]
 ;;;    [[Global Macros]]
@@ -13,45 +13,17 @@
 ;;;    [[Global Hooks]]
 ;;;    [[Global Keybindings]]
 ;;; [[Mode/Package Specific Setup]]
-;;;    [[etc]]
-;;;    [[Lisp Modes]]
-;;;    [[auto-complete]]
-;;;    [[company-mode]]
-;;;    [[C/C++]]
-;;;    [[Clojure]]
-;;;    [[dired]]
-;;;    [[company]]
-;;;    [[column-enforce-mode]]
-;;;    [[css-mode]]
-;;;    [[Emacs Lisp]]
-;;;    [[Eval Expresssion (Minibuffer)]]
-;;;    [[Find Things Fast]]
-;;;    [[Git Commit Mode]]
-;;;    [[Guide Key]]
-;;;    [[Helm]]
-;;;    [[Java]]
-;;;    [[loccur]]
-;;;    [[Magit]]
-;;;    [[markdown]]
-;;;    [[Messages]]
-;;;    [[Objective-C]]
-;;;    [[Org]]
-;;;    [[Paredit]]
-;;;    [[Perl]]
-;;;    [[Python]]
-;;;    [[Racket]]
-;;;    [[Shell]]
-;;;    [[Sly]]
-;;;    [[(Common) Lisp Mode]]
-;;;    [[text-mode]]
-;;;    [[Web Mode]]
-;;;    [[(n)xml Mode]]
-;;;    [[YAML Mode]]
+;;;    [[eval-after-load]]
+;;;    [[auto-mode-alist]]
+;;;    [[magic-mode-alist]]
+;;;    [[interpreter-mode-alist]]
 ;;; [[Global Minor Modes]]
 ;;; [[Diminished Minor Modes]]
-;;; [[Powerline & Evil Mode]]
-;;; [[Experimental]]
 ;;; [[Final Setup]]
+
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'subr-x)) ; when-let, thread-last, string-remove-prefix, etc.
 
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 
@@ -59,16 +31,6 @@
   "Have we done a complete load of the init file yet? (Use this to
   keep track of things we only want to run once, but not again if
   we call eval-buffer).")
-
-;;; Don't show toolbar, scrollbar, splash screen, startup screen
-
-(dolist (mode '(scroll-bar-mode tool-bar-mode))
-  (when (fboundp mode)
-    (funcall mode -1)))
-
-;; if os isn't macOS, don't show the top menu bar
-(unless (eq window-system 'ns)
-  (menu-bar-mode -1))
 
 (setq inhibit-splash-screen t
       inhibit-startup-screen t)
@@ -82,8 +44,11 @@
  ;; If there is more than one, they won't work right.
  '(inhibit-startup-echo-area-message (user-login-name)))
 
+;;; [[<Additional Init File Setup & Compiliation]]
+
 (defconst cam/-user-source-directory
-  (expand-file-name (concat user-emacs-directory "lisp/")))
+  (expand-file-name (concat user-emacs-directory "lisp/"))
+  "Directory where other init files live. ~/.emacs.d/lisp")
 
 (defconst cam/autoloads-file
   (expand-file-name (concat cam/-user-source-directory "loaddefs.el")))
@@ -92,6 +57,7 @@
 
 ;; compile init files if they haven't already been compiled.
 (defun cam/-init-files ()
+  "Paths of the misc .el init files. init.el and ~/.emacs.d/lisp"
   (cons
    (expand-file-name (concat user-emacs-directory "init.el"))
    (mapcar (lambda (file)
@@ -99,10 +65,10 @@
            (cl-remove-if (lambda (file)
                            (or (not (string-suffix-p ".el" file))
                                (string-prefix-p ".#" file)
-                               (string-equal file "")))
+                               (string-equal file "loaddefs.el")))
                          (directory-files cam/-user-source-directory)))))
 
-(defun cam/-byte-compile-init-files (&optional force-update-autoloads)
+(defun cam/-byte-compile-init-files-and-generate-autoloads (&optional force-update-autoloads)
   (unless (file-exists-p cam/autoloads-file)
     (setq force-update-autoloads t))
   (dolist (file (cam/-init-files))
@@ -115,30 +81,26 @@
       ;; t = save the autoloads file when finished.
       (update-file-autoloads file t cam/autoloads-file))))
 
-(cam/-byte-compile-init-files)
+;; compile all the init files as needed and generate autoloads
+(cam/-byte-compile-init-files-and-generate-autoloads)
 
 (load-file cam/autoloads-file)
-
-;;; [[<Auxilary Init File Setup]]
-
-(require 'cam-tweak-package)
-(eval-when-compile
-  (require 'cam-macros))
 
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
 
-(eval-when-compile
-  (require 'package))
-
+(require 'package)
 (package-initialize)
 
-(setq package-archives '(("gnu"          . "https://elpa.gnu.org/packages/")
-                         ("melpa-stable" . "https://stable.melpa.org/packages/")
-                         ("melpa"        . "https://melpa.org/packages/")
-                         ("org"          . "https://orgmode.org/elpa/")))
+(defconst cam/-package-archives
+  '(("gnu"          . "https://elpa.gnu.org/packages/")
+    ("melpa-stable" . "https://stable.melpa.org/packages/")
+    ("melpa"        . "https://melpa.org/packages/")
+    ("org"          . "https://orgmode.org/elpa/")))
 
-(defconst cam/packages
+(setq package-archives cam/-package-archives)
+
+(defconst cam/-packages
   '(ac-cider                                      ; auto-complete <-> cider
     ;; ac-sly                                        ; auto-complete <-> sly
     ace-jump-mode
@@ -211,21 +173,18 @@
     cmake-ide
     ;; I'm not sure how many of these we actually need/want
     company-rtags
-    ;; helm-rtags
     disaster
-    ;; lsp-ui
     eglot
     eldoc-box
     cpp-auto-include
 
     racket-mode
 
-    unicode-fonts
-    ))
+    unicode-fonts))
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents-p nil)
-(dolist (package cam/packages)
+(dolist (package cam/-packages)
   (unless (package-installed-p package)
     (unless cam/has-refreshed-package-contents-p
       (ignore-errors
@@ -235,10 +194,7 @@
         (package-install package)
       (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
 
-
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
-
-
 
 ;;; [[<Theme]]
 
@@ -247,23 +203,11 @@
 (unless cam/has-loaded-init-p
   (cam/setup-frame))
 
-
-;;; [[<Global Requires]]
-
-(require 'editorconfig)
-(require 'projectile) ; TODO - why is this a global require?
-
-(eval-when-compile
-  (require 'cl-lib)
-  (require 'dash)
-  (require 'subr-x)) ; when-let, thread-last, string-remove-prefix, etc.
-
-
 ;;; [[<Autoloads]]
 
-(autoload #'describe-minor-mode "help")
-;; (autoload #'perl-completion-mode "perl-completion")
-
+(autoload 'describe-minor-mode "help")
+(autoload 'evil-normal-state   "evil")
+(autoload 'loccur              "loccur")
 
 ;;; [[<Global Settings]]
 
@@ -290,9 +234,6 @@
       garbage-collection-messages t               ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t       ; also auto-revert buffers like dired
       next-line-add-newlines t                    ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
-      ns-right-command-modifier 'hyper
-      ns-right-control-modifier 'hyper
-      ns-right-option-modifier 'alt
       print-gensym t                              ; print uninterned symbols with prefixes to differentiate them from interned ones
       recentf-max-menu-items 50                   ; show more recent files in [Helm]recentf
       recentf-max-saved-items 50
@@ -313,19 +254,23 @@
 
       ;; EXPERIMENTAL !
       case-fold-search t                          ; cases and matches should ignore case (TODO -- I think this is the default)
-
       )
+
+;; macOS only
+(when (eq window-system 'ns)
+  (setq ns-right-command-modifier 'hyper
+        ns-right-control-modifier 'hyper
+        ns-right-option-modifier 'alt))
 
 (setq-default display-line-numbers nil            ; don't show line numbers.
               display-line-numbers-widen t        ; displaying line numbers should disregard narrowing.
-              fill-column 118                     ; My screen can handle more than 70 characters; use 118 so GH won't cut it off
-              indent-tabs-mode nil                ; disable insertion of tabs
+              fill-column 118           ; My screen can handle more than 70 characters; use 118 so GH won't cut it off
+              indent-tabs-mode nil      ; disable insertion of tabs
               truncate-lines t)                   ; don't display "continuation lines" (don't wrap long lines)
 
 
-(add-to-list 'projectile-globally-ignored-files   ; Tell projectile to always ignore uberdoc.html
-             "uberdoc.html")
-
+;; (add-to-list 'projectile-globally-ignored-files   ; Tell projectile to always ignore uberdoc.html
+;;              "uberdoc.html")
 
 ;;; [[<Global Hooks]]
 
@@ -337,10 +282,10 @@
 ;; if we're saving a script, give it execute permissions
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p)
 
-
 ;;; [[<Global Keybindings]]
 
-(autoload 'evil-normal-state "evil")
+(eval-when-compile
+  (require 'cam-macros))
 
 (cam/global-set-keys
   ("<A-escape>"    . #'helm-mark-ring)
@@ -357,7 +302,7 @@
   ("<S-delete>"    . #'cam/hungry-delete-forward)
   ("<S-down>"      . #'windmove-down)
   ("<S-left>"      . #'cam/windmove-left-or-other-frame)
-  ("<S-right>"     . #'cam/windmove-right-or-other-frame) ; Use <f11> <key> for toggling various minor modes
+  ("<S-right>"     . #'cam/windmove-right-or-other-frame)           ; Use <f11> <key> for toggling various minor modes
   ("<S-up>"        . #'windmove-up)
   ("<escape>"      . #'evil-normal-state)
   ("<f11>"         . nil)
@@ -367,13 +312,11 @@
   ("<f11> r"       . #'read-only-mode)
   ("<f11> w"       . #'whitespace-mode)
   ("<f12> d"       . #'cam/duckduckgo-search)
-  ("<f12> i"       . #'cam/open-metabase-issue-or-pr)
-  ("<f12> j"       . #'cider-javadoc)
   ("<f5>"          . #'ftf-find-file)           ; alternate bindings since super modifier doesn't work well on Windows
   ("<f6>"          . #'ftf-grepsource)
   ("<insert>"      . nil)
-  ("<scroll>"      . #'ftf-find-file)             ; for Windows use scroll to open file since s-o doesn't work
-  ("A-;"           . #'cam/loccur)
+  ("<scroll>"      . #'ftf-find-file)                     ; for Windows use scroll to open file since s-o doesn't work
+  ("A-;"           . #'loccur)
   ("A-e"           . #'cam/insert-em-dash)
   ("A-r l"         . #'rotate-layout)
   ("A-r w"         . #'rotate-window)
@@ -384,16 +327,16 @@
   ("C-c C-g"       . #'keyboard-quit)
   ("C-h M"         . #'describe-minor-mode)
   ("C-x C-b"       . #'helm-buffers-list)
-  ("C-x C-d"       . #'dired)                     ; instead of ido-list-directory
+  ("C-x C-d"       . #'dired)                                                   ; instead of ido-list-directory
   ("C-x C-f"       . #'helm-find-files)
   ("C-x C-g"       . #'keyboard-quit)
   ("C-x C-q"       . nil)              ; remove keybinding for read-only-mode since I almost never press it on purpose
   ("C-x C-r"       . #'helm-recentf)
-  ("C-x C-z"       . nil)                         ; instead of suspend-frame
+  ("C-x C-z"       . nil)                                                       ; instead of suspend-frame
   ("C-x b"         . #'helm-buffers-list)
   ("C-x f"         . #'helm-find-files)
   ("C-x k"         . #'kill-this-buffer)
-  ("C-x r r"       . #'register-list)             ; replaces copy-rectangle-to-register
+  ("C-x r r"       . #'register-list)                                           ; replaces copy-rectangle-to-register
   ("C-x w"         . nil)
   ("C-x w ."       . #'highlight-symbol-at-point) ; this is the normal binding for this function but isn't added until `hi-lock.el` is loaded
   ("C-z"           . #'evil-normal-state)
@@ -403,8 +346,8 @@
   ("H-M-e"         . #'mc/skip-to-next-like-this)
   ("H-a"           . #'mc/mark-previous-like-this)
   ("H-e"           . #'mc/mark-next-like-this)
-  ("M-/"           . #'hippie-expand)             ; Instead of dabbrev-expand
-  ("M-:"           . #'pp-eval-expression)        ; Instead of regular eval-expression
+  ("M-/"           . #'hippie-expand)                                           ; Instead of dabbrev-expand
+  ("M-:"           . #'pp-eval-expression)                                      ; Instead of regular eval-expression
   ("M-g"           . #'goto-line) ; Instead of 'M-g g' for goto-line, since I don't really use anything else with the M-g prefix
   ("M-j"           . #'cam/join-next-line)
   ("M-x"           . #'helm-M-x)
@@ -413,519 +356,69 @@
   ("s-f"           . #'ftf-grepsource)
   ("s-o"           . #'ftf-find-file))
 
-
 ;;; ---------------------------------------- [[<Mode/Package Specific Setup]] ----------------------------------------
 
-;;; [[<etc]]
+;;; [[<eval-after-load]]
+(defconst cam/-require-after-loads
+  '((auto-complete       cam-auto-complete)
+    (cc-mode             cam-c cam-cplusplus cam-java cam-objective-c)
+    (clojure-mode        cam-clojure)
+    (column-enforce-mode cam-column-enforce)
+    (company             cam-company)
+    (cperl-mode          cam-perl)
+    (css-mode            cam-css)
+    (dired               cam-dired)
+    (elisp-mode          cam-emacs-lisp)
+    (evil                cam-evil)
+    (find-things-fast    cam-ftf)
+    (guide-key           cam-guide-key)
+    (helm                cam-helm)
+    (ielm                cam-emacs-lisp)
+    (magit               cam-magit)
+    (nxml-mode           cam-nxml)
+    (org                 cam-org)
+    (paredit             cam-paredit)
+    (racket-mode         cam-racket)
+    (simple              cam-eval-expr cam-messages-mode)
+    (sly                 cam-common-lisp)
+    (web-mode            cam-web)))
 
-(cam/tweak-package button-lock
-  :load ((diminish 'button-lock-mode)))
+(dolist (spec cam/-require-after-loads)
+  (cl-destructuring-bind (file . requires) spec
+    (eval-after-load file `(progn ,@(mapcar (lambda (file-to-require)
+                                              `(require ',file-to-require))
+                                            requires)))))
 
-(cam/tweak-package wiki-nav
-  :load ((diminish 'wiki-nav-mode)))
+;;; [[<auto-mode-alist]]
+(defconst cam/-auto-mode-patterns
+  '((clojurescript-mode "\\.cljs$")
+    (cperl-mode         "\\.pl$" "\\.pm$")
+    (nxml-mode          "\\.pml$")
+    (web-mode           "\\.html$" "\\.js$" "\\.json$" "\\.jsx$" "\\.mustache$")))
 
-(cam/tweak-package highlight-parentheses
-  :load ((diminish 'highlight-parentheses-mode)))
+(dolist (spec cam/-auto-mode-patterns)
+  (cl-destructuring-bind (mode . patterns) spec
+    (dolist (pattern patterns)
+      (add-to-list 'auto-mode-alist (cons pattern mode)))))
 
+;; [[<magic-mode-alist]]
+;; Automatically open .h files with @interface declarations as obj-c rather than c
+(add-to-list 'magic-mode-alist
+             (cons (lambda ()
+                     (and (string-equal (file-name-extension buffer-file-name) "h")
+                          (re-search-forward "@\\<interface\\>"
+                                             magic-mode-regexp-match-limit t)))
+                   'objc-mode))
 
+;;; [[<interpreter-mode-alist]]
+(add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
 
-;;; [[<Lisp Modes]]
+(eval-when-compile
+  (require 'cam-tweak-package)) ; TODO FIXME
 
-(setq-default cam/is-lisp-mode-p nil)
-
-(defun cam/lisp-mode-setup ()
-  (unless cam/is-lisp-mode-p
-    (setq-local cam/is-lisp-mode-p t)
-    (highlight-parentheses-mode 1)
-    (rainbow-delimiters-mode 1)
-    (show-paren-mode 1)
-    (paredit-mode 1)
-    ;; (cam/switch-to-paredit)
-    ;; (when (and evil-mode
-    ;;            (not (cl-member evil-state '(emacs insert))))
-    ;;   (cam/switch-to-smartparens))
-    (add-hook 'before-save-hook
-      #'cam/untabify-current-buffer
-      (not :append)
-      :local)))
-
-;;; [[<auto-complete]]
-(cam/tweak-package auto-complete
-  :declare (ac-complete-functions ac-complete-symbols ac-complete-variables)
-  :vars ((ac-delay . 0.05) ; 0.2
-         (ac-auto-show-menu . 0.1) ; 0.5
-         (ac-candidate-menu-height . 20)
-         ;; (ac-candidate-limit . 20)
-         (ac-menu-height . 20)         ; number of results to show
-         (ac-quick-help-height . 50)   ; increase max height of quick help from 20 lines to 50
-         (ac-use-menu-map . t))        ; use special completion keymap when showing completion menu
-  :load ((cam/suppress-messages
-           (ac-config-default)
-           (add-to-list 'ac-modes 'cider-repl-mode)
-           ;; (add-to-list 'ac-modes 'emacs-lisp-mode)
-           ;; (add-to-list 'ac-modes 'ielm-mode)
-           (delete 'emacs-lisp-mode ac-modes)
-           (delete 'lisp-mode ac-modes)
-           (delete 'lisp-interaction-mode ac-modes)))
-  :keymap ac-menu-map
-  :keys (("A-f"       . #'ac-complete-functions)
-         ("A-s"       . #'ac-complete-symbols)
-         ("A-v"       . #'ac-complete-variables)
-         ("<S-tab>"   . #'auto-complete)
-         ("<backtab>" . #'auto-complete)))
-
-;;; [[<company-mode]]
-(cam/tweak-package company
-  :keys (("<S-tab>"   . #'company-complete)
-         ("<backtab>" . #'company-complete)))
-
-;;; [[<C/C++]]
-
-(cam/tweak-package cc-mode
-  :mode-name c-mode
-  :minor-modes (auto-complete-mode
-                electric-pair-local-mode)
-  :local-vars ((tab-width . 4)
-               (c-basic-indent . "k&r")
-               (c-basic-offset . 4)
-               (c-default-style . "linux"))
-  :keys (("C-j" . #'newline)))
-
-(defun cam/c++-switch-between-header-and-impl ()
-  "Toggle between the corresponding C++ header or implementation file for the current buffer. By default, raises an
-error if the corresponding file does not exist; pass the prefix arg to suppress this error and visit the (new) file."
-  (interactive)
-  (let* ((header-extensions '("h" "hpp" "hxx" "hh" "H" "h++"))
-         (impl-extensions '("cpp" "cxx" "cc" "C" "c++"))
-         (possible-extensions (if (member (file-name-extension buffer-file-name) header-extensions)
-                                  impl-extensions
-                                header-extensions))
-         found)
-    (cl-labels ((file-name-with-extension
-                 (extension)
-                 (concat (file-name-sans-extension buffer-file-name) "." extension)))
-      (cl-dolist (extension possible-extensions)
-        (let ((new-file-name (file-name-with-extension extension)))
-          (message "Trying %s..." new-file-name)
-          (when (file-exists-p new-file-name)
-            (find-file new-file-name)
-            (setq found t))))
-      (unless found
-        (if current-prefix-arg
-            (let ((default-extension (car possible-extensions)))
-              (find-file (file-name-with-extension default-extension)))
-          (user-error "Could not find related file for %s. Try again with C-u to create it" buffer-file-name))))))
-
-(defun cam/insert-c++-log-message (text)
-  (interactive "sstd::cout << ")
-  (insert
-   (concat
-    "std::cout << "
-    (if current-prefix-arg
-        text
-      (concat "\"" text " = \" << " text))
-    " << std::endl;")))
-
-(cam/tweak-package cc-mode
-  :mode-name c++-mode
-  :minor-modes (column-enforce-mode
-                flycheck-mode
-                ;; smartparens-strict-mode
-                company-mode
-                eldoc-box-hover-mode
-                eldoc-box-hover-at-point-mode
-                cam/todo-font-lock-mode)
-  :require (company-lsp
-            lsp-mode
-            lsp-ui
-            lsp-clangd
-            eglot)
-  :vars ((company-lsp-enable-snippet . nil)
-         (rtags-completions-enabled . t)
-         (rtags-display-result-backend . 'helm))
-  :local-vars ((flycheck-highlighting-mode . nil))
-  :setup ((cam/c-mode-setup)
-          (rtags-start-process-unless-running)
-          (dolist (backend '(company-rtags company-lsp))
-            (add-to-list 'company-backends backend))
-          (add-to-list 'eglot-server-programs '((c++-mode) "clangd"))
-          (eglot-ensure)
-          (auto-complete-mode 0)
-          (flyspell-prog-mode))
-  :keys (("<f1>" . #'eldoc-doc-buffer)
-         ("<f7>" . #'cam/c++-switch-between-header-and-impl)
-         ("C-." . #'disaster)                     ; disassemble code at point
-         ("C-j" . #'newline)
-         ("M-." . #'rtags-find-symbol-at-point)
-         ("<f10>" .  #'cam/insert-c++-log-message)))
-
-
-;;; [[<Clojure]]
-
-(cam/tweak-package clojure-mode
-  :mode-name clojure-mode
-  :require (clojure-mode-extra-font-locking cider-eldoc)
-  :minor-modes (auto-complete-mode
-                cider-mode
-                clj-refactor-mode
-                column-enforce-mode
-                eldoc-mode
-                cam/todo-font-lock-mode)
-  :setup ((cam/lisp-mode-setup)
-          (flyspell-prog-mode)
-          (ac-cider-setup)
-          (cljr-add-keybindings-with-modifier "A-H-")
-          (setq-local eldoc-documentation-function #'cider-eldoc)
-          (eldoc-mode 1))
-  :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
-               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
-               (ac-auto-show-menu . 1.0)
-               (ac-quick-help-delay . 1.5)
-               (eldoc-documentation-function . #'cider-eldoc)
-               (fill-column . 118)                    ; non-docstring column width of 117, which fits nicely on GH
-               (clojure-docstring-fill-column . 118)) ; docstring column width of 117
-  :local-hooks ((after-save-hook . (lambda ()
-                                     (add-hook 'after-save-hook #'cam/clj-load-buffer-clean-namespace nil :local))))
-  :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
-         ("<f1>"         . #'ac-cider-popup-doc)
-         ("<f7>"         . #'cam/clj-switch-to-test-namespace)
-         ("<f8>"         . #'cam/clj-switch-between-model-and-api-namespaces)
-         ("<f9>"         . #'cam/clj-insert-header)
-         ("<f10>"        . #'cam/clj-insert-println)
-         ("<insert>"     . #'helm-imenu)))
-
-(add-to-list 'auto-mode-alist '("\\.cljs$" . clojurescript-mode))
-
-(cam/tweak-package clj-refactor
-  :load ((diminish 'clj-refactor-mode))
-  :vars ((cljr-favor-prefix-notation . nil)))
-
-(cam/tweak-package cider
-  :mode-name cider-repl-mode
-  :declare (cider-jack-in)
-  :vars ((cider-auto-select-error-buffer . nil)
-         (cider-repl-use-pretty-printing . t))
-  :require (ansi-color)
-  :advice ((#'cider-repl-return :before (lambda ()
-                                          "Delete trailing whitespace that may have been introduced by `auto-complete'."
-                                          (interactive)
-                                          (call-interactively #'delete-trailing-whitespace)))
-           (#'nrepl-server-filter :around #'cam/clj-ansi-colorize-nrepl-output-buffer-if-needed))
-  :minor-modes (auto-complete-mode
-                eldoc-mode)
-  :setup ((cam/lisp-mode-setup)
-          (ac-cider-setup))
-  :keys (("M-RET" . #'cider-switch-to-last-clojure-buffer)
-         ("{" . #'paredit-open-curly)
-         ("<f1>" . #'ac-cider-popup-doc)))
-
-(cam/tweak-package cider-macroexpansion
-  :setup ((read-only-mode -1))
-  :keys  (("C-c RET" . #'cider-macroexpand-1)))
-
-(cam/tweak-package cider-eval
-  :declare (cider-connected-p cider-current-ns cider-load-buffer cider-switch-to-last-clojure-buffer cider-switch-to-relevant-repl-buffer))
-
-(cam/tweak-package cider-repl
-  :declare (cider-repl-clear-buffer cider-repl-return cider-repl-set-ns))
-
-
-;;; [[<column-enforce-mode]]
-(cam/tweak-package column-enforce-mode
-  :mode-name column-enforce-mode
-  :vars ((column-enforce-column . 120)))
-
-
-;;; [[<css-mode]]
-(cam/tweak-package css-mode
-  :mode-name css-mode
-  :minor-modes (electric-pair-local-mode))
-
-
-;;; [[<company]]
-(cam/tweak-package company
-  :vars ((company-idle-delay . 0.01)
-         (company-minimum-prefix-length . 1)))
-
-
-;;; [[<dired]]
-(defun cam/after-dired-find-file ()
-  "After-advice for `dired-find-file'. Kill all `dired' buffers
-unless they are the current buffer."
-  (dolist (buf (buffer-list))
-    (unless (eq buf (current-buffer))
-      (with-current-buffer buf
-        (when (eq major-mode 'dired-mode)
-          (kill-buffer buf))))))
-
-(defun cam/revert-dired-buffers ()
-  "Revert all `dired' buffers."
-  (dolist (buf (buffer-list))
-    (with-current-buffer buf
-      (when (eq major-mode 'dired-mode)
-        (revert-buffer)))))
-
-(defun cam/around-dired-do-delete (fun &optional arg)
-  "Around-advice for `dired-do-delete'. When deleting a file, check if its a directory; if so, and the directory is
-deleted, ask to kill any buffers that were visiting files that were children of that directory."
-  (let* ((file (dired-get-filename))
-         (deleting-directory-p (file-directory-p file)))
-    (let ((result (funcall fun arg)))
-      (when (and deleting-directory-p
-                 (not (file-exists-p file))) ; check that file was actually deleted
-        (dolist (buf (buffer-list))
-          (-when-let (buffer-file (buffer-file-name buf))
-            (when (string-prefix-p (expand-file-name file) (expand-file-name buffer-file))
-              (kill-buffer-ask buf)))))
-      result)))
-
-(cam/tweak-package dired
-  :declare (dired-do-delete dired-find-file dired-get-filename dired-hide-details-mode)
-  :vars ((dired-recursive-copies  . 'always)
-         (dired-recursive-deletes . 'always))
-  :require (dired-x)                              ; dired-smart-shell-command, dired-jump (C-x C-j), etc.
-  :advice ((#'dired-do-delete :around #'cam/around-dired-do-delete)
-           (#'dired-find-file :after  #'cam/after-dired-find-file)
-           (#'dired-smart-shell-command :after (lambda (&rest _)
-                                                 (revert-buffer))))
-  :load ((add-hook 'focus-in-hook #'cam/revert-dired-buffers))
-  :minor-modes (dired-hide-details-mode))
-
-(cam/tweak-package dired-x
-  :declare (dired-smart-shell-command))
-
-
-;;; [[<Emacs Lisp]]
-
-(defun cam/emacs-lisp-macroexpand-last-sexp ()
-  (interactive)
-  (call-interactively #'pp-macroexpand-last-sexp)
-  (with-current-buffer "*Pp Macroexpand Output*"
-    (macrostep-mode 1)))
-
-(defun cam/emacs-lisp-eval-switch-to-ielm ()
-  (interactive)
-  (eval-buffer)
-  (-if-let (ielm-window (get-window-with-predicate
-                         (lambda (window)
-                           (string-equal (buffer-name (window-buffer window)) "*ielm*"))))
-      (select-window ielm-window)
-    (let ((new-window (split-window-sensibly)))
-      (if new-window
-          (select-window new-window)
-        (other-window 1))
-      (ielm)
-      (balance-windows))))
-
-(defun cam/emacs-lisp-insert-message (text)
-  (interactive "sprintln: ")
-  (if current-prefix-arg
-      (insert "(message \" text \")")
-    (insert "(message \"" text ": %s\" " text ")")))
-
-;; FIXME -- not sure why we need to have these here when we're supposed to be generating autoloads automatically.
-;; Doesn't seem to be able to open init.el for editing tho if these aren't here.
-(autoload 'cam/emacs-lisp-color-code-mode "cam-emacs-lisp-color-code")
-(autoload 'cam/todo-font-lock-mode "cam-todo-font-lock")
-
-(cam/tweak-package elisp-mode
-  :mode-name emacs-lisp-mode
-  :load ((put 'add-hook 'lisp-indent-function 1))
-  :minor-modes (aggressive-indent-mode
-                auto-compile-mode
-                column-enforce-mode
-                company-mode
-                eldoc-mode
-                elisp-slime-nav-mode
-                cam/emacs-lisp-color-code-mode
-                flyspell-mode
-                morlock-mode
-                cam/todo-font-lock-mode
-                wiki-nav-mode)
-  :setup ((cam/lisp-mode-setup)
-          (unless (string-equal user-init-file (buffer-file-name))
-            (flycheck-mode 1))
-          (with-eval-after-load 'dash
-            (global-dash-fontify-mode 1)))
-  :local-vars ((fill-column . 118)
-               (emacs-lisp-docstring-fill-column . 118))
-  :keys (("<C-M-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
-         ("C-c RET"      . #'cam/emacs-lisp-macroexpand-last-sexp)
-         ("C-x C-e"      . #'pp-eval-last-sexp)
-         ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)
-         ("<f10>" . #'cam/emacs-lisp-insert-message)))
-
-(cam/tweak-package elisp-slime-nav
-  :load ((diminish 'elisp-slime-nav-mode))
-  :keys (("C-c C-d" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
-
-(cam/tweak-package ielm
-  :mode-name inferior-emacs-lisp-mode
-  :hook-name ielm-mode-hook
-  :minor-modes (aggressive-indent-mode
-                company-mode
-                elisp-slime-nav-mode
-                morlock-mode)
-  :setup ((cam/lisp-mode-setup))
-  :local-vars ((indent-line-function . #'lisp-indent-line))     ; automatically indent multi-line forms correctly
-  :keys (("C-c RET" . #'cam/emacs-lisp-macroexpand-last-sexp)
-         ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)))
-
-(cam/tweak-package nadvice
-  :load ((put #'advice-add 'lisp-indent-function 2)))
-
-
-;;; [[<Eval Expresssion (Minibuffer)]]
-(cam/tweak-package simple
-  :hook-name eval-expression-minibuffer-setup-hook
-  :minor-modes (company-mode
-                paredit-mode)
-  :local-vars ((company-echo-delay . 10)))
-
-
-;;; [[<Find Things Fast]]
-(cam/tweak-package find-things-fast
-  :load ((nconc ftf-filetypes '("*.clj"
-                                "*.cljc"
-                                "*.cljs"
-                                "*.css"
-                                "*.edn"
-                                "*.el"
-                                "*.html"
-                                "*.js"
-                                "*.jsx"
-                                "*.java"
-                                "*.lisp"
-                                "*.md"
-                                "*.mustache"
-                                "*.pml"
-                                "*.yaml"
-                                "*.yml")))
-  ;; normally ftf deduplicates stuff only based on the immediate parent directory; instead tweak it so it uses the
-  ;; entire path relative to the project root.
-  :advice ((#'ftf-uniqueify :around (lambda (f file-cons)
-                                      ;; cache the value of `(ftf-project-directory) because it's way to slow to call
-                                      ;; on a big list of a few hundred files.
-                                      (unless (boundp 'cam/-ftf-project-directory)
-                                        (setq-local cam/-ftf-project-directory (ftf-project-directory)))
-                                      (setcar file-cons
-                                              (concat (car file-cons)
-                                                      ": "
-                                                      (string-remove-prefix
-                                                       cam/-ftf-project-directory
-                                                       (file-name-directory (cdr file-cons)))))))))
-
-
-;;; [[<Git Commit Mode]]
 (cam/tweak-package git-commit
   :mode-name git-commit
   :minor-modes (flyspell-mode))
-
-
-;;; [[<Guide Key]]
-(cam/tweak-package guide-key
-  :vars ((guide-key/idle-delay . 1.0)
-         (guide-key/recursive-key-sequence-flag . t)
-         (guide-key/guide-key-sequence . '("<f12>" "<f1>"
-                                           "<help>" "A-'"
-                                           "A-*"    "A-,"
-                                           "A-/"    "A-1"
-                                           "A-3"    "A-\""
-                                           "A-^"    "A-_"
-                                           "A-`"    "A-r"
-                                           "A-~"    "C-c"
-                                           "C-h"    "C-x"
-                                           "M-o"))))
-
-
-;;; [[<Helm]]
-(cam/tweak-package helm
-  :vars (
-         ;; enable fuzzy matching for helm
-         (helm-buffers-fuzzy-matching . t)
-         (helm-recentf-fuzzy-match    . t)
-         (helm-M-x-fuzzy-match        . t)
-         ;; Have C-x C-f skip files in .gitignore TODO -- disabled to now -- too hard to find these files when I need
-         ;; to look at them.
-         (helm-ff-skip-git-ignored-files . nil)
-         ;; Have C-x C-f skip "boring" files matching the regex below
-         (helm-ff-skip-boring-files . t)
-         ;; TODO -- this skips .emacs.d ??
-         (helm-ff--boring-regexp . (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol)
-                                           (and "~" eol)
-                                           (and bol "#" (1+ anything) "#" eol)
-                                           (and bol ".#"))))))
-
-;;; [[<Java]]
-(cam/tweak-package cc-mode
-  :mode-name java-mode
-  :setup ((cam/c-mode-setup))
-  :keys (("C-j" . #'newline)))
-
-
-;;; [[<loccur]]
-(cam/tweak-package loccur
-  :declare (loccur))
-
-;;; [[<Magit]]
-(defun cam/magit-visit-pull-request-url ()
-  "Visit the current git branch's PR on GitHub."
-  (interactive)
-  (browse-url (concat "http://github.com/"
-                      (->> (magit-get "remote" (magit-get-current-remote) "url")
-                           (string-remove-suffix ".git")
-                           (string-remove-prefix "git@github.com:"))
-                      "/pull/"
-                      (magit-get-current-branch))))
-
-(defun cam/magit-shell-command ()
-  "Replacement for `shell-command' in `magit-status-mode'.
-Calls `magit-refresh' after the command finishes."
-  (interactive)
-  (call-interactively #'shell-command)
-  (call-interactively #'magit-refresh))
-
-(defun cam/refresh-magit-buffers ()
-  "Refresh all `magit-status-mode' buffers."
-  (dolist (buf (buffer-list))
-    (with-current-buffer buf
-      (when (eq major-mode 'magit-status-mode)
-        (magit-refresh)))))
-
-(defun cam/magit-buffer-p (buffer)
-  (string-prefix-p "*magit" (buffer-name buffer)))
-
-(defun cam/kill-all-magit-buffers-and-windows ()
-  "Kill all magit-related buffers and windows."
-  (interactive)
-  ;; kill all the visible magit buffers & their windows
-  (dolist (frame (frame-list))
-    (dolist (window (window-list frame))
-      (let ((buffer (window-buffer window)))
-        (when (cam/magit-buffer-p buffer)
-          (with-current-buffer buffer
-            (kill-buffer-and-window))))))
-  ;; ok, now kill any magit buffers in the background
-  (dolist (buffer (buffer-list))
-    (when (cam/magit-buffer-p buffer)
-      (kill-buffer buffer))))
-
-(cam/tweak-package magit
-  :mode-name magit-status-mode
-  :declare (magit-get magit-get-current-branch magit-get-current-remote magit-refresh)
-  :vars ((magit-auto-revert-mode-lighter . "")
-         (magit-last-seen-setup-instructions . "1.4.0")
-         (magit-push-always-verify . nil)
-         ;; Don't prompt to save buffers in the current repo before performing Magit actions
-         (magit-save-repository-buffers . 'dontask))
-  :load ((add-hook 'focus-in-hook #'cam/refresh-magit-buffers))
-  :keys (("C-x 4 0" . #'cam/kill-all-magit-buffers-and-windows)
-         ("M-!"     . #'cam/magit-shell-command)
-         ("V"       . #'cam/magit-visit-pull-request-url)
-         ("s-u"     . #'magit-refresh)))
-
-
-;;; [[<markdown]]
 
 ;; (with-eval-after-load "markdown-mode"
 ;;   (require 'preview-markdown)
@@ -936,263 +429,96 @@ Calls `magit-refresh' after the command finishes."
   :mode-name markdown-mode
   :minor-modes (flyspell-mode))
 
-;;; [[<Messages]]
-
-(defun cam/clear-messages-buffer ()
-  (interactive)
-  (cam/when-let-visible-buffer ((buffer (string-equal "*Messages*" (buffer-name buffer))))
-    (with-current-buffer buffer
-      (read-only-mode -1)
-      (delete-region (point-min) (point-max))
-      (read-only-mode 1))))
-
-(cam/tweak-package simple
-  :mode-name messages-buffer-mode
-  :keys (("c" . #'cam/clear-messages-buffer)))
-
-;;; [[<Objective-C]]
-(cam/tweak-package cc-mode
-  :mode-name objc-mode
-  :load (;; Automatically open .h files with @interface declarations as obj-c rather than c
-         (add-to-list 'magic-mode-alist
-                      `(,(lambda ()
-                           (and (string-equal (file-name-extension buffer-file-name) "h")
-                                (re-search-forward "@\\<interface\\>"
-                                                   magic-mode-regexp-match-limit t)))
-                        . objc-mode)))
-  :setup ((cam/c-mode-setup))
-  :keys (("C-j" . #'newline)))
-
-;;; [[<Org]]
-(defun cam/org-insert-code-block ()
-  "Insert a new Org code block and start editing it."
-  (interactive)
-  (org-return-indent)
-  (insert "#+BEGIN_SRC emacs-lisp")
-  (org-return-indent)
-  (insert "#+END_SRC")
-  (forward-line -1)
-  (org-end-of-line)
-  (org-return-indent)
-  (org-edit-src-code))
-
-(cam/tweak-package org
-  :declare (org-bookmark-jump-unhide org-end-of-line org-return-indent)
-  :vars ((org-support-shift-select . nil))
-  :minor-modes (flyspell-mode)
-  :local-vars ((truncate-lines . nil))
-  :keys (("C-c c" . #'cam/org-insert-code-block)))
-
-(cam/tweak-package org-src
-  :declare (org-edit-src-code))
-
-
-;;; [[<Paredit]]
-(cam/tweak-package paredit
-  :declare (paredit-backward-delete
-            paredit-close-curly paredit-doublequote paredit-forward-delete paredit-forward-up paredit-in-string-p paredit-newline
-            paredit-open-round paredit-open-square paredit-reindent-defun)
-  ;; Tell paredit it's ok to delete selection in these contexts. Otherwise delete-selection-mode doesn't work with paredit
-  :load ((put #'paredit-forward-delete  'delete-selection 'supersede)
-         (put #'paredit-backward-delete 'delete-selection 'supersede)
-         (put #'paredit-open-round      'delete-selection t)
-         (put #'paredit-open-square     'delete-selection t)
-         (put #'paredit-doublequote     'delete-selection t)
-         (put #'paredit-newline         'delete-selection t)))
-
-
-;;; [[<Perl]]
-(cam/tweak-package cperl-mode
-  :mode-name cperl-mode
-  :minor-modes (eldoc-mode
-                electric-pair-local-mode
-                ;; perl-completion-mode
-                )
-  :vars ((cperl-electric-keywords . t)
-         (cperl-indent-level . 4))
-  :keys (("C-c C-d" . #'cperl-perldoc))
-  :local-vars ((eldoc-documentation-function . (lambda ()
-                                                 (car
-                                                  (let (cperl-message-on-help-error)
-                                                    (cperl-get-help))))))
-  ;; :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
-  :auto-mode-alist ("\.pl$"
-                    "\.pm$"))
-(add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
-
-
-;;; [[<Python]]
 (cam/tweak-package python
   :minor-modes (electric-pair-local-mode))
 
-;;; [[<Racket]]
-(cam/tweak-package racket-mode
-  :mode-name racket-mode
-  :minor-modes (company-mode
-                eldoc-mode)
-  :setup ((cam/lisp-mode-setup)
-          (auto-complete-mode -1)
-          (eldoc-mode 1))
-  :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
-  :keys (("<f1>" . #'racket-repl-describe)))
-
-(cam/tweak-package racket-repl
-  :setup ((cam/racket-mode-setup)
-          (eldoc-mode 1))
-  :local-vars ((eldoc-documentation-function . #'racket-repl-eldoc-function))
-  :keys (("<f1>" . #'racket-repl-describe)))
-
-;;; [[<Shell]]
 (cam/tweak-package sh-script
   :mode-name sh-mode
   :minor-modes (electric-pair-local-mode
                 cam/todo-font-lock-mode)
   :keys (("C-j" . #'newline)))
 
-
-;;; [[<(Common) Lisp Mode]]
-(defun cam/save-load-switch-to-sly ()
-  (interactive)
-  (save-buffer)
-  (sly-compile-and-load-file)
-  (sly-switch-to-most-recent 'sly-mrepl-mode))
-
-(setq inferior-lisp-program "sbcl")
-
-;; Tweak configuration for the Sly minor mode as opposed to lisp-mode because otherwise cam/tweak-package will
-;; redefine cam/lisp-mode-setup
-
-;;; [[<Sly]]
-(cam/tweak-package sly
-  ;; :require (ac-sly)
-  :minor-modes (company-mode)
-  :keys (("<C-M-return>" . #'cam/save-load-switch-to-sly))
-  :setup ((cam/lisp-mode-setup)
-          ;; don't load ac-sly until after sly is loaded, otherwise there will be circular requires between them
-          (eval-after-load 'sly
-            '(progn
-               (require 'ac-sly)
-               (set-up-sly-ac :fuzzy)))))
-
-;;; [[<text-mode]]
 (cam/tweak-package text-mode
   :mode-name text-mode
   :minor-modes (flyspell-mode))
 
-;;; [[<Web Mode]]
-
-(defun cam/js-insert-console-dot-log (text)
-  (interactive "sconsole.log: ")
-  (if current-prefix-arg
-      (insert "console.log(\"" text "\"); // NOCOMMIT")
-    (insert "console.log(\"" text ":\", " text "); // NOCOMMIT")))
-
-(cam/tweak-package web-mode
-  :mode-name web-mode
-  :minor-modes (column-enforce-mode
-                electric-pair-local-mode
-                rainbow-delimiters-mode
-                company-mode)
-  :keys (("C-j" . #'newline)
-         ("<f10>" . #'cam/js-insert-console-dot-log))
-  :auto-mode-alist ("\\.js$"
-                    "\\.json$"
-                    "\\.html$"
-                    "\\.jsx$"
-                    "\\.mustache$")
-  :setup
-  ;; make sure autocomplete isn't enabled (we're using company instead)
-  ((auto-complete-mode -1)
-   ;; enable tide-mode for JS files
-   (when (let ((ext (file-name-extension buffer-file-name)))
-           (or (string= ext "js")
-               (string= ext "jsx")))
-     (require 'tide)
-     (tide-setup))))
-
-(cam/tweak-package tide
-  :require (company-lsp)
-  :minor-modes (flycheck-mode
-                eldoc-mode
-                tide-hl-identifier-mode
-                column-enforce-mode
-                electric-pair-local-mode
-                rainbow-delimiters-mode)
-  :keys (("<f1>" . #'tide-documentation-at-point))
-  :vars ((tide-always-show-documentation . t))
-  :setup
-  ((flyspell-prog-mode)
-   (company-mode 1)))
-
-;;; [[<(n)xml Mode]]
-
-(cam/tweak-package nxml-mode
-  :mode-name nxml-mode
-  :minor-modes (electric-pair-mode
-                company-mode)
-  :keys (("C-j" . #'newline))
-  :vars ((nxml-slash-auto-complete-flag . t))
-  :auto-mode-alist (".pml$")
-  :setup ((when (string-equal (file-name-extension buffer-file-name) "pml")
-            (message "<Loading cam/pml-mode>")
-            (cam/pml-mode 1))))
-
-
-;;; [[<YAML Mode]]
 (cam/tweak-package yaml-mode
   :mode-name yaml-mode
   :keys (("C-j" . #'newline-and-indent)
          ("C-m" . #'newline-and-indent)))
 
-
 ;;; [[<Global Minor Modes]]
 
-;; Modes to disable
-(blink-cursor-mode -1)                            ; disable annoying blinking cursor
+(defun cam/-apply-symbol-function (symb &rest args)
+  (when (fboundp symb)
+    (let ((f (symbol-function symb)))
+      (cond
+       ((autoloadp f)
+        (message "Autoload %s" symb)
+        (autoload-do-load f)
+        (apply #'cam/-apply-symbol-function symb args))
+       (t
+        (message "%s" (cons symb args))
+        (apply f args))))))
 
-;; Modes to enable
-(delete-selection-mode 1)                         ; typing will delete selected text
-(editorconfig-mode 1)                             ; parse .editorconfig files and apply settings for things like indentation
-(global-anzu-mode 1)                              ; show number of matches in mode line while searching
-(global-auto-revert-mode 1)                       ; automatically reload files when they change on disk
-(global-diff-hl-mode 1)                           ; Show which lines have changed since last git commit in the fringe
-(global-eldoc-mode 1)                             ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
-(global-undo-tree-mode 1)
-(guide-key-mode 1)                                ; Show list of completions for keystrokes after a delay
-(ido-mode 1)
-(ido-everywhere 1)
-(ido-vertical-mode 1)
-(projectile-mode 1)
-(rainbow-mode 1)                                  ; Colorize strings like #FCE94F
-(recentf-mode 1)                                  ; Track recently visited files
-(save-place-mode 1)                               ; automatically save position in files & start at that position next time you open them
-(winner-mode 1)
+(defconst cam/-global-disabled-minor-modes
+  '(blink-cursor-mode
+    ;; Don't show toolbar, scrollbar, splash screen, startup screen
+    scroll-bar-mode
+    tool-bar-mode)
+  "Global minor modes to disable")
+
+;; don't disable menu bar more on macOS.
+(unless (eq window-system 'ns)
+  (add-to-list 'cam/-global-disabled-minor-modes 'menu-bar-mode))
+
+(dolist (mode cam/-global-disabled-minor-modes)
+  (cam/-apply-symbol-function mode -1))
+
+(defconst cam/-global-minor-modes
+  '(delete-selection-mode     ; typing will delete selected text
+    editorconfig-mode         ; parse .editorconfig files and apply settings for things like indentation
+    global-anzu-mode          ; show number of matches in mode line while searching
+    global-auto-revert-mode   ; automatically reload files when they change on disk
+    global-diff-hl-mode       ; Show which lines have changed since last git commit in the fringe
+    global-eldoc-mode         ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
+    global-undo-tree-mode
+    guide-key-mode            ; Show list of completions for keystrokes after a delay
+    ido-mode
+    ido-everywhere
+    ido-vertical-mode
+    projectile-mode
+    rainbow-mode              ; Colorize strings like #FCE94F
+    recentf-mode              ; Track recently visited files
+    save-place-mode           ; automatically save position in files & start at that position next time you open them
+    winner-mode)
+  "Global minor modes to enable")
+
+(dolist (mode cam/-global-minor-modes)
+  (cam/-apply-symbol-function mode 1))
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
-(add-hook 'find-file-hook (lambda ()
-                            (rainbow-mode 1)))
-
+(add-hook 'find-file-hook (lambda () (rainbow-mode 1)))
 
 ;;; [[<Diminished Minor Modes]]
 
-(dolist (mode '(anzu-mode
-                diff-hl-mode
-                editorconfig-mode
-                global-auto-revert-mode
-                guide-key-mode
-                projectile-mode
-                rainbow-mode
-                undo-tree-mode))
+(require 'diminish)
+
+(defconst cam/-diminished-minor-modes
+  '(anzu-mode
+    button-lock-mode
+    diff-hl-mode
+    editorconfig-mode
+    global-auto-revert-mode
+    guide-key-mode
+    highlight-parentheses-mode
+    projectile-mode
+    rainbow-mode
+    undo-tree-mode
+    wiki-nav-mode))
+
+(dolist (mode cam/-diminished-minor-modes)
   (diminish mode))
-
-
-;;; ---------------------------------------- [[<Powerline & Evil Mode]] ----------------------------------------
-
-(with-eval-after-load 'evil
-  (require 'cam-evil))
-
-
-
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 

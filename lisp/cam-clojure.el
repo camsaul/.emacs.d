@@ -2,10 +2,31 @@
 
 (eval-when-compile
   (require 'cl-lib)
-  (require 'cam-macros)
-  (require 'clojure-mode)
-  (require 'cider)
-  (require 'cider-repl))
+  (require 'cam-macros))
+
+(require 'cam-lisp)
+
+(require 'ac-cider)
+(require 'ansi-color)
+(require 'auto-complete)
+(require 'cam-todo-font-lock)
+(require 'cider)
+(require 'cider-eldoc)
+(require 'clj-refactor)
+(require 'clojure-mode)
+(require 'clojure-mode-extra-font-locking)
+(require 'column-enforce-mode)
+(require 'diminish)
+(require 'eldoc)
+(require 'flyspell)
+
+(declare-function helm-imenu "helm-imenu")
+
+(diminish 'clj-refactor-mode)
+
+(setq cider-auto-select-error-buffer nil
+      cider-repl-use-pretty-printing t
+      cljr-favor-prefix-notation     nil)
 
 (define-clojure-indent
   (matcha '(1 (:defn)))
@@ -53,14 +74,14 @@ and vice versa."
   (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
   (cider-repl-clear-buffer))
 
-(defvar cam/-clojure-load-buffer-clean-namespace--namespace-cleaned-p nil)
+(defvar cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p nil)
 
 ;;;###autoload
 (cl-defun cam/clj-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
   "When CIDER is active attempt to load BUFFER (by default, the current buffer) and clean its namespace declaration
 form."
   (interactive "bBuffer: ")
-  (when (not cam/-clojure-load-buffer-clean-namespace--namespace-cleaned-p)
+  (when (not cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p)
     (with-demoted-errors "Error cleaning namespace declaration: %S"
       (with-current-buffer (get-buffer buffer)
         (let ((filename (file-name-nondirectory (buffer-file-name))))
@@ -75,7 +96,7 @@ form."
             (cljr-clean-ns)
             (when (buffer-modified-p)
               ;; prevent recursive calls !
-              (let ((cam/-clojure-load-buffer-clean-namespace--namespace-cleaned-p t))
+              (let ((cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p t))
                 (save-buffer)))))))))
 
 ;;;###autoload
@@ -85,7 +106,7 @@ form."
       (insert "(println \"" text "\") ; NOCOMMIT")
     (insert "(println \"" text ":\" " text ") ; NOCOMMIT")))
 
-(defun cam/-insert-small-clojure-header (text)
+(defun cam/-insert-smallclojure--header (text)
   "Insert a small header like: ;;; --- TEXT ---"
   (let* ((total-width 112)
          (padding (/ (- total-width (length text)) 2))
@@ -104,7 +125,7 @@ form."
                   (cl-oddp total-width))
         "-")))))
 
-(defun cam/-insert-large-clojure-header (text)
+(defun cam/-insert-largeclojure--header (text)
   "Insert a large box-style header."
   (let* ((total-width 112)
          (padding (/ (- total-width (length text)) 2))
@@ -134,8 +155,8 @@ form."
 (defun cam/clj-insert-header (text)
   (interactive "sheader text: ")
   (if current-prefix-arg
-      (cam/-insert-small-clojure-header text)
-    (cam/-insert-large-clojure-header text)))
+      (cam/-insert-smallclojure--header text)
+    (cam/-insert-largeclojure--header text)))
 
 ;;;###autoload
 (defun cam/clj-ansi-colorize-nrepl-output-buffer-if-needed (f process output)
@@ -144,5 +165,61 @@ form."
     (funcall f process (replace-regexp-in-string "^.+ :: " "" output)) ; strip the logging prefix while we're at it
     (with-current-buffer (process-buffer process)
       (ansi-color-apply-on-region old-max (point-max)))))
+
+(cam/tweak-package clojure-mode
+  :mode-name clojure-mode
+  :minor-modes (auto-complete-mode
+                cider-mode
+                clj-refactor-mode
+                column-enforce-mode
+                eldoc-mode
+                cam/todo-font-lock-mode)
+  :setup ((cam/lisp-mode-setup)
+          (flyspell-prog-mode)
+          (ac-cider-setup)
+          (cljr-add-keybindings-with-modifier "A-H-")
+          (setq-local eldoc-documentation-function #'cider-eldoc)
+          (eldoc-mode 1))
+  :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
+               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
+               (ac-auto-show-menu . 1.0)
+               (ac-quick-help-delay . 1.5)
+               (eldoc-documentation-function . #'cider-eldoc)
+               (fill-column . 118)                    ; non-docstring column width of 117, which fits nicely on GH
+               (clojure-docstring-fill-column . 118)) ; docstring column width of 117
+  :local-hooks ((after-save-hook . (lambda ()
+                                     (add-hook 'after-save-hook #'cam/clj-load-buffer-clean-namespace nil :local))))
+  :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
+         ("<f1>"         . #'ac-cider-popup-doc)
+         ("<f7>"         . #'cam/clj-switch-to-test-namespace)
+         ("<f8>"         . #'cam/clj-switch-between-model-and-api-namespaces)
+         ("<f9>"         . #'cam/clj-insert-header)
+         ("<f10>"        . #'cam/clj-insert-println)
+         ("<insert>"     . #'helm-imenu)
+         ("<f12> i"      . #'cam/open-metabase-issue-or-pr)
+         ("<f12> j"      . #'cider-javadoc)))
+
+(advice-add #'cider-repl-return :before
+  (lambda ()
+    "Delete trailing whitespace that may have been introduced by `auto-complete'."
+    (interactive)
+    (call-interactively #'delete-trailing-whitespace)))
+
+(advice-add #'nrepl-server-filter :around #'cam/clj-ansi-colorize-nrepl-output-buffer-if-needed)
+
+(cam/tweak-package cider
+  :mode-name cider-repl-mode
+  :minor-modes (auto-complete-mode
+                eldoc-mode)
+  :setup ((cam/lisp-mode-setup)
+          (ac-cider-setup))
+  :keys (("M-RET"   . #'cider-switch-to-last-clojure-buffer)
+         ("{"       . #'paredit-open-curly)
+         ("<f1>"    . #'ac-cider-popup-doc)
+         ("<f12> j" . #'cider-javadoc)))
+
+(cam/tweak-package cider-macroexpansion
+  :setup ((read-only-mode -1))
+  :keys  (("C-c RET" . #'cider-macroexpand-1)))
 
 (provide 'cam-clojure)

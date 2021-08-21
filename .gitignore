@@ -3,6 +3,7 @@
 .DS_Store
 .\#*
 .cache/
+.mc-lists
 /.tutor
 /eln-cache
 /racket-mode/

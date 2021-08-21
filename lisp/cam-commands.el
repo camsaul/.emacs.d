@@ -23,13 +23,6 @@
   (interactive)
   (join-line -1))
 
-;; TODO - why not just make this an autoload???
-;;;###autoload
-(defun cam/loccur ()
-  (interactive)
-  (require 'loccur)
-  (call-interactively #'loccur))
-
 ;;;###autoload
 (defun cam/backward-kill-line ()
   "Kill line from current cursor position to beginning of line."
