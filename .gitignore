@@ -7,6 +7,7 @@
 .mc-lists.el
 /.tutor
 /eln-cache
+/history
 /racket-mode/
 \#*\#
 ac-comphist.dat

@@ -24,6 +24,9 @@
 (require 'pp)
 (require 'wiki-nav)
 
+(setq print-circle t          ; print recursive Emacs Lisp structures with #N= and #N#
+      print-gensym t)         ; print uninterned symbols with #: prefixes
+
 (defun cam/emacs-lisp-macroexpand-last-sexp ()
   (interactive)
   (call-interactively #'pp-macroexpand-last-sexp)
