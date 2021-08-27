@@ -4,6 +4,7 @@
 .\#*
 .cache/
 .mc-lists
+.mc-lists.el
 /.tutor
 /eln-cache
 /racket-mode/

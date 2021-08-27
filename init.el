@@ -101,7 +101,8 @@
 (setq package-archives cam/-package-archives)
 
 (defconst cam/-packages
-  '(ac-cider                                      ; auto-complete <-> cider
+  '(
+    ;; ac-cider                                      ; auto-complete <-> cider
     ;; ac-sly                                        ; auto-complete <-> sly
     ace-jump-mode
     ace-window                                    ; Ace jump to other windows
@@ -385,14 +386,16 @@
 
 (dolist (spec cam/-require-after-loads)
   (cl-destructuring-bind (file . requires) spec
-    (eval-after-load file `(progn ,@(mapcar (lambda (file-to-require)
-                                              `(require ',file-to-require))
-                                            requires)))))
+    (eval-after-load file
+      `(progn ,@(mapcar (lambda (file-to-require)
+                          `(require ',file-to-require))
+                        requires)))))
 
 ;;; [[<auto-mode-alist]]
 (defconst cam/-auto-mode-patterns
   '((clojurescript-mode "\\.cljs$")
     (cperl-mode         "\\.pl$" "\\.pm$")
+    (emacs-lisp-mode    "\\.el$")
     (nxml-mode          "\\.pml$")
     (web-mode           "\\.html$" "\\.js$" "\\.json$" "\\.jsx$" "\\.mustache$")))
 
@@ -413,12 +416,13 @@
 ;;; [[<interpreter-mode-alist]]
 (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
 
+
 (eval-when-compile
   (require 'cam-tweak-package)) ; TODO FIXME
 
-(cam/tweak-package git-commit
-  :mode-name git-commit
-  :minor-modes (flyspell-mode))
+;; (cam/tweak-package git-commit
+;;   :mode-name git-commit
+;;   :minor-modes (flyspell-mode))
 
 ;; (with-eval-after-load "markdown-mode"
 ;;   (require 'preview-markdown)
@@ -449,53 +453,96 @@
 
 ;;; [[<Global Minor Modes]]
 
-(defun cam/-apply-symbol-function (symb &rest args)
-  (when (fboundp symb)
-    (let ((f (symbol-function symb)))
-      (cond
-       ((autoloadp f)
-        (message "Autoload %s" symb)
-        (autoload-do-load f)
-        (apply #'cam/-apply-symbol-function symb args))
-       (t
-        (message "%s" (cons symb args))
-        (apply f args))))))
+;; (defun cam/-apply-symbol-function (symb &rest args)
+;;   (when (fboundp symb)
+;;     (let ((f (symbol-function symb)))
+;;       (cond
+;;        ((autoloadp f)
+;;         (message "Autoload %s" symb)
+;;         (autoload-do-load f)
+;;         (apply #'cam/-apply-symbol-function symb args))
+;;        (t
+;;         (message "%s" (cons symb args))
+;;         (apply f args))))))
 
-(defconst cam/-global-disabled-minor-modes
-  '(blink-cursor-mode
-    ;; Don't show toolbar, scrollbar, splash screen, startup screen
-    scroll-bar-mode
-    tool-bar-mode)
-  "Global minor modes to disable")
+(defmacro cam/-enable-disable-global-minor-modes (arg &rest modes)
+  `(progn
+     ,@(mapcar
+        (lambda (mode)
+          `(,mode ,arg))
+        modes)))
+
+(defmacro cam/-disable-global-minor-modes (&rest modes)
+  `(cam/-enable-disable-global-minor-modes -1 ,@modes))
+
+(defmacro cam/-enable-global-minor-modes (&rest modes)
+  `(cam/-enable-disable-global-minor-modes 1 ,@modes))
+
+(cam/-disable-global-minor-modes
+ blink-cursor-mode
+ ;; Don't show toolbar, scrollbar, splash screen, startup screen
+ scroll-bar-mode
+ tool-bar-mode)
 
 ;; don't disable menu bar more on macOS.
-(unless (eq window-system 'ns)
-  (add-to-list 'cam/-global-disabled-minor-modes 'menu-bar-mode))
+;; (unless (eq window-system 'ns)
+;;   (add-to-list 'cam/-global-disabled-minor-modes 'menu-bar-mode))
 
-(dolist (mode cam/-global-disabled-minor-modes)
-  (cam/-apply-symbol-function mode -1))
+;; (dolist (mode cam/-global-disabled-minor-modes)
+;;   (cam/-apply-symbol-function mode -1))
 
-(defconst cam/-global-minor-modes
-  '(delete-selection-mode     ; typing will delete selected text
-    editorconfig-mode         ; parse .editorconfig files and apply settings for things like indentation
-    global-anzu-mode          ; show number of matches in mode line while searching
-    global-auto-revert-mode   ; automatically reload files when they change on disk
-    global-diff-hl-mode       ; Show which lines have changed since last git commit in the fringe
-    global-eldoc-mode         ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
-    global-undo-tree-mode
-    guide-key-mode            ; Show list of completions for keystrokes after a delay
-    ido-mode
-    ido-everywhere
-    ido-vertical-mode
-    projectile-mode
-    rainbow-mode              ; Colorize strings like #FCE94F
-    recentf-mode              ; Track recently visited files
-    save-place-mode           ; automatically save position in files & start at that position next time you open them
-    winner-mode)
-  "Global minor modes to enable")
+;; (cam/-enable-global-minor-modes
+;;  delete-selection-mode     ; typing will delete selected text
+;;  editorconfig-mode         ; parse .editorconfig files and apply settings for things like indentation
+;;  global-anzu-mode          ; show number of matches in mode line while searching
+;;  global-auto-revert-mode   ; automatically reload files when they change on disk
+;;  global-diff-hl-mode       ; Show which lines have changed since last git commit in the fringe
+;;  global-eldoc-mode         ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
+;;  global-undo-tree-mode
+;;  guide-key-mode            ; Show list of completions for keystrokes after a delay
+;;  ido-mode
+;;  ido-everywhere
+;;  ido-vertical-mode
+;;  projectile-mode
+;;  rainbow-mode              ; Colorize strings like #FCE94F
+;;  recentf-mode              ; Track recently visited files
+;;  save-place-mode           ; automatically save position in files & start at that position next time you open them
+;;  winner-mode)
 
-(dolist (mode cam/-global-minor-modes)
-  (cam/-apply-symbol-function mode 1))
+(delete-selection-mode 1)
+
+(editorconfig-mode 1)
+
+(global-anzu-mode 1)
+
+(global-auto-revert-mode 1)
+
+(global-diff-hl-mode 1)
+
+(global-eldoc-mode 1)
+
+(global-undo-tree-mode 1)
+
+(guide-key-mode 1)
+
+(ido-mode 1)
+
+(ido-everywhere 1)
+
+(ido-vertical-mode 1)
+
+;; (projectile-mode 1)
+
+(rainbow-mode 1)
+
+(recentf-mode 1)
+
+(save-place-mode 1)
+
+(winner-mode 1)
+
+;; (dolist (mode cam/-global-minor-modes)
+;;   (cam/-apply-symbol-function mode 1))
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook (lambda () (rainbow-mode 1)))

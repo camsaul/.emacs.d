@@ -6,9 +6,7 @@
 
 (require 'cam-lisp)
 
-(require 'ac-cider)
 (require 'ansi-color)
-(require 'auto-complete)
 (require 'cam-todo-font-lock)
 (require 'cider)
 (require 'cider-eldoc)
@@ -16,6 +14,7 @@
 (require 'clojure-mode)
 (require 'clojure-mode-extra-font-locking)
 (require 'column-enforce-mode)
+(require 'company)
 (require 'diminish)
 (require 'eldoc)
 (require 'flyspell)
@@ -158,35 +157,36 @@ form."
       (cam/-insert-smallclojure--header text)
     (cam/-insert-largeclojure--header text)))
 
-;;;###autoload
-(defun cam/clj-ansi-colorize-nrepl-output-buffer-if-needed (f process output)
-  (let ((old-max (with-current-buffer (process-buffer process)
-                   (point-max))))
-    (funcall f process (replace-regexp-in-string "^.+ :: " "" output)) ; strip the logging prefix while we're at it
-    (with-current-buffer (process-buffer process)
-      (ansi-color-apply-on-region old-max (point-max)))))
+;; ;;;###autoload
+;; (defun cam/clj-ansi-colorize-nrepl-output-buffer-if-needed (f process output)
+;;   (let ((old-max (with-current-buffer (process-buffer process)
+;;                    (point-max))))
+;;     (funcall f process (replace-regexp-in-string "^.+ :: " "" output)) ; strip the logging prefix while we're at it
+;;     (with-current-buffer (process-buffer process)
+;;       (ansi-color-apply-on-region old-max (point-max)))))
 
 (cam/tweak-package clojure-mode
   :mode-name clojure-mode
-  :minor-modes (auto-complete-mode
+  :minor-modes (
+                ;; auto-complete-mode
                 cider-mode
                 clj-refactor-mode
+                company-mode
                 column-enforce-mode
                 eldoc-mode
                 cam/todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
           (flyspell-prog-mode)
-          (ac-cider-setup)
           (cljr-add-keybindings-with-modifier "A-H-")
-          (setq-local eldoc-documentation-function #'cider-eldoc)
-          (eldoc-mode 1))
-  :local-vars ((clojure-align-forms-automatically . t) ; vertically aligns some forms automatically (supposedly)
-               (ac-delay . 1.0)                        ; use slightly longer delays for AC because CIDER is slow
-               (ac-auto-show-menu . 1.0)
-               (ac-quick-help-delay . 1.5)
+          (when (fboundp 'auto-complete-mode)
+            (auto-complete-mode -1)))
+  :local-vars ((cider-redirect-server-output-to-repl . t)
+               (clojure-align-forms-automatically . t)        ; vertically aligns some forms automatically (supposedly)
+               (clojure-docstring-fill-column . 118)          ; docstring column width of 117
+               (company-idle-delay . 0.05)
+               (company-minimum-prefix-length . 2)
                (eldoc-documentation-function . #'cider-eldoc)
-               (fill-column . 118)                    ; non-docstring column width of 117, which fits nicely on GH
-               (clojure-docstring-fill-column . 118)) ; docstring column width of 117
+               (fill-column . 118))                           ; non-docstring column width of 117, which fits nicely on GH
   :local-hooks ((after-save-hook . (lambda ()
                                      (add-hook 'after-save-hook #'cam/clj-load-buffer-clean-namespace nil :local))))
   :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
@@ -205,14 +205,18 @@ form."
     (interactive)
     (call-interactively #'delete-trailing-whitespace)))
 
-(advice-add #'nrepl-server-filter :around #'cam/clj-ansi-colorize-nrepl-output-buffer-if-needed)
+;; (advice-add #'nrepl-server-filter :around #'cam/clj-ansi-colorize-nrepl-output-buffer-if-needed)
 
 (cam/tweak-package cider
   :mode-name cider-repl-mode
-  :minor-modes (auto-complete-mode
+  :minor-modes (company-mode
                 eldoc-mode)
+  :local-vars ((cider-redirect-server-output-to-repl . t)
+               (company-idle-delay . 0.05)
+               (company-minimum-prefix-length . 2))
   :setup ((cam/lisp-mode-setup)
-          (ac-cider-setup))
+          (when (fboundp 'auto-complete-mode)
+            (auto-complete-mode -1)))
   :keys (("M-RET"   . #'cider-switch-to-last-clojure-buffer)
          ("{"       . #'paredit-open-curly)
          ("<f1>"    . #'ac-cider-popup-doc)
