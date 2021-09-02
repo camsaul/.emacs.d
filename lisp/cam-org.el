@@ -11,11 +11,13 @@
 
 (setq org-support-shift-select nil)
 
-(defun cam/org-insert-code-block ()
+(defun cam/org-insert-code-block (language)
   "Insert a new Org code block and start editing it."
-  (interactive)
+  (interactive (list (if current-prefix-arg
+                         (read-string "Language: ")
+                       "emacs-lisp")))
   (org-return-indent)
-  (insert "#+BEGIN_SRC emacs-lisp")
+  (insert "#+BEGIN_SRC " language)
   (org-return-indent)
   (insert "#+END_SRC")
   (forward-line -1)
