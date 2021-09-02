@@ -3,9 +3,13 @@
 (eval-when-compile
   (require 'cam-tweak-package))
 
-(require 'org)
-
+(require 'cam-ox-pml)
+(require 'column-enforce-mode)
+(require 'company)
+(require 'company-yasnippet)
 (require 'flyspell)
+(require 'org)
+(require 'yasnippet)
 
 (declare-function org-edit-src-code "org-src")
 
@@ -26,9 +30,22 @@
   (org-edit-src-code))
 
 (cam/tweak-package org
-  :minor-modes (flyspell-mode)
+  :minor-modes (column-enforce-mode
+                company-mode
+                flyspell-mode
+                yas-minor-mode)
   :local-vars ((truncate-lines . nil))
-  :keys (("C-c c" . #'cam/org-insert-code-block)))
+  :keys (("C-c c" . #'cam/org-insert-code-block)
+         ("S-<left>" . nil)
+         ("S-<right>" . nil)
+         ("S-<up>" . nil)
+         ("S-<down>" . nil)
+         ("<f9>" . #'cam/org-publish-to-pml)
+         ;; ("<insert>" . #'company-yasnippet)
+         ("<insert>" . #'yas-expand))
+  ;; TODO -- doesn't really work
+  ;; :setup ((setq-local company-backends (cl-concatenate 'list company-backends '(company-yasnippet))))
+  )
 
 (cam/tweak-package org-src
   :declare (org-edit-src-code))
