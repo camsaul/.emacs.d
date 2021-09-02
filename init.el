@@ -444,6 +444,10 @@
   :keys (("C-j" . #'newline-and-indent)
          ("C-m" . #'newline-and-indent)))
 
+(cam/tweak-package help-mode
+  :mode-name help-mode
+  :minor-modes (rainbow-mode))
+
 ;;; [[<Global Minor Modes]]
 
 (defconst cam/-global-disabled-minor-modes
