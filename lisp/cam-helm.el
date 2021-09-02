@@ -19,6 +19,9 @@
  helm-ff--boring-regexp (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol)
                                 (and "~" eol)
                                 (and bol "#" (1+ anything) "#" eol)
-                                (and bol ".#"))))
+                                (and bol ".#")))
+
+ ;; save command in history even if it fails
+ helm-M-x-always-save-history t)
 
 (provide 'cam-helm)
