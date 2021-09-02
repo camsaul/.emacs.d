@@ -16,7 +16,8 @@
                 company-mode)
   :keys (("C-j" . #'newline))
   :vars ((nxml-slash-auto-complete-flag . t))
-  :setup ((when (string-equal (file-name-extension buffer-file-name) "pml")
+  :setup ((when (and buffer-file-name
+                     (string-equal (file-name-extension buffer-file-name) "pml"))
             (message "<Loading cam/pml-mode>")
             (require 'cam-pml-mode)
             (cam/pml-mode 1))))

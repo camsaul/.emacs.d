@@ -404,7 +404,8 @@
 ;; Automatically open .h files with @interface declarations as obj-c rather than c
 (add-to-list 'magic-mode-alist
              (cons (lambda ()
-                     (and (string-equal (file-name-extension buffer-file-name) "h")
+                     (and buffer-file-name
+                          (string-equal (file-name-extension buffer-file-name) "h")
                           (re-search-forward "@\\<interface\\>"
                                              magic-mode-regexp-match-limit t)))
                    'objc-mode))
