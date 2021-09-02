@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: @@variable
+# key: ~v
+# --
+@@variable:$1@@$0
