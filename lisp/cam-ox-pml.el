@@ -70,6 +70,20 @@
           (setq start start*))))
     output))
 
+;; e.g.
+;;
+;; #+BEGIN: image fileref "images/describe_face.png" width "75%"
+;; /M-x describe-face/
+;; #+END:
+;;
+;; becomes
+;;
+;; <figure>
+;; <imagedata width="75%" fileref="images/describe_face.png" />
+;; <p>
+;; <emph>M-x describe-face</emph>
+;; </p>
+;; </figure>
 (defun cam/ox-pml-dynamic-block (dynamic-block content info)
   (cam/org-element-bind (block-name arguments) dynamic-block
     (cond
@@ -237,7 +251,6 @@
   contents)
 
 (defun cam/ox-pml-special-block (special-block content info)
-  (cam/org-element-bind (type ))
   (apply #'cam/ox-pml--unhandled 'special-block args))
 
 (defun cam/ox-pml-src-block (src-block _contents _info)
