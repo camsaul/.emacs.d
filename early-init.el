@@ -2,9 +2,15 @@
 
 ;;; (Things that need to happen as soon as this file starts loading)
 
+;; allow Emacs to use unlimited memory on launch. Then we'll reign it back in once Emacs has finished launching.
+(setq gc-cons-threshold most-positive-fixnum)
+
+(add-hook 'emacs-startup-hook
+  (lambda ()
+    ;; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
+    (setq gc-cons-threshold (* 128 1024 1024))))
+
 (setq
- ;; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
- gc-cons-threshold (* 128 1024 1024)
  ;; load .el files if they're newer than .elc/.eld ones
  load-prefer-newer t
  ;; do native compilation whenever we do byte compilation.

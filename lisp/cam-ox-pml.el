@@ -6,12 +6,14 @@
 
 (defconst cam/ox-pml-known-snippet-tags
   '("filename"
+    "firstuse"
     "initials"
     "keystroke"
     "method"
     "missing"
-    "variable")
-  "Allowed tags for #+tag: lines.")
+    "variable"
+    "dt")
+  "Allowed tags for #+tag: lines and @@tag:contents@@ forms.")
 
 (defmacro cam/org-element-bind (bindings element &rest body)
   "This is basically just CL with-slots but for an `org-mode' element. See http://clhs.lisp.se/Body/m_w_slts.htm"
@@ -34,15 +36,17 @@
     (concat (string-trim-right contents) "\n")))
 
 (defun cam/ox-pml--unhandled (type &rest args)
-  (warn "unhandled org type: %s\n%s" type (butlast args))
-  (concat
-   "\n"
-   (prin1-to-string (cons type
-                          (car args) ;; (butlast args)
-                          ))))
+  (error "unhandled org type: %s" type)
+  ;; (concat
+  ;;  "\n"
+  ;;  (prin1-to-string (cons type
+  ;;                         (car args) ;; (butlast args)
+  ;;                         )))
+  )
 
-(defun cam/ox-pml-bold (&rest args)
-  (apply #'cam/ox-pml--unhandled 'bold args))
+(defun cam/ox-pml-bold (_bold contents _info)
+  ;; (format "<emph>%s</emph>" contents)
+  (#'cam/ox-pml--unhandled 'bold _bold contents _info))
 
 (defun cam/ox-pml-center-block (&rest args)
   (apply #'cam/ox-pml--unhandled 'center-block args))
@@ -85,10 +89,12 @@
 ;; </p>
 ;; </figure>
 (defun cam/ox-pml-dynamic-block (dynamic-block content info)
-  (cam/org-element-bind (block-name arguments) dynamic-block
+  (cam/org-element-bind (begin block-name arguments) dynamic-block
     (cond
      ((string-equal block-name "image")
       (let* ((arguments (cam/ox-pml--parse-arguments arguments))
+             (_ (unless (assoc 'fileref arguments)
+                  (error "image on line %d missing fileref attribute" (line-number-at-pos begin t))))
              (properties (mapconcat (lambda (pair)
                                       (cl-destructuring-bind (key . value) pair
                                         (format "%s=\"%s\""
@@ -102,6 +108,7 @@
                            (not (string-blank-p content)))
                   (cam/ox-pml--ensure-newline content))
                 "</figure>\n")))
+
      (t
       (cam/ox-pml--unhandled dynamic-block content info)))))
 
@@ -134,8 +141,13 @@
 (defun cam/ox-pml-fixed-width (&rest args)
   (apply #'cam/ox-pml--unhandled 'fixed-width args))
 
-(defun cam/ox-pml-footnote-reference (&rest args)
-  (apply #'cam/ox-pml--unhandled 'footnote-reference args))
+(defun cam/ox-pml-footnote-reference (footnote-reference _contents info)
+  (message "(org-element-property footnote-reference :type): %s" (org-element-property :type footnote-reference))
+  (when (equal (org-element-property :type footnote-reference) 'standard)
+    (let ((footnote (org-export-get-footnote-definition footnote-reference info)))
+      (concat "<footnote><p>"
+              (org-export-data footnote info)
+              "</p></footnote>"))))
 
 (defun cam/ox-pml-headline (headline contents info)
   (cam/org-element-bind (title level begin) headline
@@ -179,7 +191,7 @@
    "</li>\n"))
 
 (defconst cam/ox-pml-tag-keywords
-  '("TITLE" "AUTHOR" "MISSING")
+  '("TITLE" "AUTHOR" "MISSING" "ED")
   "Org keywords to insert directly into the PML output as XML elements")
 
 (defun cam/ox-pml-keyword (keyword _contents info)
@@ -187,7 +199,11 @@
     (cond
      ((member key cam/ox-pml-tag-keywords)
       (let ((tag (downcase key)))
-        (format "<%s>%s</%s>" tag value tag)))
+        (format "<%s>%s</%s>" tag (cam/ox-pml-plain-text value info) tag)))
+
+     ((string-equal key "DT")
+      (format "<dt newline=\"yes\">%s</dt>\n" (cam/ox-pml-plain-text value info)))
+
      (t
       (cam/ox-pml--unhandled 'keyword keyword _contents info)))))
 
@@ -218,9 +234,10 @@
                                        cam/ox-pml--do-not-wrap-in-paragraph-elements
                                        :test (lambda (contents prefix)
                                                (string-prefix-p prefix contents))))))
-    (if do-not-wrap-p
-        contents
-      (format "<p>\n%s</p>\n" (cam/ox-pml--ensure-newline contents)))))
+    (unless (string-blank-p contents)
+      (if do-not-wrap-p
+          contents
+        (format "<p>\n%s</p>\n" (cam/ox-pml--ensure-newline contents))))))
 
 (defun cam/ox-pml-plain-list (plain-list contents _info)
   (cam/org-element-bind (type) plain-list
@@ -241,8 +258,10 @@
 (defun cam/ox-pml-property-drawer (&rest args)
   (apply #'cam/ox-pml--unhandled 'property-drawer args))
 
-(defun cam/ox-pml-quote-block (&rest args)
-  (apply #'cam/ox-pml--unhandled 'quote-block args))
+(defun cam/ox-pml-quote-block (_quote-block contents _info)
+  (concat "<blockquote>\n"
+          (cam/ox-pml--ensure-newline contents)
+          "</blockquote>\n"))
 
 (defun cam/ox-pml-radio-target (&rest args)
   (apply #'cam/ox-pml--unhandled 'radio-target args))
@@ -251,7 +270,10 @@
   contents)
 
 (defun cam/ox-pml-special-block (special-block content info)
-  (apply #'cam/ox-pml--unhandled 'special-block args))
+  (let ((tag (org-element-property :type special-block)))
+    (concat (format "<%s>\n" tag)
+            (cam/ox-pml--ensure-newline content)
+            (format "</%s>\n" tag))))
 
 (defun cam/ox-pml-src-block (src-block _contents _info)
   (let* ((lang (org-element-property :language src-block))
@@ -366,17 +388,58 @@
 (org-export-define-backend 'cam-pml
   cam/ox-pml-translate-alist)
 
+(defun cam/-compile-pml-file (pml-file-name)
+  (let ((pdf-file-name (replace-regexp-in-string "pml$" "pdf" pml-file-name))
+        ;; run shell commands in context of buffer directory
+        (default-directory (file-name-directory (buffer-file-name))))
+    (delete-file pdf-file-name)
+    (message "Compiling %s -> %s" pml-file-name pdf-file-name)
+    ;; (let ((default-directory "/home/cam/book/Book/"))
+    ;;   (shell-command "rake Ch_SudokuMode.2.pdf")
+    ;;   (shell-command "wslview Ch_SudokuMode.2.pdf"))
+    ;; this currently only works with Java 8.
+    (shell-command (format "rake %s" pdf-file-name) "*Rake Output*" "*Rake Output*")
+    (if (file-exists-p pdf-file-name)
+        (progn
+          (message "Opening %s..." pdf-file-name)
+          (shell-command (format "wslview %s" pdf-file-name)))
+      (display-buffer "*Rake Output*"))))
+
 (defun cam/org-publish-to-pml ()
   (interactive)
-  (org-export-to-file 'cam-pml (org-export-output-file-name ".pml")))
+  (let ((pml-file-name (org-export-output-file-name ".pml")))
+    (message "Compiling org file to %s..." pml-file-name)
+    (delete-file pml-file-name)
+    (org-export-to-file 'cam-pml pml-file-name)
+    ;; with prefix arg do not compile to PDF
+    (when (file-exists-p pml-file-name)
+      (if current-prefix-arg
+          (let ((pml-buffer (find-file-noselect pml-file-name)))
+            (display-buffer pml-buffer))
+        (cam/-compile-pml-file pml-file-name)))))
 
 (add-to-list 'org-export-backends 'cam-pml)
 
 (font-lock-add-keywords
  'org-mode
- '(("@@[^@]+@@" . 'org-code)
+ '(("@@initials:\\([^@]+\\)@@" (0 'font-lock-comment-face) (1 'bold t))
+   ("@@firstuse:\\([^@]+\\)@@" (0 'font-lock-comment-face) (1 'italic t))
+   ("@@keystroke:\\([^@]+\\)@@" (0 'font-lock-comment-face) (1 'font-lock-string-face t))
+   ("@@variable:\\([^@]+\\)@@" (0 'font-lock-comment-face) (1 'font-lock-variable-name-face t))
+   ("@@method:\\([^@]+\\)@@" (0 'font-lock-comment-face) (1 'font-lock-function-name-face t))
+   ("\\(@@\\)\\([^@:]+\\):\\([^@:]+\\)\\(@@\\)"
+    (1 'font-lock-comment-face)
+    (2 'org-code)
+    (3 'font-lock-string-face)
+    (4 'font-lock-comment-face))
+   ("#\\+missing:" 0 'font-lock-warning-face t)
+   ;; ("#\\+missing:.+$" 0 'font-lock-warning-face prepend)
+   ;; ("#\\+missing:" 0 'font-lock-warning-face prepend)
+   ;; ("\\(#\\+missing:\\)\\([^\n]+\\)" (0 'font-lock-warning-face t) (2 'italic t))
    ;; ("[[:blank:]]/[^/]+/[[:blank:]]" . 'italic)
    ))
+
+;; (font-lock-remove-keywords nil '("#\\+missing:" . 'font-lock-error-face))
 
 ;; font-lock-fontify-buffer
 ;; font-lock-update

@@ -183,7 +183,7 @@ form."
   :local-vars ((cider-redirect-server-output-to-repl . t)
                (clojure-align-forms-automatically . t)        ; vertically aligns some forms automatically (supposedly)
                (clojure-docstring-fill-column . 118)          ; docstring column width of 117
-               (company-idle-delay . 0.05)
+               (company-idle-delay . 0.2)
                (company-minimum-prefix-length . 2)
                (eldoc-documentation-function . #'cider-eldoc)
                (fill-column . 118))                           ; non-docstring column width of 117, which fits nicely on GH
@@ -212,7 +212,7 @@ form."
   :minor-modes (company-mode
                 eldoc-mode)
   :local-vars ((cider-redirect-server-output-to-repl . t)
-               (company-idle-delay . 0.05)
+               (company-idle-delay . 0.2)
                (company-minimum-prefix-length . 2))
   :setup ((cam/lisp-mode-setup)
           (when (fboundp 'auto-complete-mode)

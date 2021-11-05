@@ -179,7 +179,13 @@
 
     racket-mode
 
-    unicode-fonts))
+    unicode-fonts
+
+    ;; more stuff that's experimental
+    company-posframe
+    company-quickhelp
+    vterm
+    ))
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents-p nil)
@@ -212,6 +218,8 @@
 
 (fset #'yes-or-no-p #'y-or-n-p)                             ; Prompt for 'y' or 'n' instead of 'yes' or 'no'
 
+(set-language-environment "UTF-8")
+(set-default-coding-systems 'utf-8)
 (prefer-coding-system 'utf-8-auto-unix)
 
 (mapatoms (lambda (atom)                                    ; Enable all disabled functions
@@ -233,6 +241,7 @@
       garbage-collection-messages t                         ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t                 ; also auto-revert buffers like dired
       next-line-add-newlines t                              ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
+      read-process-output-max (* 1024 1024)                 ; read data in up to 1MB chunks from subprocesses rather than 4kb chunks.
       recentf-max-menu-items 50                             ; show more recent files in [Helm]recentf
       recentf-max-saved-items 50
       require-final-newline t                               ; add final newline on save
@@ -448,6 +457,15 @@
   :mode-name help-mode
   :minor-modes (rainbow-mode))
 
+(cam/tweak-package prog-mode
+  :mode-name prog-mode
+  :minor-modes (hl-line-mode)
+  :local-vars ((show-trailing-whitespace . t))
+  )
+
+(with-eval-after-load 'help-mode
+  (add-hook 'help-mode-hook #'rainbow-mode))
+
 ;;; [[<Global Minor Modes]]
 
 (defconst cam/-global-disabled-minor-modes
@@ -471,6 +489,7 @@
     global-auto-revert-mode                                 ; automatically reload files when they change on disk
     global-diff-hl-mode                                     ; Show which lines have changed since last git commit in the fringe
     global-eldoc-mode                                       ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
+    global-so-long-mode                                     ; don't die when handling files with really long lines
     global-undo-tree-mode
     guide-key-mode                                          ; Show list of completions for keystrokes after a delay
     ido-mode
@@ -487,7 +506,7 @@
   (eval `(,mode 1)))
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
-(add-hook 'find-file-hook (lambda () (rainbow-mode 1)))
+(add-hook 'find-file-hook #'rainbow-mode)
 
 ;;; [[<Diminished Minor Modes]]
 
@@ -516,5 +535,5 @@
 
 (setq cam/has-loaded-init-p t)
 
-(ignore-errors                                              ; only seems to work on Emacs 25+
-  (message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0)))
+;; TODO -- consider whether this should be in an `emacs-startup-hook'
+(message "Loaded init.el in %.0f ms." (* (float-time (time-subtract after-init-time before-init-time)) 1000.0))

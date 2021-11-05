@@ -18,9 +18,13 @@
          ;; use shell command `fc-list` to get the list of available fonts on the system.
          ;; M-x list-fontsets to list the fonts available to Emacs
          (font-name
-          ;; "DejaVuSansMono"
-          "Cascadia Code"))
+          "DejaVuSansMono"
+          ;; "CascadiaCode"
+          ))
     (format "%s-%d" font-name font-size)))
+
+;; (set-frame-font "-SAJA-Cascadia Code PL-*-normal-normal-*-*-*-*-*-m-0-iso10646-1")
+(set-frame-font "-PfEd-DejaVu Sans Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
 
 ;;; theme setup
 

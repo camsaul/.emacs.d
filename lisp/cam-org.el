@@ -45,6 +45,7 @@
          ("<insert>" . #'yas-expand))
   ;; TODO -- doesn't really work
   ;; :setup ((setq-local company-backends (cl-concatenate 'list company-backends '(company-yasnippet))))
+  :setup ((yas-reload-all))
   )
 
 (cam/tweak-package org-src

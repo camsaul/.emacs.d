@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: image
+# key: #image
+# --
+#+BEGIN: image fileref "images/$1" width "$2%"
+$3
+#+END:
+$0
