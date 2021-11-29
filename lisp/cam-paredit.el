@@ -9,4 +9,18 @@
 (put #'paredit-doublequote     'delete-selection t)
 (put #'paredit-newline         'delete-selection t)
 
+;; disable `kill-sentence' and `backward-kill-sentence' in paredit mode because they're easy to accidentally type and
+;; don't preserve sexp structure
+(advice-add #'kill-sentence :before
+  (lambda (&optional _arg)
+    "Disable `kill-sentence' in `paredit-mode' because it doesn't preserve sexp structure."
+    (when paredit-mode
+      (error "kill-sentence is disabled in paredit-mode"))))
+
+(advice-add #'backward-kill-sentence :before
+  (lambda (&optional _arg)
+    "Disable backward-`kill-sentence' in `paredit-mode' because it doesn't preserve sexp structure."
+    (when paredit-mode
+      (error "backward-kill-sentence is disabled in paredit-mode"))))
+
 (provide 'cam-paredit)
