@@ -17,6 +17,8 @@
 (require 'company)
 (require 'diminish)
 (require 'eldoc)
+(require 'flycheck)
+(require 'flycheck-clj-kondo)
 (require 'flyspell)
 
 (declare-function helm-imenu "helm-imenu")
@@ -76,27 +78,29 @@ and vice versa."
 (defvar cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p nil)
 
 ;;;###autoload
-(cl-defun cam/clj-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
-  "When CIDER is active attempt to load BUFFER (by default, the current buffer) and clean its namespace declaration
-form."
-  (interactive "bBuffer: ")
-  (when (not cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p)
-    (with-demoted-errors "Error cleaning namespace declaration: %S"
-      (with-current-buffer (get-buffer buffer)
-        (let ((filename (file-name-nondirectory (buffer-file-name))))
-          ;; don't run for `project.clj` or EDN files
-          (when (and (not (string-equal filename "project.clj"))
-                     (not (string-match-p "\.edn$" filename))
-                     (cider-current-repl))
-            ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the file
-            ;; first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to save
-            (let ((cider-save-file-on-load t))
-              (cider-load-buffer))
-            (cljr-clean-ns)
-            (when (buffer-modified-p)
-              ;; prevent recursive calls !
-              (let ((cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p t))
-                (save-buffer)))))))))
+;; (cl-defun cam/clj-load-buffer-clean-namespace (&optional (buffer (current-buffer)))
+;;   "When CIDER is active attempt to load BUFFER (by default, the current buffer) and clean its namespace declaration
+;; form."
+;;   (interactive "bBuffer: ")
+;;   (when (not cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p)
+;;     (with-demoted-errors "Error cleaning namespace declaration: %S"
+;;       (with-current-buffer (get-buffer buffer)
+;;         (let ((filename (file-name-nondirectory (buffer-file-name))))
+;;           ;; don't run for `project.clj` or EDN files
+;;           (when (and (not (string-equal filename "project.clj"))
+;;                      (not (string-match-p "\.edn$" filename))
+;;                      (cider-current-repl))
+;;             ;; unfortunately it doesn't look like you can use `cider-load-buffer` programatically without saving the file
+;;             ;; first, because when binding `cider-save-file-on-load` to `nil` it prompts asking whether you want to save
+;;             (let ((cider-save-file-on-load t))
+;;               (cider-load-buffer))
+;;             (cljr-clean-ns)
+;;             (when (buffer-modified-p)
+;;               ;; prevent recursive calls !
+;;               (let ((cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p t))
+;;                 (save-buffer)))))))))
+
+(defun cam/clj-load-buffer-clean-namespace (&optional _buffer))
 
 ;;;###autoload
 (defun cam/clj-insert-println (text)
@@ -167,13 +171,12 @@ form."
 
 (cam/tweak-package clojure-mode
   :mode-name clojure-mode
-  :minor-modes (
-                ;; auto-complete-mode
-                cider-mode
+  :minor-modes (cider-mode
                 clj-refactor-mode
                 company-mode
                 column-enforce-mode
                 eldoc-mode
+                flycheck-mode
                 cam/todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
           (flyspell-prog-mode)

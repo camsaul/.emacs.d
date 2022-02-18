@@ -15,10 +15,8 @@
 
 (cam/suppress-messages
   (ac-config-default)
-  (add-to-list 'ac-modes 'cider-repl-mode)
-  (delete 'emacs-lisp-mode ac-modes)
-  (delete 'lisp-mode ac-modes)
-  (delete 'lisp-interaction-mode ac-modes))
+  ;; disable automatically entering auto-complete-mode. We'll enter it manually if we want it.
+  (setq ac-modes nil))
 
 (cam/tweak-package auto-complete
   :keymap ac-menu-map

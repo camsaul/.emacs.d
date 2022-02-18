@@ -21,11 +21,6 @@
 ;;; [[Diminished Minor Modes]]
 ;;; [[Final Setup]]
 
-(eval-when-compile
-  (require 'cl-lib)
-  (require 'subr-x)                                         ; when-let, thread-last, string-remove-prefix, etc.
-  (require 'cam-macros))
-
 ;;; ---------------------------------------- [[<Initial Setup]] ----------------------------------------
 
 (defvar cam/has-loaded-init-p nil
@@ -55,6 +50,11 @@
   (expand-file-name (concat cam/-user-source-directory "loaddefs.el")))
 
 (add-to-list 'load-path cam/-user-source-directory t)       ; t = append
+
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'subr-x)                                         ; when-let, thread-last, string-remove-prefix, etc.
+  (require 'cam-macros))
 
 ;; compile init files if they haven't already been compiled.
 (defun cam/-init-files ()
@@ -125,6 +125,7 @@
     esup                                                    ; Emacs Start-Up Profiler <3
     find-things-fast
     flycheck                                                ; on-the-fly syntax checking
+    flycheck-clj-kondo                                      ; Flycheck for clj-kondo
     flyspell                                                ; spell checking
     git-timemachine                                         ; Walk through git revisions of a file
     gitconfig-mode
@@ -527,6 +528,14 @@
 
 (dolist (mode cam/-diminished-minor-modes)
   (diminish mode))
+
+;; HACK -- fix copy not working correctly with GTK
+(when (eq window-system 'pgtk)
+  (require 'pgtk-win)
+  (advice-add #'pgtk-own-selection-internal :around
+    (lambda (f selection value)
+      (unless (eq selection 'PRIMARY)
+        (funcall f selection value)))))
 
 ;;; ---------------------------------------- [[<Final Setup]] ----------------------------------------
 

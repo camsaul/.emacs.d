@@ -14,7 +14,7 @@
 
 ;; use a different font size depending on whether we're rendering in pure GTK w/ display scaling or not.
 (defun cam/-font ()
-  (let* ((font-size (ceiling (/ 20 (cam/-hdpi-scale))))
+  (let* ((font-size (ceiling (/ 18 (cam/-hdpi-scale))))
          ;; use shell command `fc-list` to get the list of available fonts on the system.
          ;; M-x list-fontsets to list the fonts available to Emacs
          (font-name
@@ -24,7 +24,7 @@
     (format "%s-%d" font-name font-size)))
 
 ;; (set-frame-font "-SAJA-Cascadia Code PL-*-normal-normal-*-*-*-*-*-m-0-iso10646-1")
-(set-frame-font "-PfEd-DejaVu Sans Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
+;; (set-frame-font "-PfEd-DejaVu Sans Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
 
 ;;; theme setup
 

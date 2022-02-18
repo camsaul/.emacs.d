@@ -7,18 +7,7 @@
 (require 'cc-mode)
 (require 'cam-c)
 
-(require 'cam-todo-font-lock)
-(require 'column-enforce-mode)
-(require 'company)
-(require 'company-lsp)
-(require 'company-rtags)
 (require 'eglot)
-(require 'eldoc-box)
-(require 'flycheck)
-(require 'flyspell)
-(require 'lsp-clangd)
-(require 'lsp-mode)
-(require 'lsp-ui)
 (require 'rtags)
 
 (declare-function disaster "disaster")
@@ -60,27 +49,10 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
 
 (cam/tweak-package cc-mode
   :mode-name c++-mode
-  :minor-modes (column-enforce-mode
-                flycheck-mode
-                ;; smartparens-strict-mode
-                company-mode
-                eldoc-box-hover-mode
-                eldoc-box-hover-at-point-mode
-                cam/todo-font-lock-mode)
-  :vars ((company-lsp-enable-snippet . nil)
-         (rtags-completions-enabled . t)
-         ;; (rtags-display-result-backend . 'helm)
-         )
   :local-vars ((flycheck-highlighting-mode . nil))
   :setup ((cam/c-mode-setup)
-          (rtags-start-process-unless-running)
-          (dolist (backend '(company-rtags company-lsp))
-            (add-to-list 'company-backends backend))
           (add-to-list 'eglot-server-programs '((c++-mode) "clangd"))
-          (eglot-ensure)
-          (when (fboundp 'auto-complete-mode)
-            (auto-complete-mode 0))
-          (flyspell-prog-mode))
+          (eglot-ensure))
   :keys (("<f1>" . #'eldoc-doc-buffer)
          ("<f7>" . #'cam/c++-switch-between-header-and-impl)
          ("C-." . #'disaster)                     ; disassemble code at point
