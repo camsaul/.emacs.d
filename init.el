@@ -242,6 +242,7 @@
       frame-resize-pixelwise t                              ; maximize as much as possible rather than rounding to closest whole line
       garbage-collection-messages t                         ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t                 ; also auto-revert buffers like dired
+      isearch-case-fold-search 'yes                         ; yes = ignore case even if the search string has captials
       next-line-add-newlines t                              ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       read-process-output-max (* 1024 1024)                 ; read data in up to 1MB chunks from subprocesses rather than 4kb chunks.
       recentf-max-menu-items 50                             ; show more recent files in [Helm]recentf
