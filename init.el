@@ -436,7 +436,8 @@
 
 (cam/tweak-package markdown-mode
   :mode-name markdown-mode
-  :minor-modes (flyspell-mode))
+  :minor-modes (column-enforce-mode
+                flyspell-mode))
 
 (cam/tweak-package python
   :minor-modes (electric-pair-local-mode))
