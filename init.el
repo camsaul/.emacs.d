@@ -404,7 +404,7 @@
     (cperl-mode         "\\.pl$" "\\.pm$")
     (emacs-lisp-mode    "\\.el$")
     (nxml-mode          "\\.pml$")
-    (web-mode           "\\.html$" "\\.js$" "\\.json$" "\\.jsx$" "\\.mustache$")))
+    (web-mode           "\\.html$" "\\.js$" "\\.json$" "\\.jsx$" "\\.ts$" "\\.tsx$" "\\.mustache$")))
 
 (dolist (spec cam/-auto-mode-patterns)
   (cl-destructuring-bind (mode . patterns) spec

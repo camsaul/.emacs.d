@@ -9,13 +9,17 @@
                        "*.edn"
                        "*.el"
                        "*.html"
+                       "*.java"
                        "*.js"
                        "*.jsx"
-                       "*.java"
                        "*.lisp"
                        "*.md"
                        "*.mustache"
                        "*.pml"
+                       "*.sql"
+                       "*.sh"
+                       "*.ts"
+                       "*.tsx"
                        "*.yaml"
                        "*.yml"))
 
