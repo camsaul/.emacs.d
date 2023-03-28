@@ -8,7 +8,7 @@
 
 (require 'column-enforce-mode)
 (require 'company)
-(require 'company-lsp)
+;; (require 'company-lsp)
 (require 'eldoc)
 (require 'elec-pair)
 (require 'flycheck)

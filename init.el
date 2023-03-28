@@ -164,7 +164,7 @@
 
     ;; new JS stuff
     lsp-mode
-    company-lsp
+    ;; company-lsp
     tide
 
     ;; new C++ stuff

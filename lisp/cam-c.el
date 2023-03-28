@@ -8,7 +8,7 @@
 (require 'cam-todo-font-lock)
 (require 'column-enforce-mode)
 (require 'company)
-(require 'company-lsp)
+;; (require 'company-lsp)
 (require 'company-rtags)
 (require 'eglot)
 (require 'eldoc-box)
@@ -17,7 +17,7 @@
 (require 'flyspell)
 (require 'lsp-clangd)
 (require 'lsp-mode)
-(require 'lsp-ui)
+;; (require 'lsp-ui)
 (require 'rainbow-delimiters)
 (require 'rtags)
 
@@ -31,7 +31,7 @@
                 electric-pair-local-mode
                 flycheck-mode
                 rainbow-delimiters-mode)
-  :vars ((company-lsp-enable-snippet . t) ; nil
+  :vars (;; (company-lsp-enable-snippet . t) ; nil
          (rtags-completions-enabled . t)
          ;; (rtags-display-result-backend . 'helm)
          )
@@ -51,7 +51,8 @@
           ;; for some reason these backends are getting stomped on, so just add them again when we try to autocomplete
           ;; something if they're not already there.
           (cl-labels ((add-company-backends ()
-                        (dolist (backend '(company-rtags company-lsp))
+                        (dolist (backend '(company-rtags ;; company-lsp
+                                                         ))
                           (add-to-list 'company-backends backend))))
             (add-company-backends)
             (advice-add #'company-complete :before
