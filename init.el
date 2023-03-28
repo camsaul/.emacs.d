@@ -54,7 +54,8 @@
 (eval-when-compile
   (require 'cl-lib)
   (require 'subr-x)                                         ; when-let, thread-last, string-remove-prefix, etc.
-  (require 'cam-macros))
+  (require 'cam-macros)
+  (require 'autoload))                                      ; for update-file-autoloads
 
 ;; compile init files if they haven't already been compiled.
 (defun cam/-init-files ()
@@ -80,6 +81,7 @@
               force-update-autoloads)
       (message "Updating autoloads for %s" file)
       ;; t = save the autoloads file when finished.
+      (require 'autoload)
       (update-file-autoloads file t cam/autoloads-file))))
 
 ;; compile all the init files as needed and generate autoloads
