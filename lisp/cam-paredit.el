@@ -23,4 +23,9 @@
     (when paredit-mode
       (error "backward-kill-sentence is disabled in paredit-mode"))))
 
+(cam/tweak-package paredit
+  ;; remove the wacky RET binding recently added to paredit.
+  :keys (("RET")
+         ("C-j")))
+
 (provide 'cam-paredit)

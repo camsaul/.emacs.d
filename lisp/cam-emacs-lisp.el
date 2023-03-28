@@ -99,4 +99,7 @@
 (cam/tweak-package nadvice
   :load ((put #'advice-add 'lisp-indent-function 2)))
 
+(cam/tweak-package minibuffer
+  :keys (("RET" . #'exit-minibuffer)))
+
 (provide 'cam-emacs-lisp)
