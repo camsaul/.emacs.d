@@ -3,45 +3,59 @@
 (eval-when-compile
   (require 'subr-x))
 
+(require 'moe-theme)
+
 ;;; font setup
 
-(defun cam/-hdpi-scale ()
+(defconst cam/-hdpi-scale
   (or (when (and (boundp 'pgtk-initialized)
                  pgtk-initialized)
         (when-let ((scale (getenv "GDK_DPI_SCALE")))
           (string-to-number scale)))
       1))
 
+;; use shell command `fc-list` to get the list of available fonts on the system.
+;;
+;; (x-list-fonts "*") for all available fonts.
+;; (x-list-fonts "Source Code Pro") to see if font in question is available
+(defconst cam/-font-family "Source Code Pro") ;; "CascadiaCode"
+
 ;; use a different font size depending on whether we're rendering in pure GTK w/ display scaling or not.
-(defun cam/-font ()
-  (let* ((font-size (ceiling (/ 18 (cam/-hdpi-scale))))
-         ;; use shell command `fc-list` to get the list of available fonts on the system.
-         ;; M-x list-fontsets to list the fonts available to Emacs
-         (font-name
-          "DejaVuSansMono"
-          ;; "CascadiaCode"
-          ))
-    (format "%s-%d" font-name font-size)))
+(defconst cam/-font-size
+  (ceiling (/ 16.0 cam/-hdpi-scale)))
 
-;; (set-frame-font "-SAJA-Cascadia Code PL-*-normal-normal-*-*-*-*-*-m-0-iso10646-1")
-;; (set-frame-font "-PfEd-DejaVu Sans Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
+(defconst cam/-mode-line-font-size-ratio
+  0.75
+  "How big the mode line font should be relative to the normal frame font")
 
+(defconst cam/-mode-line-font-height
+  (ceiling (* cam/-font-size 10.0 cam/-mode-line-font-size-ratio)))
+
+(defconst cam/-font
+  (format "%s:size=%d:weight=medium" cam/-font-family cam/-font-size))
+
+;; (let ((font "Source Code Pro:size=18:weight=semibold"))
+;;   (set-frame-font font t)
+;;   (set-face-font 'default font))
+
+;; (set-face-attribute 'default nil :weight 'medium)
 ;;; theme setup
 
 (declare-function moe-dark "moe-theme")
 
 (defun cam/-set-theme ()
-  (require 'moe-theme)
   (moe-dark))
 
 (declare-function unicode-fonts-setup "unicode-fonts")
 
 (defun cam/-set-frame-font ()
-  (let ((font (cam/-font)))
+  (let ((font cam/-font))
     (message "Using font %s" font)
     ;; nil = don't worry about keeping the current frame size.
     ;; t = apply font to all frames going forward & save setting to custom.el (supposedly)
-    (set-frame-font font nil t))
+    (condition-case err
+        (set-frame-font font nil t)
+      (error (warn "Unable to set frame font: %s" (error-message-string err)))))
   ;; create unicode mappings for our font if needed.
   (require 'unicode-fonts)
   (unicode-fonts-setup))
@@ -49,8 +63,10 @@
 (defun cam/setup-frame ()
   (cam/-set-frame-font)
   (cam/-set-theme)
-  (set-fringe-style '(6 . 0))           ; ¾ width fringe on the left and none on the right
-  (moe-theme-random-color)
+  ;; I've seen this fail randomly in some cases. Not sure why
+  (ignore-errors
+    (set-fringe-style '(6 . 0)))           ; ¾ width fringe on the left and none on the right
+  ;; (moe-theme-random-color)
   (set-face-foreground 'mode-line "#111111")
   (set-cursor-color (face-background 'mode-line))
   ;;  Don't show a blue background behind buffer name on modeline for deselected frames
@@ -70,6 +86,12 @@
 (defun cam/theme--face-symbol (active-or-inactive where)
   (intern (format "cam/%s-%s" active-or-inactive where)))
 
+(dolist (face '(mode-line mode-line-inactive))
+  (set-face-attribute face nil
+                      :family cam/-font-family
+                      :height cam/-mode-line-font-height
+                      :weight 'medium))
+
 ;; define our various faces now
 (dolist (group '((active . ((side-outer "gray70" "black")
                             (side-center "gray80" "black")
@@ -85,7 +107,12 @@
       (let ((symb (cam/theme--face-symbol active-or-inactive (car face)))
             (bg (cadr face))
             (fg (caddr face)))
-        (face-spec-set symb (list (list t :background bg :foreground fg)))))))
+        (face-spec-set symb (list (list t
+                                        :background bg
+                                        :foreground fg
+                                        :family cam/-font-family
+                                        :height cam/-mode-line-font-height
+                                        :weight 'medium)))))))
 
 (defvar cam/theme-mode-tag-function nil)
 
@@ -95,7 +122,11 @@
     "EMACS"))
 
 (face-spec-set 'cam/theme--default-mode-face
-               '((t :background "#cc6633" :foreground "white")))
+               (list (list t :background "#cc6633"
+                           :foreground "white"
+                           :family cam/-font-family
+                           :height cam/-mode-line-font-height
+                           :weight 'medium)))
 
 (defvar cam/theme-mode-face-symbol-function nil)
 
@@ -186,10 +217,7 @@
            (rhs (append center-right rhs-inside rhs-center rhs-outside)))
       (concat
        (powerline-render lhs)
-       (powerline-fill center-face (powerline-width rhs))
+       (powerline-fill center-face (* (powerline-width rhs) cam/-mode-line-font-size-ratio))
        (powerline-render rhs))))))
-
-(set-face-bold 'mode-line-inactive nil)
-(set-face-bold 'mode-line nil)
 
 (provide 'cam-theme)

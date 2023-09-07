@@ -81,9 +81,15 @@
   (let ((state (or state evil-state 'nil)))
     (intern (format "cam/active-evil-%s-state" state))))
 
+;; create all the faces for the powerline LHS mode indicator
 (dolist (state '(nil emacs normal visual insert replace operator motion))
   (let ((symb (cam/evil--active-state-face-symbol state))
-        (face (list (list t :background (cam/evil-state-color state) :foreground "white"))))
+        (face (list (list t
+                          :background (cam/evil-state-color state)
+                          :foreground "white"
+                          :family cam/-font-family
+                          :height cam/-mode-line-font-height
+                          :weight 'medium))))
     (face-spec-set symb face)))
 
 (setq cam/theme-mode-face-symbol-function #'cam/evil--active-state-face-symbol)

@@ -51,6 +51,8 @@
 
 (add-to-list 'load-path cam/-user-source-directory t)       ; t = append
 
+(add-to-list 'load-path "~/esup/" t)
+
 (eval-when-compile
   (require 'cl-lib)
   (require 'subr-x)                                         ; when-let, thread-last, string-remove-prefix, etc.
@@ -69,6 +71,8 @@
                                (string-prefix-p ".#" file)
                                (string-equal file "loaddefs.el")))
                          (directory-files cam/-user-source-directory)))))
+
+(require 'bytecomp) ; for byte-recompile-file
 
 (defun cam/-byte-compile-init-files-and-generate-autoloads (&optional force-update-autoloads)
   (unless (file-exists-p cam/autoloads-file)
@@ -96,11 +100,12 @@
 (package-initialize)
 
 (defconst cam/-package-archives
-  '(("gnu"          . "https://elpa.gnu.org/packages/")
-    ("melpa-stable" . "https://stable.melpa.org/packages/")
-    ("melpa"        . "https://melpa.org/packages/")))
+  '(("gnu"    . "https://elpa.gnu.org/packages/")
+    ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+    ("melpa"  . "https://melpa.org/packages/")))
 
-(setq package-archives cam/-package-archives)
+(dolist (archive cam/-package-archives)
+  (add-to-list 'package-archives archive))
 
 (defconst cam/-packages
   '(ace-jump-mode
@@ -129,8 +134,7 @@
     flycheck-clj-kondo                                      ; Flycheck for clj-kondo
     flyspell                                                ; spell checking
     git-timemachine                                         ; Walk through git revisions of a file
-    gitconfig-mode
-    gitignore-mode                                          ; Major mode for editing .gitignore files
+    git-modes                                               ; Major modes for editing .gitignore and other Git config files
     guide-key
     helm
     highlight-parentheses                                   ; highlight matching parentheses
@@ -222,7 +226,7 @@
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
-(prefer-coding-system 'utf-8-auto-unix)
+(prefer-coding-system 'utf-8-unix)
 
 (mapatoms (lambda (atom)                                    ; Enable all disabled functions
             (when (get atom 'disabled)
@@ -289,7 +293,7 @@
 (add-hook 'before-save-hook
   (lambda ()
     (delete-trailing-whitespace)
-    (set-buffer-file-coding-system 'utf-8-auto-unix)))
+    (set-buffer-file-coding-system 'utf-8-unix)))
 
 ;; if we're saving a script, give it execute permissions
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p)
