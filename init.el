@@ -188,7 +188,7 @@
     unicode-fonts
 
     ;; more stuff that's experimental
-    company-posframe
+    ;; company-posframe
     company-quickhelp
     vterm
     ))
