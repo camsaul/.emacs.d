@@ -51,7 +51,6 @@ namespace."
                        "."
                        (file-name-extension buffer-file-name)))))
 
-;;;###autoload
 (defun cam/clj-switch-between-model-and-api-namespaces ()
   "(For Metabase development) if the current buffer is a /model/ namespace, switch to the corresponding /api/ namespace,
 and vice versa."
@@ -62,19 +61,20 @@ and vice versa."
      (replace-regexp-in-string "/api/" "/models/" buffer-file-name))))
 
 ;;;###autoload
-(defun cam/-clj-clear-nrepl-server-buffer ()
-  "Clear contents of the `*nrepl-server*` buffer."
-  (cam/when-let-visible-buffer ((buffer (string-prefix-p "*nrepl-server" (buffer-name buffer))))
-    (with-current-buffer buffer
-      (comint-clear-buffer))))
-
-;;;###autoload
 (defun cam/clj-save-load-switch-to-cider ()
   (interactive)
   (save-buffer)
-  (cam/-clj-clear-nrepl-server-buffer)
-  (cider-load-buffer-and-switch-to-repl-buffer :set-namespace)
-  (cider-repl-clear-buffer))
+  (let ((buffer-ns (cider-current-ns)))
+    (save-excursion
+      (cider-switch-to-repl-buffer)
+      (cider-repl-set-ns buffer-ns)
+      (cider-repl-clear-buffer)))
+  (let ((callback (cider-load-file-handler
+                   (current-buffer)
+                   (lambda (_source-buffer)
+                     (cider-switch-to-repl-buffer)
+                     (set-window-start nil (point-min))))))
+    (cider-load-buffer (current-buffer) callback :undef-all)))
 
 (defvar cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p nil)
 
@@ -100,8 +100,6 @@ and vice versa."
 ;;               ;; prevent recursive calls !
 ;;               (let ((cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p t))
 ;;                 (save-buffer)))))))))
-
-(defun cam/clj-load-buffer-clean-namespace (&optional _buffer))
 
 ;;;###autoload
 (defun cam/clj-insert-println (text)
@@ -162,14 +160,6 @@ and vice versa."
       (cam/-insert-smallclojure--header text)
     (cam/-insert-largeclojure--header text)))
 
-;; ;;;###autoload
-;; (defun cam/clj-ansi-colorize-nrepl-output-buffer-if-needed (f process output)
-;;   (let ((old-max (with-current-buffer (process-buffer process)
-;;                    (point-max))))
-;;     (funcall f process (replace-regexp-in-string "^.+ :: " "" output)) ; strip the logging prefix while we're at it
-;;     (with-current-buffer (process-buffer process)
-;;       (ansi-color-apply-on-region old-max (point-max)))))
-
 (cam/tweak-package clojure-mode
   :mode-name clojure-mode
   :minor-modes (cider-mode
@@ -192,8 +182,6 @@ and vice versa."
                (company-minimum-prefix-length . 2)
                (eldoc-documentation-function . #'cider-eldoc)
                (fill-column . 118))                           ; non-docstring column width of 117, which fits nicely on GH
-  :local-hooks ((after-save-hook . (lambda ()
-                                     (add-hook 'after-save-hook #'cam/clj-load-buffer-clean-namespace nil :local))))
   :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
          ("C-j"          . #'newline)
          ("<f1>"         . #'ac-cider-popup-doc)

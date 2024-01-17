@@ -7,6 +7,18 @@
 (require 'cc-mode)
 (require 'cam-c)
 
+(require 'cam-todo-font-lock)
+(require 'column-enforce-mode)
+(require 'company)
+;; (require 'company-lsp)
+(require 'company-rtags)
+(require 'eglot)
+(require 'eldoc-box)
+(require 'flycheck)
+(require 'flyspell)
+(require 'lsp-clangd)
+(require 'lsp-mode)
+;; (require 'lsp-ui)
 (require 'eglot)
 (require 'rtags)
 
