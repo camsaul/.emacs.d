@@ -136,6 +136,7 @@
     highlight-parentheses                                   ; highlight matching parentheses
     ido-vertical-mode
     loccur
+    lsp-mode
     macrostep                                               ; Interactive macrostepper for Emacs Lisp
     magit
     markdown-mode                                           ; Major mode for editing markdown files
