@@ -170,7 +170,6 @@
     evil-cleverparens
 
     ;; new JS stuff
-    lsp-mode
     ;; company-lsp
     tide
 
@@ -196,7 +195,8 @@
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents-p nil)
-(dolist (package cam/-packages)
+
+(defun cam/-install-package (package)
   (unless (package-installed-p package)
     (unless cam/has-refreshed-package-contents-p
       (ignore-errors
@@ -205,6 +205,13 @@
     (condition-case err
         (package-install package)
       (error (warn (concat "Failed to install package " (symbol-name package) ": " (error-message-string err)))))))
+
+(defun cam/-install-packages ()
+  (dolist (package cam/-packages)
+    (cam/-install-package package)))
+
+(cam/-install-packages)
+
 
 ;;; ---------------------------------------- [[<Global Setup]] ----------------------------------------
 
