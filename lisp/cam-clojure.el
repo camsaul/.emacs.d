@@ -20,6 +20,7 @@
 (require 'flycheck)
 (require 'flycheck-clj-kondo)
 (require 'flyspell)
+(require 'lsp-mode)
 
 (declare-function helm-imenu "helm-imenu")
 
@@ -169,6 +170,7 @@ and vice versa."
                 column-enforce-mode
                 eldoc-mode
                 flycheck-mode
+                lsp
                 cam/todo-font-lock-mode)
   :setup ((cam/lisp-mode-setup)
           (flyspell-prog-mode)
