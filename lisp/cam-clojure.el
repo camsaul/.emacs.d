@@ -73,7 +73,9 @@ and vice versa."
                    (lambda (_source-buffer)
                      (cider-switch-to-repl-buffer)
                      (set-window-start nil (point-min))))))
-    (cider-load-buffer (current-buffer) callback :undef-all)))
+    (cider-load-buffer (current-buffer) callback
+                       ; :undef-all
+                       )))
 
 (defvar cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p nil)
 
