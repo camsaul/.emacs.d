@@ -507,6 +507,7 @@
     global-eldoc-mode                                       ; Automatically enable eldoc-mode in any buffers possible. Display fn arglists / variable dox in minibuffer
     global-so-long-mode                                     ; don't die when handling files with really long lines
     global-undo-tree-mode
+    glyphless-display-mode                                  ; show glyphless characters like zero-width spaces
     guide-key-mode                                          ; Show list of completions for keystrokes after a delay
     ido-mode
     ido-everywhere
@@ -534,6 +535,7 @@
     diff-hl-mode
     editorconfig-mode
     global-auto-revert-mode
+    glyphless-display-mode
     guide-key-mode
     highlight-parentheses-mode
     projectile-mode
