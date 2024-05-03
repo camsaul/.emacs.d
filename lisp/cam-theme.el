@@ -71,6 +71,8 @@
   (set-cursor-color (face-background 'mode-line))
   ;;  Don't show a blue background behind buffer name on modeline for deselected frames
   (set-face-background 'mode-line-buffer-id nil)
+  ;; let's not get bit by any more zero-width spaces
+  (set-face-background 'glyphless-char "red")
   ;; maximize the screen, unless we launched with it maximized.
   (unless (eq (frame-parameter nil 'fullscreen) 'maximized)
     (toggle-frame-maximized)))
