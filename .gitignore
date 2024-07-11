@@ -5,9 +5,11 @@
 .cache/
 .mc-lists
 .mc-lists.el
+/.lsp-session*
 /.tutor
 /eln-cache
 /history
+/projects
 /racket-mode/
 \#*\#
 ac-comphist.dat
@@ -18,6 +20,7 @@ bookmarks
 custom.el
 elpa/
 eshell/
+flycheck_*
 games/
 ido.last
 loaddefs.el

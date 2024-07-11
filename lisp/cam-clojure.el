@@ -28,7 +28,8 @@
 
 (setq cider-auto-select-error-buffer nil
       cider-repl-use-pretty-printing t
-      cljr-favor-prefix-notation     nil)
+      cljr-favor-prefix-notation     nil
+      cider-enable-flex-completion   t)
 
 (define-clojure-indent
   (matcha '(1 (:defn)))
@@ -74,9 +75,8 @@ and vice versa."
                    (lambda (_source-buffer)
                      (cider-switch-to-repl-buffer)
                      (set-window-start nil (point-min))))))
-    (cider-load-buffer (current-buffer) callback
-                       ; :undef-all
-                       )))
+    ;;(cider-load-buffer (current-buffer) callback :undef-all)
+    (cider-load-buffer (current-buffer) callback)))
 
 (defvar cam/clojure--load-buffer-clean-namespace--namespace-cleaned-p nil)
 
@@ -162,6 +162,14 @@ and vice versa."
       (cam/-insert-smallclojure--header text)
     (cam/-insert-largeclojure--header text)))
 
+(defun cam/clojure-find-definition ()
+  "Try finding something using LSP. If that fails, try finding it using CIDER."
+  (interactive)
+  (let ((result (call-interactively #'lsp-find-definition)))
+    (when (and (stringp result)
+               (string-prefix-p "LSP :: Not found" result))
+      (call-interactively #'cider-find-var))))
+
 (cam/tweak-package clojure-mode
   :mode-name clojure-mode
   :minor-modes (cider-mode
@@ -186,14 +194,15 @@ and vice versa."
                (fill-column . 118))                           ; non-docstring column width of 117, which fits nicely on GH
   :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
          ("C-j"          . #'newline)
-         ("<f1>"         . #'ac-cider-popup-doc)
+         ("<f1>"         . #'cider-doc)
          ("<f7>"         . #'cam/clj-switch-to-test-namespace)
          ("<f8>"         . #'cam/clj-switch-between-model-and-api-namespaces)
          ("<f9>"         . #'cam/clj-insert-header)
          ("<f10>"        . #'cam/clj-insert-println)
          ("<insert>"     . #'helm-imenu)
          ("<f12> i"      . #'cam/open-metabase-issue-or-pr)
-         ("<f12> j"      . #'cider-javadoc)))
+         ("<f12> j"      . #'cider-javadoc)
+         ("M-."          . #'cam/clojure-find-definition)))
 
 (advice-add #'cider-repl-return :before
   (lambda ()
@@ -216,7 +225,7 @@ and vice versa."
   :keys (("M-RET"   . #'cider-switch-to-last-clojure-buffer)
          ("RET"     . #'cider-repl-return)
          ("{"       . #'paredit-open-curly)
-         ("<f1>"    . #'ac-cider-popup-doc)
+         ("<f1>"    . #'cider-doc)
          ("<f12> j" . #'cider-javadoc)))
 
 (cam/tweak-package cider-macroexpansion
