@@ -402,6 +402,7 @@
     (racket-mode         cam-racket)
     (simple              cam-eval-expr cam-messages-mode)
     (sly                 cam-common-lisp)
+    (sql-mode            cam-sql)
     (web-mode            cam-web)))
 
 (dolist (spec cam/-require-after-loads)
