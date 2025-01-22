@@ -194,6 +194,9 @@
     vterm
     ))
 
+;; update built-in packages as well.
+(setq package-install-upgrade-built-in t)
+
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents-p nil)
 
