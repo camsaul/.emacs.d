@@ -7,8 +7,8 @@
 
 (add-hook 'emacs-startup-hook
   (lambda ()
-    ;; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 128MB
-    (setq gc-cons-threshold (* 128 1024 1024))))
+    ;; By default GC starts around ~780kB. Since this isn't the 90s GC when we hit 512MB
+    (setq gc-cons-threshold (* 512 1024 1024))))
 
 (setq
  ;; load .el files if they're newer than .elc/.eld ones
