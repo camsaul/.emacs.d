@@ -16,6 +16,7 @@
                        "*.md"
                        "*.mustache"
                        "*.pml"
+                       "*.prolog"
                        "*.sql"
                        "*.sh"
                        "*.ts"
