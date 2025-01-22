@@ -155,6 +155,7 @@
     register-list                                           ; dired-like editing of Emacs registers
     saveplace                                               ; save position of point when killing a buffer
     sly                                                     ; Common Lisp
+    sweeprolog                                              ; Prolog IDE
     rotate                                                  ; rotate-window, rotate-layout, etc.
     undo-tree
     web-mode                                                ; major-mode for editing web templates
@@ -405,6 +406,7 @@
     (simple              cam-eval-expr cam-messages-mode)
     (sly                 cam-common-lisp)
     (sql-mode            cam-sql)
+    (sweeprolog          cam-prolog)
     (web-mode            cam-web)))
 
 (dolist (spec cam/-require-after-loads)
@@ -420,6 +422,7 @@
     (cperl-mode         "\\.pl$" "\\.pm$")
     (emacs-lisp-mode    "\\.el$")
     (nxml-mode          "\\.pml$")
+    (sweeprolog-mode    "\\.prolog$")
     (web-mode           "\\.html$" "\\.js$" "\\.json$" "\\.jsx$" "\\.ts$" "\\.tsx$" "\\.mustache$")))
 
 (dolist (spec cam/-auto-mode-patterns)
