@@ -155,6 +155,7 @@
     register-list                                           ; dired-like editing of Emacs registers
     saveplace                                               ; save position of point when killing a buffer
     sly                                                     ; Common Lisp
+    sweeprolog                                              ; Prolog IDE
     rotate                                                  ; rotate-window, rotate-layout, etc.
     undo-tree
     web-mode                                                ; major-mode for editing web templates
@@ -192,6 +193,9 @@
     company-quickhelp
     vterm
     ))
+
+;; update built-in packages as well.
+(setq package-install-upgrade-built-in t)
 
 ;;; Install packages as needed
 (defvar cam/has-refreshed-package-contents-p nil)
@@ -396,12 +400,16 @@
     (helm                cam-helm)
     (ielm                cam-emacs-lisp)
     (magit               cam-magit)
+    (make-mode           cam-make)
     (nxml-mode           cam-nxml)
     (org                 cam-org)
     (paredit             cam-paredit)
+    (python              cam-python)
     (racket-mode         cam-racket)
     (simple              cam-eval-expr cam-messages-mode)
     (sly                 cam-common-lisp)
+    (sql-mode            cam-sql)
+    (sweeprolog          cam-prolog)
     (web-mode            cam-web)))
 
 (dolist (spec cam/-require-after-loads)
@@ -417,6 +425,7 @@
     (cperl-mode         "\\.pl$" "\\.pm$")
     (emacs-lisp-mode    "\\.el$")
     (nxml-mode          "\\.pml$")
+    (sweeprolog-mode    "\\.prolog$")
     (web-mode           "\\.html$" "\\.js$" "\\.json$" "\\.jsx$" "\\.ts$" "\\.tsx$" "\\.mustache$")))
 
 (dolist (spec cam/-auto-mode-patterns)
