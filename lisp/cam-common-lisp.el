@@ -24,7 +24,8 @@
 (cam/tweak-package sly
   ;; :require (ac-sly)
   :minor-modes (company-mode)
-  :keys (("<C-M-return>" . #'cam/save-load-switch-to-sly))
+  :keys (("<C-M-return>" . #'cam/save-load-switch-to-sly)
+         ("C-j" . #'newline))
   :setup ((cam/lisp-mode-setup)
           ;; don't load ac-sly until after sly is loaded, otherwise there will be circular requires between them
           ;; (eval-after-load 'sly
