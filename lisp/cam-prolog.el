@@ -1,15 +1,16 @@
 ;;; -*- lexical-binding: t; -*-
 
 (eval-when-compile
-  (require 'cam-tweak-package)
-  (require 'sweeprolog))
+  (require 'cam-tweak-package))
+
+(require 'sweeprolog)
+(require 'company)
 
 (defun cam/prolog-insert-message (text)
   (interactive "sprint: ")
   (if current-prefix-arg
       (insert "format('" text "~n'),")
     (insert "format('" text " = ~w~n', [" text "]),")))
-
 
 (cam/tweak-package sweeprolog
   :minor-modes (company-mode
