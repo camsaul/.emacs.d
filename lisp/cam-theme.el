@@ -188,24 +188,24 @@
            (rhs-inside
             (list
              (powerline-raw
-              (concat
-               " "
-               (powerline-encoding)
-               (when buffer-read-only
-                 " [readonly]"))
-              side-inner-face
-              'r)
-             (powerline-arrow-right side-inner-face side-center-face)))
-
-           (rhs-center
-            (list
-             (powerline-raw
               ;; %l = line number; %C = column number
               (concat
                " L%l/"
                (int-to-string (line-number-at-pos (point-max)))
                " C%C")
-              side-center-face 'r)
+              side-inner-face 'r)
+             (powerline-arrow-right side-inner-face side-center-face)))
+
+           (rhs-center
+            (list
+             (powerline-raw
+              (concat
+               " "
+               (powerline-encoding)
+               (when buffer-read-only
+                 " [readonly]"))
+              side-center-face
+              'r)
              (powerline-arrow-right side-center-face side-outer-face)))
 
            (rhs-outside
@@ -219,7 +219,7 @@
            (rhs (append center-right rhs-inside rhs-center rhs-outside)))
       (concat
        (powerline-render lhs)
-       (powerline-fill center-face (* (powerline-width rhs) cam/-mode-line-font-size-ratio))
+       (powerline-fill center-face (powerline-width rhs))
        (powerline-render rhs))))))
 
 (provide 'cam-theme)
