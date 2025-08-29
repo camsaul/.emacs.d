@@ -1,5 +1,6 @@
 ;;; -*- lexical-binding: t; coding: utf-8; comment-column: 60; no-byte-compile: nil; -*-
 
+
 ;;; TOC:
 ;;; [[Initial Setup]]
 ;;;    [[Additional Init File Setup & Compiliation]]
@@ -360,7 +361,7 @@
   ("C-x C-z"       . nil)                                   ; instead of suspend-frame
   ("C-x b"         . #'helm-buffers-list)
   ("C-x f"         . #'helm-find-files)
-  ("C-x k"         . #'kill-this-buffer)
+  ("C-x k"         . #'kill-current-buffer)
   ("C-x r r"       . #'register-list)                       ; replaces copy-rectangle-to-register
   ("C-x w"         . nil)
   ("C-x w ."       . #'highlight-symbol-at-point)           ; this is the normal binding for this function but isn't added until `hi-lock.el` is loaded
