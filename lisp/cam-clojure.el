@@ -193,8 +193,10 @@ and vice versa."
           (cljr-add-keybindings-with-modifier "A-H-")
           (when (fboundp 'auto-complete-mode)
             (auto-complete-mode -1))
+          ;; seriously I do not want Emacs to hang waiting for LSP every time I try to edit anything
           (remove-function (local 'indent-region-function) #'lsp-format-region)
-          )
+          ;; prefer CIDER completion over LSP completion since it doesn't randomly hang all the time.
+          (setq-local completion-at-point-functions '(cider-complete-at-point lsp-completion-at-point t)))
   :local-vars ((cider-redirect-server-output-to-repl . t)
                (clojure-align-forms-automatically . t)        ; vertically aligns some forms automatically (supposedly)
                (clojure-docstring-fill-column . 118)          ; docstring column width of 117
@@ -205,9 +207,10 @@ and vice versa."
                (lsp-enable-on-type-formatting . nil)
                (lsp-enable-file-watchers . nil)
                (lsp-before-save-edits . nil)
+               ;; non-docstring column width of 117, which fits nicely on GH
                (fill-column . 118)
                ;; apparently despite me attempting to disable indentation LSP does it anyway
-               (indent-region-function . #'clojure-indent-region)) ; non-docstring column width of 117, which fits nicely on GH
+               (indent-region-function . #'clojure-indent-region))
   :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
          ("C-j"          . #'newline)
          ("<f1>"         . #'cider-doc)
