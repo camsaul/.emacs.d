@@ -270,6 +270,7 @@
       select-enable-clipboard t                             ; Cutting and pasting uses the clipboard
       sentence-end-double-space nil                         ; A single space should be considered finished even if there's only one space after the period for filling purposes.
       shift-select-mode nil                                 ; this is not an actual minor mode despite the name
+      undo-tree-auto-save-history nil                       ; don't save undo tree history to files when saving a buffer (TOO SLOW!)
       vc-make-backup-files t                                ; Make backups of files even if they're under VC
       visible-bell t                                        ; Show a visual overlay instead of beeping when doing something like trying to scroll up at top of file
 
