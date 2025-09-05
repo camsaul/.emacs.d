@@ -138,6 +138,7 @@
     git-modes                                               ; Major modes for editing .gitignore and other Git config files
     guide-key
     helm
+    helm-cider
     highlight-parentheses                                   ; highlight matching parentheses
     ido-vertical-mode
     loccur

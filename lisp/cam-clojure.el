@@ -186,7 +186,8 @@ and vice versa."
                 eldoc-mode
                 flycheck-mode
                 lsp
-                cam/todo-font-lock-mode)
+                cam/todo-font-lock-mode
+                helm-cider-mode)
   :setup ((cam/lisp-mode-setup)
           (flyspell-prog-mode)
           (cljr-add-keybindings-with-modifier "A-H-")
@@ -215,6 +216,7 @@ and vice versa."
          ("<f9>"         . #'cam/clj-insert-header)
          ("<f10>"        . #'cam/clj-insert-println)
          ("<insert>"     . #'helm-imenu)
+         ("<pause>"      . #'cider-browse-ns)
          ("<f12> i"      . #'cam/open-metabase-issue-or-pr)
          ("<f12> j"      . #'cider-javadoc)
          ("M-."          . #'cam/clojure-find-definition)))
