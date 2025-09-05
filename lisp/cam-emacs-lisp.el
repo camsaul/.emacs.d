@@ -76,6 +76,7 @@
                (emacs-lisp-docstring-fill-column . 118))
   :keys (("<C-M-return>" . #'cam/emacs-lisp-eval-switch-to-ielm)
          ("C-c RET"      . #'cam/emacs-lisp-macroexpand-last-sexp)
+         ("C-j"          . #'newline)
          ("C-x C-e"      . #'pp-eval-last-sexp)
          ("<f1>" . #'elisp-slime-nav-describe-elisp-thing-at-point)
          ("<f10>" . #'cam/emacs-lisp-insert-message)))
