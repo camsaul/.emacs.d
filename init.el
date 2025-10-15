@@ -1,5 +1,6 @@
 ;;; -*- lexical-binding: t; coding: utf-8; comment-column: 60; no-byte-compile: nil; -*-
 
+
 ;;; TOC:
 ;;; [[Initial Setup]]
 ;;;    [[Additional Init File Setup & Compiliation]]
@@ -137,6 +138,7 @@
     git-modes                                               ; Major modes for editing .gitignore and other Git config files
     guide-key
     helm
+    helm-cider
     highlight-parentheses                                   ; highlight matching parentheses
     ido-vertical-mode
     loccur
@@ -269,6 +271,7 @@
       select-enable-clipboard t                             ; Cutting and pasting uses the clipboard
       sentence-end-double-space nil                         ; A single space should be considered finished even if there's only one space after the period for filling purposes.
       shift-select-mode nil                                 ; this is not an actual minor mode despite the name
+      undo-tree-auto-save-history nil                       ; don't save undo tree history to files when saving a buffer (TOO SLOW!)
       vc-make-backup-files t                                ; Make backups of files even if they're under VC
       visible-bell t                                        ; Show a visual overlay instead of beeping when doing something like trying to scroll up at top of file
 
@@ -360,7 +363,7 @@
   ("C-x C-z"       . nil)                                   ; instead of suspend-frame
   ("C-x b"         . #'helm-buffers-list)
   ("C-x f"         . #'helm-find-files)
-  ("C-x k"         . #'kill-this-buffer)
+  ("C-x k"         . #'kill-current-buffer)
   ("C-x r r"       . #'register-list)                       ; replaces copy-rectangle-to-register
   ("C-x w"         . nil)
   ("C-x w ."       . #'highlight-symbol-at-point)           ; this is the normal binding for this function but isn't added until `hi-lock.el` is loaded

@@ -31,10 +31,17 @@
       cljr-favor-prefix-notation     nil
       cider-enable-flex-completion   t)
 
+(setq lsp-enable-indentation nil
+      lsp-enable-on-type-formatting nil
+      lsp-enable-file-watchers nil
+      lsp-before-save-edits nil)
+
+(advice-remove 'rename-file #'lsp--on-rename-file)
+
 (define-clojure-indent
-  (matcha '(1 (:defn)))
-  (matche '(1 (:defn)))
-  (matchu '(1 (:defn))))
+ (matcha '(1 (:defn)))
+ (matche '(1 (:defn)))
+ (matchu '(1 (:defn))))
 
 ;;;###autoload
 (defun cam/clj-switch-to-test-namespace ()
@@ -179,19 +186,31 @@ and vice versa."
                 eldoc-mode
                 flycheck-mode
                 lsp
-                cam/todo-font-lock-mode)
+                cam/todo-font-lock-mode
+                helm-cider-mode)
   :setup ((cam/lisp-mode-setup)
           (flyspell-prog-mode)
           (cljr-add-keybindings-with-modifier "A-H-")
           (when (fboundp 'auto-complete-mode)
-            (auto-complete-mode -1)))
+            (auto-complete-mode -1))
+          ;; seriously I do not want Emacs to hang waiting for LSP every time I try to edit anything
+          (remove-function (local 'indent-region-function) #'lsp-format-region)
+          ;; prefer CIDER completion over LSP completion since it doesn't randomly hang all the time.
+          (setq-local completion-at-point-functions '(cider-complete-at-point lsp-completion-at-point t)))
   :local-vars ((cider-redirect-server-output-to-repl . t)
                (clojure-align-forms-automatically . t)        ; vertically aligns some forms automatically (supposedly)
                (clojure-docstring-fill-column . 118)          ; docstring column width of 117
                (company-idle-delay . 0.2)
                (company-minimum-prefix-length . 2)
                (eldoc-documentation-function . #'cider-eldoc)
-               (fill-column . 118))                           ; non-docstring column width of 117, which fits nicely on GH
+               (lsp-enable-indentation . nil)
+               (lsp-enable-on-type-formatting . nil)
+               (lsp-enable-file-watchers . nil)
+               (lsp-before-save-edits . nil)
+               ;; non-docstring column width of 117, which fits nicely on GH
+               (fill-column . 118)
+               ;; apparently despite me attempting to disable indentation LSP does it anyway
+               (indent-region-function . #'clojure-indent-region))
   :keys (("<C-M-return>" . #'cam/clj-save-load-switch-to-cider)
          ("C-j"          . #'newline)
          ("<f1>"         . #'cider-doc)
@@ -200,6 +219,7 @@ and vice versa."
          ("<f9>"         . #'cam/clj-insert-header)
          ("<f10>"        . #'cam/clj-insert-println)
          ("<insert>"     . #'helm-imenu)
+         ("<pause>"      . #'cider-browse-ns)
          ("<f12> i"      . #'cam/open-metabase-issue-or-pr)
          ("<f12> j"      . #'cider-javadoc)
          ("M-."          . #'cam/clojure-find-definition)))
