@@ -202,7 +202,7 @@ and vice versa."
                (clojure-docstring-fill-column . 118)          ; docstring column width of 117
                (company-idle-delay . 0.2)
                (company-minimum-prefix-length . 2)
-               (eldoc-documentation-function . #'cider-eldoc)
+               ;; (eldoc-documentation-function . #'cider-eldoc)
                (lsp-enable-indentation . nil)
                (lsp-enable-on-type-formatting . nil)
                (lsp-enable-file-watchers . nil)
