@@ -19,14 +19,14 @@
 ;; this stuff adapted from https://github.com/emacscollective/auto-compile#setup
 (defun cam/-package-directory (package-name)
   (let ((elpa-dir (expand-file-name (concat user-emacs-directory "elpa/"))))
-    (when-let ((dir (car (file-name-all-completions package-name elpa-dir))))
+    (when-let* ((dir (car (file-name-all-completions package-name elpa-dir))))
       (concat elpa-dir dir))))
 
 (defconst cam/autoloads-file (expand-file-name (concat user-emacs-directory "lisp/loaddefs.el")))
 
 ;; if the packed and auto-compile packages exist...
-(when-let ((packed-dir (cam/-package-directory "packed"))
-           (auto-compile-dir (cam/-package-directory "auto-compile")))
+(when-let* ((packed-dir (cam/-package-directory "packed"))
+            (auto-compile-dir (cam/-package-directory "auto-compile")))
   ;; create a loaddefs.el file if one does not already exist
   (unless (file-exists-p cam/autoloads-file)
     (shell-command (concat  "touch " cam/autoloads-file)))
