@@ -10,7 +10,7 @@
 (defconst cam/-hdpi-scale
   (or (when (and (boundp 'pgtk-initialized)
                  pgtk-initialized)
-        (when-let ((scale (getenv "GDK_DPI_SCALE")))
+        (when-let* ((scale (getenv "GDK_DPI_SCALE")))
           (string-to-number scale)))
       1))
 
@@ -22,7 +22,7 @@
 
 ;; use a different font size depending on whether we're rendering in pure GTK w/ display scaling or not.
 (defconst cam/-font-size
-  (ceiling (/ 16.0 cam/-hdpi-scale)))
+  (ceiling (/ 22.0 cam/-hdpi-scale)))
 
 (defconst cam/-mode-line-font-size-ratio
   0.75
@@ -181,7 +181,7 @@
 
            (center-right
             (list
-             (when-let ((process (powerline-process)))
+             (when-let* ((process (powerline-process)))
                (powerline-raw process center-face 'r))
              (powerline-arrow-right center-face side-inner-face)))
 

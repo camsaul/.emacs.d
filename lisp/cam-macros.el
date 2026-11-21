@@ -28,10 +28,11 @@ Like Clojure's `time'."
             (,result     ,body)
             (,elapsed   (- (cam/current-microseconds)
                            ,start-time)))
-       (apply #'message ,(let* ((form-str (prin1-to-string body))
-                                (form-str (if (> (length form-str) 50) (concat (substring form-str 0 50) "...")
-                                            form-str)))
-                           (concat form-str " elapsed time: %.1f %s."))
+       ;; pass the form as an argument rather than making it part of the format string, since it might contain `%'
+       (apply #'message "%s elapsed time: %.1f %s."
+              ,(let ((form-str (prin1-to-string body)))
+                 (if (> (length form-str) 50) (concat (substring form-str 0 50) "...")
+                   form-str))
               (cond ((< ,elapsed 1000)    `(,,elapsed "µs"))
                     ((< ,elapsed 1000000) `(,(/ ,elapsed 1000.0) "ms"))
                     (:else                `(,(/ ,elapsed 1000000.0) "seconds"))))

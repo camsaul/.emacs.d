@@ -23,8 +23,8 @@
                                                   (let (cperl-message-on-help-error)
                                                     (cperl-get-help))))))
   ;; :setup ((add-to-list 'ac-sources 'ac-source-perl-completion))
-  :auto-mode-alist ("\.pl$"
-                    "\.pm$"))
+  :auto-mode-alist ("\\.pl$"
+                    "\\.pm$"))
 (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
 
 (provide 'cam-perl)

@@ -43,7 +43,6 @@
                ;; (comment-start . "// ")
                ;; (comment-end . "")
                )
-  :keys (("C-j" . #'newline))
   :setup ((rtags-start-process-unless-running)
           (add-to-list 'eglot-server-programs '((c-mode) "clangd"))
           (eglot-ensure)
@@ -59,7 +58,8 @@
               (lambda (&rest _args)
                 (when (eq major-mode 'c-mode)
                   (add-company-backends))))))
-  :keys (("<f1>" . #'eldoc-doc-buffer)
+  :keys (("C-j" . #'newline)
+         ("<f1>" . #'eldoc-doc-buffer)
          ("M-." . #'rtags-find-symbol-at-point)))
 
 ;; (add-hook 'c-mode-common-hook #'cam/c-mode-setup)

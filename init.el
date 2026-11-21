@@ -260,7 +260,6 @@
       frame-resize-pixelwise t                              ; maximize as much as possible rather than rounding to closest whole line
       garbage-collection-messages t                         ; Show messages when garbage collection occurs so we don't set the GC threshold too high and make Emacs laggy
       global-auto-revert-non-file-buffers t                 ; also auto-revert buffers like dired
-      isearch-case-fold-search 'yes                         ; yes = ignore case even if the search string has captials
       next-line-add-newlines t                              ; C-n (#'next-line) will add a newline at the end of the buffer instead of giving you an error
       read-process-output-max (* 1024 1024)                 ; read data in up to 1MB chunks from subprocesses rather than 4kb chunks.
       recentf-max-menu-items 50                             ; show more recent files in [Helm]recentf
@@ -268,6 +267,7 @@
       require-final-newline t                               ; add final newline on save
       revert-without-query '(".*")                          ; tell revert-buffer to revert all buffers without confirmation
       save-interprogram-paste-before-kill t                 ; Save clipboard strings (from other applications) into kill-ring before replacing them
+      search-upper-case nil                                 ; nil = isearch ignores case even if the search string has capitals
       select-enable-clipboard t                             ; Cutting and pasting uses the clipboard
       sentence-end-double-space nil                         ; A single space should be considered finished even if there's only one space after the period for filling purposes.
       shift-select-mode nil                                 ; this is not an actual minor mode despite the name
@@ -411,7 +411,7 @@
     (racket-mode         cam-racket)
     (simple              cam-eval-expr cam-messages-mode)
     (sly                 cam-common-lisp)
-    (sql-mode            cam-sql)
+    (sql                 cam-sql)
     (sweeprolog          cam-prolog)
     (web-mode            cam-web)))
 
@@ -536,6 +536,9 @@
 
 ;; for some obnoxious reason there's no global-rainbow-mode so this will have to suffice
 (add-hook 'find-file-hook #'rainbow-mode)
+
+;; same deal with glyphless-display-mode: it's buffer-local and there's no global version.
+(add-hook 'find-file-hook #'glyphless-display-mode)
 
 ;;; [[<Diminished Minor Modes]]
 

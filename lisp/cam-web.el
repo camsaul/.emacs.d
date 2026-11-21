@@ -34,7 +34,8 @@
   ((when (fboundp 'auto-complete-mode)
      (auto-complete-mode -1))
    ;; enable tide-mode for JS files
-   (when (let ((ext (file-name-extension buffer-file-name)))
+   (when (let ((ext (and buffer-file-name ; not every web-mode buffer is visiting a file
+                         (file-name-extension buffer-file-name))))
            (or (string= ext "js")
                (string= ext "jsx")))
      (require 'tide)

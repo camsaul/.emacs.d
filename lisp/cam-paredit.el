@@ -1,5 +1,8 @@
 ;;; -*- lexical-binding: t; -*-
 
+(eval-when-compile
+  (require 'cam-tweak-package))
+
 (require 'paredit)
 
 (put #'paredit-forward-delete  'delete-selection 'supersede)

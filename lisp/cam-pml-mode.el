@@ -13,11 +13,15 @@
         (let ((pos (point)))
           (insert "]]></inlinecode>")
           (goto-char pos)))
-    (save-excursion
-      (goto-char (region-beginning))
-      (insert "<inlinecode><![CDATA[")
-      (goto-char (region-end))
-      (insert "]]></inlinecode>"))))
+    ;; grab the bounds up front since moving point changes what the region is. Insert the closing tag first so START
+    ;; is still correct when we insert the opening one.
+    (let ((start (region-beginning))
+          (end   (region-end)))
+      (save-excursion
+        (goto-char end)
+        (insert "]]></inlinecode>")
+        (goto-char start)
+        (insert "<inlinecode><![CDATA[")))))
 
 (defun cam/pml-insert-code-block (language)
   (interactive (list (if current-prefix-arg
@@ -114,8 +118,11 @@
       (cam/pml--insert-tag-maybe-cdata (cdr child-tag) content))))
 
 (defun cam/pml--read-tag-content (tag)
-  (or (read-string (format "<%s> contents: " tag))
-      (cam/pml--read-tag-content tag)))
+  ;; `read-string' returns an empty string rather than nil if you don't enter anything.
+  (let ((content (read-string (format "<%s> contents: " tag))))
+    (if (string-empty-p content)
+        (cam/pml--read-tag-content tag)
+      content)))
 
 (defun cam/pml-insert-anything (tag content)
   (interactive (let ((tag (read-answer "insert "
@@ -149,7 +156,7 @@
     (column-enforce-mode 1))
   (setq-local column-enforce-column (if cam/pml-mode 80 120))
   (setq-local fill-column (if cam/pml-mode 80 120))
-  (electric-indent-mode (if cam/pml-mode -1 1)))
+  (electric-indent-local-mode (if cam/pml-mode -1 1)))
 
 ;; (message "(provide 'cam-pml-mode)")
 

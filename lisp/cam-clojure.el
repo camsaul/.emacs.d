@@ -2,7 +2,8 @@
 
 (eval-when-compile
   (require 'cl-lib)
-  (require 'cam-macros))
+  (require 'cam-macros)
+  (require 'cam-tweak-package))
 
 (require 'cam-lisp)
 
@@ -28,8 +29,10 @@
 
 (setq cider-auto-select-error-buffer nil
       cider-repl-use-pretty-printing t
-      cljr-favor-prefix-notation     nil
-      cider-enable-flex-completion   t)
+      cljr-favor-prefix-notation     nil)
+
+;; this is a function you call rather than a variable you set.
+(cider-enable-flex-completion)
 
 (setq lsp-enable-indentation nil
       lsp-enable-on-type-formatting nil

@@ -26,15 +26,18 @@ unless they are the current buffer."
 (defun cam/around-dired-do-delete (fun &optional arg)
   "Around-advice for `dired-do-delete'. When deleting a file, check if its a directory; if so, and the directory is
 deleted, ask to kill any buffers that were visiting files that were children of that directory."
-  (let* ((file (dired-get-filename))
-         (deleting-directory-p (file-directory-p file)))
+  ;; point isn't necessarily on a file, e.g. when deleting marked files.
+  (let* ((file (dired-get-filename nil :no-error-if-not-filep))
+         (deleting-directory-p (and file (file-directory-p file))))
     (let ((result (funcall fun arg)))
       (when (and deleting-directory-p
                  (not (file-exists-p file))) ; check that file was actually deleted
-        (dolist (buf (buffer-list))
-          (when-let ((buffer-file (buffer-file-name buf)))
-            (when (string-prefix-p (expand-file-name file) (expand-file-name buffer-file))
-              (kill-buffer-ask buf)))))
+        ;; make sure the name ends in a slash so deleting /a/foo doesn't match files in /a/foobar/
+        (let ((directory (file-name-as-directory (expand-file-name file))))
+          (dolist (buf (buffer-list))
+            (when-let* ((buffer-file (buffer-file-name buf)))
+              (when (string-prefix-p directory (expand-file-name buffer-file))
+                (kill-buffer-ask buf))))))
       result)))
 
 (setq dired-recursive-copies  'always

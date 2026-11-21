@@ -10,9 +10,12 @@
   "Visit the current git branch's PR on GitHub."
   (interactive)
   (browse-url (concat "http://github.com/"
-                      (->> (magit-get "remote" (magit-get-current-remote) "url")
-                           (string-remove-suffix ".git")
-                           (string-remove-prefix "git@github.com:"))
+                      ;; handle both SSH (git@github.com:owner/repo.git) and HTTPS remote URLs
+                      (thread-last
+                        (magit-get "remote" (magit-get-current-remote) "url")
+                        (string-remove-suffix ".git")
+                        (string-remove-prefix "git@github.com:")
+                        (string-remove-prefix "https://github.com/"))
                       "/pull/"
                       (magit-get-current-branch))))
 
@@ -36,23 +39,22 @@ Calls `magit-refresh' after the command finishes."
 (defun cam/kill-all-magit-buffers-and-windows ()
   "Kill all magit-related buffers and windows."
   (interactive)
-  ;; kill all the visible magit buffers & their windows
+  ;; delete all the windows showing magit buffers
   (dolist (frame (frame-list))
     (dolist (window (window-list frame))
-      (let ((buffer (window-buffer window)))
-        (when (cam/magit-buffer-p buffer)
-          (with-current-buffer buffer
-            (kill-buffer-and-window))))))
-  ;; ok, now kill any magit buffers in the background
+      (when (and (window-live-p window)
+                 (cam/magit-buffer-p (window-buffer window)))
+        ;; this fails if WINDOW is the only window in its frame. That's fine; it will show a different buffer once we
+        ;; kill the magit one below.
+        (ignore-errors
+          (delete-window window)))))
+  ;; ok, now kill all the magit buffers, visible or not
   (dolist (buffer (buffer-list))
     (when (cam/magit-buffer-p buffer)
       (kill-buffer buffer))))
 
-(setq magit-auto-revert-mode-lighter     ""
-      magit-last-seen-setup-instructions "1.4.0"
-      magit-push-always-verify           nil
-      ;; Don't prompt to save buffers in the current repo before performing Magit actions
-      magit-save-repository-buffers      'dontask)
+;; Don't prompt to save buffers in the current repo before performing Magit actions
+(setq magit-save-repository-buffers 'dontask)
 
 (add-hook 'focus-in-hook #'cam/refresh-magit-buffers)
 

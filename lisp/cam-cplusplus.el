@@ -42,7 +42,8 @@ error if the corresponding file does not exist; pass the prefix arg to suppress 
           (message "Trying %s..." new-file-name)
           (when (file-exists-p new-file-name)
             (find-file new-file-name)
-            (setq found t))))
+            (setq found t)
+            (cl-return))))
       (unless found
         (if current-prefix-arg
             (let ((default-extension (car possible-extensions)))

@@ -36,9 +36,9 @@
 (defun cam/emacs-lisp-eval-switch-to-ielm ()
   (interactive)
   (eval-buffer)
-  (if-let ((ielm-window (get-window-with-predicate
-                         (lambda (window)
-                           (string-equal (buffer-name (window-buffer window)) "*ielm*")))))
+  (if-let* ((ielm-window (get-window-with-predicate
+                          (lambda (window)
+                            (string-equal (buffer-name (window-buffer window)) "*ielm*")))))
       (select-window ielm-window)
     (let ((new-window (split-window-sensibly)))
       (if new-window
@@ -50,7 +50,7 @@
 (defun cam/emacs-lisp-insert-message (text)
   (interactive "sprintln: ")
   (if current-prefix-arg
-      (insert "(message \" text \")")
+      (insert "(message \"" text "\")")
     (insert "(message \"" text ": %s\" " text ")")))
 
 (cam/tweak-package elisp-mode

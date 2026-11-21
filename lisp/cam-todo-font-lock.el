@@ -3,6 +3,8 @@
 ;;; Commentary:
 ;;; Code:
 
+(require 'paredit) ; for paredit-in-comment-p
+
 (defconst cam/todo-font-lock--keywords
   '(("\\<\\(TODO\\|HACK\\|DEPRECATED\\|NOCOMMIT\\)\\>" 1 (when (paredit-in-comment-p)
                                                            'font-lock-warning-face)

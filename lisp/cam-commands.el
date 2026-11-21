@@ -33,14 +33,16 @@
 (defun cam/hungry-delete-forward ()
   "Delete all but one spaces after `point'."
   (interactive)
-  (while (= (char-after (1+ (point))) 32)
+  (while (and (eq (char-after) ?\s)
+              (eq (char-after (1+ (point))) ?\s))
     (delete-char 1)))
 
 ;;;###autoload
 (defun cam/hungry-delete-backward ()
   "Delete all but one spaces before `point'."
   (interactive)
-  (while (= (char-before (1- (point))) 32)
+  (while (and (eq (char-before) ?\s)
+              (eq (char-before (1- (point))) ?\s))
     (delete-char -1)))
 
 ;;;###autoload
@@ -79,7 +81,7 @@
   "Open Metabase GitHub issue or pull request with ISSUE-NUMBER in your browser.
 If there is a number under your current cursor position, uses that number
 automatically; otherwise prompts for a number."
-  (interactive (list (or (when-let ((num (number-at-point)))
+  (interactive (list (or (when-let* ((num (number-at-point)))
                            (when (integerp num)
                              num))
                          (read-number "Issue or pull request number: "))))
@@ -89,7 +91,7 @@ automatically; otherwise prompts for a number."
 (defun cam/duckduckgo-search (search-term)
   "Open a browser window and search DuckDuckGo for SEARCH-TERM."
   (interactive (list (read-string "Search DuckDuckGo for: " (cam/symbol-at-point-name))))
-  (browse-url (concat "https://duckduckgo.com/?q=" search-term)))
+  (browse-url (concat "https://duckduckgo.com/?q=" (url-hexify-string search-term))))
 
 ;;;###autoload
 (defun cam/javadocs-search (search-term)
@@ -127,14 +129,12 @@ Called with a prefix ARG, set the value of `cam/insert-spaces-goal-col' to point
     (error "comment-column is not set!"))
   (save-excursion
     (beginning-of-line)
-    (let ((current-line (line-number-at-pos (point))))
-      (search-forward ";")
-      (backward-char)
-      ;; Check to make sure we're still on the same line
-      (unless (= (line-number-at-pos (point)) current-line)
-        (cl-return-from cam/realign-eol-comment-current-line)))
+    ;; If there's no ";" on the current line there's nothing to do
+    (unless (search-forward ";" (line-end-position) t)
+      (cl-return-from cam/realign-eol-comment-current-line))
+    (backward-char)
     ;; Make sure this is just a single ";"
-    (when (= (char-after (1+ (point))) ?\;)
+    (when (eq (char-after (1+ (point))) ?\;)
       (cl-return-from cam/realign-eol-comment-current-line))
     ;; calculate the number of spaces to add / remove and do so
     (let ((cols-difference (- comment-column

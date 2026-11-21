@@ -12,7 +12,7 @@
 
 (cam/tweak-package nxml-mode
   :mode-name nxml-mode
-  :minor-modes (electric-pair-mode
+  :minor-modes (electric-pair-local-mode
                 company-mode)
   :keys (("C-j" . #'newline))
   :vars ((nxml-slash-auto-complete-flag . t))

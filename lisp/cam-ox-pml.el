@@ -35,7 +35,7 @@
       ""
     (concat (string-trim-right contents) "\n")))
 
-(defun cam/ox-pml--unhandled (type &rest args)
+(defun cam/ox-pml--unhandled (type &rest _args)
   (error "unhandled org type: %s" type)
   ;; (concat
   ;;  "\n"
@@ -44,9 +44,9 @@
   ;;                         )))
   )
 
-(defun cam/ox-pml-bold (_bold contents _info)
+(defun cam/ox-pml-bold (bold contents info)
   ;; (format "<emph>%s</emph>" contents)
-  (#'cam/ox-pml--unhandled 'bold _bold contents _info))
+  (cam/ox-pml--unhandled 'bold bold contents info))
 
 (defun cam/ox-pml-center-block (&rest args)
   (apply #'cam/ox-pml--unhandled 'center-block args))
@@ -110,7 +110,7 @@
                 "</figure>\n")))
 
      (t
-      (cam/ox-pml--unhandled dynamic-block content info)))))
+      (cam/ox-pml--unhandled 'dynamic-block dynamic-block content info)))))
 
 (defun cam/ox-pml-entity (&rest args)
   (apply #'cam/ox-pml--unhandled 'entity args))
@@ -142,7 +142,6 @@
   (apply #'cam/ox-pml--unhandled 'fixed-width args))
 
 (defun cam/ox-pml-footnote-reference (footnote-reference _contents info)
-  (message "(org-element-property footnote-reference :type): %s" (org-element-property :type footnote-reference))
   (when (equal (org-element-property :type footnote-reference) 'standard)
     (let ((footnote (org-export-get-footnote-definition footnote-reference info)))
       (concat "<footnote><p>"
@@ -194,7 +193,7 @@
   '("TITLE" "AUTHOR" "MISSING" "ED")
   "Org keywords to insert directly into the PML output as XML elements")
 
-(defun cam/ox-pml-keyword (keyword _contents info)
+(defun cam/ox-pml-keyword (keyword contents info)
   (cam/org-element-bind (key value) keyword
     (cond
      ((member key cam/ox-pml-tag-keywords)
@@ -205,7 +204,7 @@
       (format "<dt newline=\"yes\">%s</dt>\n" (cam/ox-pml-plain-text value info)))
 
      (t
-      (cam/ox-pml--unhandled 'keyword keyword _contents info)))))
+      (cam/ox-pml--unhandled 'keyword keyword contents info)))))
 
 (defun cam/ox-pml-latex-environment (&rest args)
   (apply #'cam/ox-pml--unhandled 'latex-environment args))
@@ -216,8 +215,8 @@
 (defun cam/ox-pml-line-break (&rest args)
   (apply #'cam/ox-pml--unhandled 'line-break args))
 
-(defun cam/ox-pml-link (link content _info)
-  (cam/org-element-bind (raw-link type path) link
+(defun cam/ox-pml-link (link _content _info)
+  (cam/org-element-bind (raw-link) link
     ;; HTTPS URL
     (format "<url>%s</url>" raw-link)))
 
@@ -239,7 +238,7 @@
           contents
         (format "<p>\n%s</p>\n" (cam/ox-pml--ensure-newline contents))))))
 
-(defun cam/ox-pml-plain-list (plain-list contents _info)
+(defun cam/ox-pml-plain-list (plain-list contents info)
   (cam/org-element-bind (type) plain-list
     (cond
      ((eq type 'unordered)
@@ -247,7 +246,7 @@
      ((eq type 'ordered)
       (format "<ol>\n%s</ol>\n" (cam/ox-pml--ensure-newline contents)))
      (t
-      (cam/ox-pml--unhandled 'plain-list plain-list contents _info)))))
+      (cam/ox-pml--unhandled 'plain-list plain-list contents info)))))
 
 (defun cam/ox-pml-plain-text (text _info)
   (string-replace " -- " " --- " (xml-escape-string text)))
@@ -269,7 +268,7 @@
 (defun cam/ox-pml-section (_section contents _info)
   contents)
 
-(defun cam/ox-pml-special-block (special-block content info)
+(defun cam/ox-pml-special-block (special-block content _info)
   (let ((tag (org-element-property :type special-block)))
     (concat (format "<%s>\n" tag)
             (cam/ox-pml--ensure-newline content)

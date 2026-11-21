@@ -13,13 +13,13 @@
 
 (defun cam/evil-state-color (&optional state)
   (cl-case (or state evil-state)
-    ('emacs "#dd0000")
-    ('normal "#0072bb")
-    ('visual "#ffd034")
-    ('insert "#336600")
-    ('replace "#663399")
-    ('operator "#ff0099")
-    ('motion "orange")
+    (emacs "#dd0000")
+    (normal "#0072bb")
+    (visual "#ffd034")
+    (insert "#336600")
+    (replace "#663399")
+    (operator "#ff0099")
+    (motion "orange")
     (otherwise "#cc6633")))
 
 (set-cursor-color (cam/evil-state-color))
@@ -69,6 +69,16 @@
 
 
 ;;; evil-powerline config
+
+;; HACK -- `powerline-evil' defines `powerline-evil-operator-face' as inheriting from itself, which Emacs 31+ rejects
+;; with an "inheritance cycle" error, so the library fails to load. Define the face correctly ourselves first, since
+;; `defface' leaves a face that is already defined alone. This has to happen at compile time too because the `require'
+;; below does.
+(eval-and-compile
+  (defface powerline-evil-operator-face
+    '((t (:background "cyan" :inherit powerline-evil-base-face)))
+    "Powerline face for evil OPERATOR state."
+    :group 'powerline))
 
 (require 'powerline-evil)
 

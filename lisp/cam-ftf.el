@@ -24,13 +24,16 @@
                        "*.yaml"
                        "*.yml"))
 
+(defvar-local cam/-ftf-project-directory nil
+  "Cached value of `ftf-project-directory' for the current buffer.")
+
 ;; normally ftf deduplicates stuff only based on the immediate parent directory; instead tweak it so it uses the
 ;; entire path relative to the project root.
 (advice-add #'ftf-uniqueify :around
   (lambda (_f file-cons)
     ;; cache the value of `(ftf-project-directory) because it's way to slow to call
     ;; on a big list of a few hundred files.
-    (unless (boundp 'cam/-ftf-project-directory)
+    (unless cam/-ftf-project-directory
       (setq-local cam/-ftf-project-directory (ftf-project-directory)))
     (setcar file-cons
             (concat (car file-cons)

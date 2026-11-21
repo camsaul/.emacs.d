@@ -14,12 +14,14 @@
  ;; load .el files if they're newer than .elc/.eld ones
  load-prefer-newer t
  ;; do native compilation whenever we do byte compilation.
- native-comp-deferred-compilation t)
+ native-comp-jit-compilation t)
 
 ;; this stuff adapted from https://github.com/emacscollective/auto-compile#setup
 (defun cam/-package-directory (package-name)
   (let ((elpa-dir (expand-file-name (concat user-emacs-directory "elpa/"))))
-    (when-let* ((dir (car (file-name-all-completions package-name elpa-dir))))
+    ;; the elpa directory won't exist yet the first time Emacs is launched on a new machine.
+    (when-let* (((file-directory-p elpa-dir))
+                (dir (car (file-name-all-completions package-name elpa-dir))))
       (concat elpa-dir dir))))
 
 (defconst cam/autoloads-file (expand-file-name (concat user-emacs-directory "lisp/loaddefs.el")))
@@ -34,9 +36,8 @@
   (add-to-list 'load-path packed-dir)
   (add-to-list 'load-path auto-compile-dir)
   (require 'auto-compile)
-  ;; auto-compile should also do native compilation and update autoloads.
+  ;; auto-compile should also do native compilation.
   (setq auto-compile-native-compile t)
-  (setq auto-compile-update-autoloads t)
   (setq auto-compile-verbose t)
   ;; enable auto-compile
   (auto-compile-on-load-mode)

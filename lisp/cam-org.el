@@ -20,13 +20,13 @@
   (interactive (list (if current-prefix-arg
                          (read-string "Language: ")
                        "emacs-lisp")))
-  (org-return-indent)
+  (org-return t)
   (insert "#+BEGIN_SRC " language)
-  (org-return-indent)
+  (org-return t)
   (insert "#+END_SRC")
   (forward-line -1)
   (org-end-of-line)
-  (org-return-indent)
+  (org-return t)
   (org-edit-src-code))
 
 (cam/tweak-package org
