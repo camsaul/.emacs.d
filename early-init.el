@@ -24,23 +24,16 @@
                 (dir (car (file-name-all-completions package-name elpa-dir))))
       (concat elpa-dir dir))))
 
-(defconst cam/autoloads-file (expand-file-name (concat user-emacs-directory "lisp/loaddefs.el")))
-
-;; if the packed and auto-compile packages exist...
-(when-let* ((packed-dir (cam/-package-directory "packed"))
-            (auto-compile-dir (cam/-package-directory "auto-compile")))
-  ;; create a loaddefs.el file if one does not already exist
-  (unless (file-exists-p cam/autoloads-file)
-    (shell-command (concat  "touch " cam/autoloads-file)))
-  ;; add packed and auto-compile to the load path and load auto-compile
-  (add-to-list 'load-path packed-dir)
+;; if the auto-compile package exists...
+(when-let* ((auto-compile-dir (cam/-package-directory "auto-compile")))
+  ;; add auto-compile to the load path and load it
   (add-to-list 'load-path auto-compile-dir)
   (require 'auto-compile)
   ;; auto-compile should also do native compilation.
   (setq auto-compile-native-compile t)
   (setq auto-compile-verbose t)
-  ;; enable auto-compile
-  (auto-compile-on-load-mode)
+  ;; recompile files when they get saved. `auto-compile-on-load-mode' gets enabled in init.el instead, once init.el
+  ;; has compiled itself; enabling it here would make it try to recompile init.el before `load-path' is set up.
   (auto-compile-on-save-mode))
 
 ;;; early-init.el ends here

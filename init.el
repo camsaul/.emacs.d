@@ -54,13 +54,12 @@
 
 (add-to-list 'load-path "~/esup/" t)
 
-(eval-when-compile
-  (require 'cl-lib)
-  (require 'subr-x)                                         ; when-let, thread-last, string-remove-prefix, etc.
-  (require 'cam-macros)
-  (require 'autoload))                                      ; for update-file-autoloads
+(require 'cl-lib)                                           ; we use cl-remove-if and friends at runtime below
 
-;; compile init files if they haven't already been compiled.
+(eval-when-compile
+  (require 'subr-x)                                         ; when-let, thread-last, string-remove-prefix, etc.
+  (require 'cam-macros))
+
 (defun cam/-init-files ()
   "Paths of the misc .el init files. init.el and ~/.emacs.d/lisp"
   (cons
@@ -73,26 +72,47 @@
                                (string-equal file "loaddefs.el")))
                          (directory-files cam/-user-source-directory)))))
 
+;; Generate autoloads for the files in ~/.emacs.d/lisp and load them. This has to happen before anything gets compiled
+;; so autoloaded macros like `cam/tweak-package' are available when the files that use them are compiled.
+(defun cam/-autoloads-out-of-date-p ()
+  "Whether `cam/autoloads-file' is missing or older than our Lisp files.
+This checks the ~/.emacs.d/lisp directory itself too, since its modification
+time changes when a file is added, removed, or renamed."
+  (cl-some (lambda (file)
+             (file-newer-than-file-p file cam/autoloads-file))
+           (cons cam/-user-source-directory (cdr (cam/-init-files)))))
+
+(defun cam/-generate-autoloads-if-needed ()
+  (when (cam/-autoloads-out-of-date-p)
+    (message "Generating %s..." cam/autoloads-file)
+    ;; `loaddefs-generate' puts every file it scans in `emacs-lisp-mode'; no need to run our mode hooks for those.
+    (let ((emacs-lisp-mode-hook nil)
+          (prog-mode-hook       nil))
+      ;; "loaddefs.el" = don't scan the autoloads file itself.
+      ;; t = regenerate the entire file instead of updating the existing one in place, so we don't hang on to
+      ;; autoloads for things that have since been removed.
+      (loaddefs-generate cam/-user-source-directory cam/autoloads-file '("loaddefs.el") nil nil t))))
+
+(cam/-generate-autoloads-if-needed)
+
+(load-file cam/autoloads-file)
+
+;; compile init files if they haven't already been compiled.
 (require 'bytecomp) ; for byte-recompile-file
 
-(defun cam/-byte-compile-init-files-and-generate-autoloads (&optional force-update-autoloads)
-  (unless (file-exists-p cam/autoloads-file)
-    (setq force-update-autoloads t))
+(defun cam/-byte-compile-init-files ()
   (dolist (file (cam/-init-files))
     (message "Compile %s if needed..." file)
     ;; nil = don't force recompilation if .elc is newer
     ;; 0 = compile file if .elc didn't already exist
-    (when (or (not (eq (byte-recompile-file file nil 0) 'no-byte-compile))
-              force-update-autoloads)
-      (message "Updating autoloads for %s" file)
-      ;; t = save the autoloads file when finished.
-      (require 'autoload)
-      (update-file-autoloads file t cam/autoloads-file))))
+    (byte-recompile-file file nil 0)))
 
-;; compile all the init files as needed and generate autoloads
-(cam/-byte-compile-init-files-and-generate-autoloads)
+(cam/-byte-compile-init-files)
 
-(load-file cam/autoloads-file)
+;; From here on out recompile any other out-of-date file right before it gets loaded. This is enabled here rather than
+;; in early-init.el so it doesn't try to recompile init.el itself before `load-path' is set up.
+(when (fboundp 'auto-compile-on-load-mode)
+  (auto-compile-on-load-mode))
 
 
 ;;; ---------------------------------------- [[<Package Setup]] ----------------------------------------
