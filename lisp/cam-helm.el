@@ -15,8 +15,11 @@
  helm-ff-skip-git-ignored-files nil
  ;; Have C-x C-f skip "boring" files matching the regex below
  helm-ff-skip-boring-files t
- ;; TODO -- this skips .emacs.d ??
- helm-ff--boring-regexp (rx (or (and "." (or "d" "o" "pch" "class" "elc") eol)
+ ;; Helm matches this against the base name of the file, not the entire path.
+ helm-ff--boring-regexp (rx (or (and "." (or "o" "pch" "class" "elc") eol)
+                                ;; skip .d dependency files, but only ones that don't start with a dot, so things like
+                                ;; .emacs.d still show up. (Emacs regexes don't have lookahead, hence the `bol'.)
+                                (and bol (not (any ".")) (0+ anything) ".d" eol)
                                 (and "~" eol)
                                 (and bol "#" (1+ anything) "#" eol)
                                 (and bol ".#")))
