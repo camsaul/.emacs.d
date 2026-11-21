@@ -9,6 +9,7 @@
 ;;;    [[Theme]]
 ;;;    [[Autoloads]]
 ;;;    [[Global Settings]]
+;;;    [[Function Declarations]]
 ;;;    [[Global Macros]]
 ;;;    [[Global Functions]]
 ;;;    [[Global Hooks]]
@@ -256,6 +257,21 @@ time changes when a file is added, removed, or renamed."
 
 ;;; [[<Global Settings]]
 
+;; Variables set below that belong to libraries that aren't loaded yet, or that only exist in builds of Emacs for
+;; other window systems. Declare them so the compiler knows they're special.
+(defvar global-auto-revert-non-file-buffers)                ; autorevert
+(defvar recentf-max-menu-items)                             ; recentf
+(defvar recentf-max-saved-items)
+(defvar undo-tree-auto-save-history)                        ; undo-tree
+(defvar w32-pass-lwindow-to-system)                         ; Windows
+(defvar w32-pass-rwindow-to-system)
+(defvar w32-apps-modifier)
+(defvar w32-lwindow-modifier)
+(defvar w32-rwindow-modifier)
+(defvar ns-right-command-modifier)                          ; macOS
+(defvar ns-right-control-modifier)
+(defvar ns-right-option-modifier)
+
 (fset #'yes-or-no-p #'y-or-n-p)                             ; Prompt for 'y' or 'n' instead of 'yes' or 'no'
 
 (set-language-environment "UTF-8")
@@ -322,6 +338,51 @@ time changes when a file is added, removed, or renamed."
 
 ;; (add-to-list 'projectile-globally-ignored-files   ; Tell projectile to always ignore uberdoc.html
 ;;              "uberdoc.html")
+
+;;; [[<Function Declarations]]
+
+;; Commands from packages and from ~/.emacs.d/lisp that are used below before the library that defines them has been
+;; loaded. They're all autoloaded (or their library is loaded by the time they're used), but async native compilation
+;; happens in a separate `emacs -Q' process that doesn't know about our autoloads, and would otherwise warn about
+;; every one of them.
+(declare-function ace-jump-mode                     "ace-jump-mode")
+(declare-function ace-window                        "ace-window")
+(declare-function aggressive-indent-mode            "aggressive-indent")
+(declare-function cam/backward-kill-line            "cam-commands")
+(declare-function cam/duckduckgo-search             "cam-commands")
+(declare-function cam/hungry-delete-backward        "cam-commands")
+(declare-function cam/hungry-delete-forward         "cam-commands")
+(declare-function cam/insert-em-dash                "cam-commands")
+(declare-function cam/insert-spaces-to-goal-column  "cam-commands")
+(declare-function cam/join-next-line                "cam-commands")
+(declare-function cam/realign-eol-comments          "cam-commands")
+(declare-function cam/windmove-left-or-other-frame  "cam-commands")
+(declare-function cam/windmove-right-or-other-frame "cam-commands")
+(declare-function cam/todo-font-lock-mode           "cam-todo-font-lock")
+(declare-function column-enforce-mode               "column-enforce-mode")
+(declare-function evil-mode                         "evil-core")
+(declare-function ftf-find-file                     "find-things-fast")
+(declare-function ftf-grepsource                    "find-things-fast")
+(declare-function helm-M-x                          "helm-command")
+(declare-function helm-buffers-list                 "helm-buffers")
+(declare-function helm-find-files                   "helm-files")
+(declare-function helm-mark-ring                    "helm-ring")
+(declare-function helm-recentf                      "helm-for-files")
+(declare-function helm-show-kill-ring               "helm-ring")
+(declare-function magit-status                      "magit-status")
+(declare-function mc/mark-all-like-this             "mc-mark-more")
+(declare-function mc/mark-next-like-this            "mc-mark-more")
+(declare-function mc/mark-next-lines                "mc-mark-more")
+(declare-function mc/mark-previous-like-this        "mc-mark-more")
+(declare-function mc/skip-to-next-like-this         "mc-mark-more")
+(declare-function mc/skip-to-previous-like-this     "mc-mark-more")
+(declare-function paredit-mode                      "paredit")
+(declare-function rainbow-mode                      "rainbow-mode")
+(declare-function register-list                     "register-list")
+(declare-function rotate-layout                     "rotate")
+(declare-function rotate-window                     "rotate")
+(declare-function undo-tree-redo                    "undo-tree")
+(declare-function wiki-nav-ido                      "wiki-nav")
 
 ;;; [[<Global Hooks]]
 
@@ -582,6 +643,7 @@ time changes when a file is added, removed, or renamed."
   (diminish mode))
 
 ;; HACK -- fix copy not working correctly with GTK
+(declare-function pgtk-own-selection-internal "pgtkselect.c") ; only exists in PGTK builds
 (when (eq window-system 'pgtk)
   (require 'pgtk-win)
   (advice-add #'pgtk-own-selection-internal :around

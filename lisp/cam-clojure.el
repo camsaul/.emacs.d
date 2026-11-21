@@ -24,6 +24,7 @@
 (require 'lsp-mode)
 
 (declare-function helm-imenu "helm-imenu")
+(declare-function helm-cider-mode "helm-cider")
 
 (diminish 'clj-refactor-mode)
 
@@ -252,6 +253,7 @@ and vice versa."
          ("<f12> j" . #'cider-javadoc)))
 
 (cam/tweak-package cider-macroexpansion
+  :declare (cider-macroexpand-1)
   :setup ((read-only-mode -1))
   :keys  (("C-c RET" . #'cider-macroexpand-1)))
 

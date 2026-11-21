@@ -5,6 +5,14 @@
 
 (require 'helm)
 
+;; these belong to helm libraries that get loaded on demand.
+(defvar helm-buffers-fuzzy-matching)                        ; helm-buffers
+(defvar helm-recentf-fuzzy-match)                           ; helm-for-files
+(defvar helm-M-x-fuzzy-match)                               ; helm-command
+(defvar helm-M-x-always-save-history)
+(defvar helm-ff-skip-git-ignored-files)                     ; helm-files
+(defvar helm-ff-skip-boring-files)
+
 (setq
  ;; enable fuzzy matching for helm
  helm-buffers-fuzzy-matching t
