@@ -169,7 +169,7 @@ time changes when a file is added, removed, or renamed."
     morlock                                                 ; Extra font-locking for Emacs Lisp
     multiple-cursors
     moe-theme
-    org                                                     ; Get latest version of org from Org package archive
+    org
     paredit
     projectile
     rainbow-delimiters
