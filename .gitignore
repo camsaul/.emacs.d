@@ -23,6 +23,7 @@ eshell/
 flycheck_*
 games/
 ido.last
+ielm-history.eld
 loaddefs.el
 network-security.data
 places
