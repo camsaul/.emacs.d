@@ -64,7 +64,7 @@
                 company-mode
                 eldoc-mode
                 elisp-slime-nav-mode
-                flyspell-mode
+                flyspell-mode ; (flyspell-prog-mode 1) doesn't work since flyspell-prog-mode takes no arguments 😿
                 morlock-mode
                 wiki-nav-mode)
   :setup ((cam/lisp-mode-setup)

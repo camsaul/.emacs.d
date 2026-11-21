@@ -365,7 +365,7 @@
   ("C-x f"         . #'helm-find-files)
   ("C-x k"         . #'kill-current-buffer)
   ("C-x r r"       . #'register-list)                       ; replaces copy-rectangle-to-register
-  ("C-x w"         . nil)
+  ;; ("C-x w"         . nil)
   ("C-x w ."       . #'highlight-symbol-at-point)           ; this is the normal binding for this function but isn't added until `hi-lock.el` is loaded
   ("C-z"           . #'evil-normal-state)
   ;; ("ESC <up>"      . #'windmove-up)
@@ -553,7 +553,7 @@
     glyphless-display-mode
     guide-key-mode
     highlight-parentheses-mode
-    projectile-mode
+    ;; projectile-mode
     rainbow-mode
     undo-tree-mode
     wiki-nav-mode))

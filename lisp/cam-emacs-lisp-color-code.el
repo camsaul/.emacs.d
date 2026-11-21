@@ -18,7 +18,7 @@
                                'font-lock-builtin-face)
      keep)
     ("[^:]\\<\\([[:lower:]-]+[[:lower:]]\\)\\>"
-     0 (when-let* ((symb (intern-soft (match-string 1))))
+     1 (when-let* ((symb (intern-soft (match-string 1))))
          (unless (or (paredit-in-string-p)
                      (paredit-in-comment-p))
            (cond
